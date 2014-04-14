@@ -42,19 +42,34 @@ cat.whiskers#long
 
 ---
 ###Rules & Clauses
-The real power of Bottlenose is derived from leveraging the "semantic glue" described above in forming dynamic artificial cognitive behaviors. A Cogscript **Rule** is not a rule in a strict sense; it does not have to be correct all the time and there need not be any true causation. Instead, its purpose is to describe a reflexive cognitivie association or general correlation. Each **Rule** follows the syntax of two **Clauses** seperated by `>>`. A **Clause** can be a plain-phrase denoting existence of a concept, or a **Relationship** assertion, **Action**, or **State**. 
+The real power of Bottlenose is derived from leveraging the "semantic glue" described above in forming dynamic artificial cognitive behaviors. A Cogscript **Rule** is not a rule in a  strict sense; it does not have to be correct all the time and there need not be any true causation, directionality, or temporal seperation. Instead, its purpose is to describe a reflexive cognitivie association or general correlation. Each **Rule** follows the syntax of two **Clauses** seperated by `>>`. A **Clause** can be a plain-phrase denoting existence of a concept, or a **Relationship** assertion, **Action**, or **State**. 
 
 A **Compound Clause** can be formed using `&` (*AND*), `,` (*INCLUSIVE OR*), and `|` (*EXCLUSIVE OR*). The `&` would indicate that in order to fulfill the entire **Clause**, statements of both sides of the `&` must be true. Differentiating the utility of `,` and `|` is more intricate. One can think of the `,` as expanding into two rules. An example clause `A >> B , C` can be thought of as `A >> B` (*if A is true, then B could be true*) and `A >> C` (*if A is true, then C could be true*). Contrarily, the statement `A >> B | C` might translate *if A is true, then either B or C could be true, but it is unlikely that B and C would be simultaneously true*. 
 
+```
+cat & laserPointer >> cat.chase(laserPointer)
+```
+
 If a **Rule** is more meaningful and/or directional, then there is additional syntax that can be added. To denote the first clause supporting or opposing the second clause `>>+` or `>>-` can be used respectively. For example `A >>+ B` might be translated *if A is true, then it is more likely that B is true*. `A >>- B` might be translated *if A is true, then it is less likely that B is true*. 
 
-To take things even further quantitative probabilities can be expressed. The probability of the second *Clause* given the truth of the first *Clause* can be assigned a numerical value between 0 (never co-occurs) and 1 (always co-occurs). This value would be placed between brackets, which is itself placed immediately behind the dependent/second **Clause**.
+```
+cat#hungry >>+ cat.plays()
+cat#old >>- cat.plays()
+```
+
+To take things even further quantitative probabilities can be expressed. The probability of the second *Clause* given the truth of the first *Clause* can be assigned a numerical value between 0 (never co-occurs) and 1 (always co-occurs). This value would be placed between brackets, which is itself placed immediately behind the dependent/second **Clause**. 
 
 ```
 coin.flips() >> coin#heads[0.5] | coin#tails[0.5]
-
 magiciansCoin.flips() >> magiciansCoin#heads[1] | magiciansCoin#tails[0]
 ```
+
+Another use of **Rules** is to hardcode more 'syntactic glue' than is available by default. Using the cat example above we can connect the **Action** of 'owning a cat' to the **Relationship** of 'cat having an owner'. Below, we equate the **Action** `.owns(X)` to the **Relationship** `.owner =X`. Note that because of the directionality imposed by introducing quantitative probability, two statements are neccesary to fully describe the concept. 
+
+``
+cat.owner=person >> person.owns(cat)[1]
+person.owns(cat) >> cat.owner=person[1]
+``
 
 ###Arithmetic
 In order to describe slightly more complex patterns there are a few operators that can be used to describe basic arithmetic (addition, subtraction). As mentioned above, noun phrases should be written in singular form wherever possible. For plural items a number can be placed after `#` and used as if the number were an adjective. The same convention can be applied to a **Component**. A range of values can be described by writing two numbers seperated by `-`. Units can be typed directly after the number(s) (without intervening spaces). When describing an arithmetic operation within a **Rule** `++` or `--` should be placed after a **Component**. If a particular value for the operation is being defined then it should follow a single `+` or `-`. Also of note, trigger (in)equalities can be indicated within a **Clause** using `>`, `<`, `<=`, `>=`, or `==`. 
@@ -64,7 +79,7 @@ cat.weight#10lbs
 
 cat.eats(iceCream) >> cat.weight++
 cat.eats(quarterPounder) >> cat.weight+0.25lbs
-cat.walks() >> cat.weight-
+cat.walks() >> cat.weight--
 
 cat.weight > 20lbs >> cat#fat
 cat.weight <= 5lbs >> cat#skinny
