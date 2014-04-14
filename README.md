@@ -18,9 +18,10 @@ mammal /= cat
 ```
 
 ###Components / Relationships
-Use `.` to indicate the existence of a component or relationship. This can be paired with `=` to assign the role. Both the component/relationship and any assigned entities should be noun phrases. If the attribute is in the form of a verb phrase use **Actions** as described below.
+Use `.` to indicate the existence of a component or relationship. This can be paired with `=` to assign the role. Both the component/relationship and any assigned entities should be noun phrases. If the attribute is in the form of a verb phrase use **Actions** as described below. Again note that all phrases should be singular.
 ```
 cat.owner = John
+cat.hobby = eating, sleeping, sunbathing
 ```
 
 ###Actions
@@ -33,11 +34,12 @@ cat.likes(!dog)
 ```
 
 ###States
-Use `#` followed by an adjective to indicate the state of the entity or a component entity. If the right-sided phrase is a noun phrase it should be instead assigned as a **Component** (shown above). For plural items a number can be placed after `#` and used as if the number were an adjective.
+Use `#` followed by an adjective to indicate the state of the entity or a component entity. If the right-sided phrase is a noun phrase it should be instead assigned as a **Component** (shown above). For plural items a number can be placed after `#` and used as if the number were an adjective. `!` can denote the absence of a state.
 ```
 cat#furry
 cat.fur#orange
 cat.whiskers#long
+cat#!feral
 ```
 
 ---
