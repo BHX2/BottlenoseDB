@@ -33,7 +33,7 @@ cat.likes(!dog)
 ```
 
 ###States
-Use `#` followed by an adjective to indicate the state of the entity or a component entity. If the right-sided phrase is a noun phrase it should be instead assigned as a **Component** (shown above).
+Use `#` followed by an adjective to indicate the state of the entity or a component entity. If the right-sided phrase is a noun phrase it should be instead assigned as a **Component** (shown above). For plural items a number can be placed after `#` and used as if the number were an adjective.
 ```
 cat#furry
 cat.fur#orange
@@ -43,6 +43,10 @@ cat.whiskers#long
 ---
 ###Rules & Clauses
 The real power of Bottlenose is derived from leveraging the "semantic glue" described above in forming dynamic artificial cognitive behaviors. A Cogscript **Rule** is not a rule in a  strict sense; it does not have to be correct all the time and there need not be any true causation, directionality, or temporal seperation. Instead, its purpose is to describe a reflexive cognitivie association or general correlation. Each **Rule** follows the syntax of two **Clauses** seperated by `>>`. A **Clause** can be a plain-phrase denoting existence of a concept, or a **Relationship** assertion, **Action**, or **State**. 
+
+```
+cat.speaks() >> cat.grammar=bad
+```
 
 A **Compound Clause** can be formed using `&` (*AND*), `,` (*INCLUSIVE OR*), and `|` (*EXCLUSIVE OR*). The `&` would indicate that in order to fulfill the entire **Clause**, statements of both sides of the `&` must be true. Differentiating the utility of `,` and `|` is more intricate. One can think of the `,` as expanding into two rules. An example clause `A >> B , C` can be thought of as `A >> B` (*if A is true, then B could be true*) and `A >> C` (*if A is true, then C could be true*). Contrarily, the statement `A >> B | C` might translate *if A is true, then either B or C could be true, but it is unlikely that B and C would be simultaneously true*. 
 
@@ -72,7 +76,7 @@ person.owns(cat) >> cat.owner=person[1.0]
 ```
 
 ###Arithmetic
-In order to describe slightly more complex patterns there are a few operators that can be used to describe basic arithmetic (addition, subtraction). As mentioned above, noun phrases should be written in singular form wherever possible. For plural items a number can be placed after `#` and used as if the number were an adjective. The same convention can be applied to a **Component**. A range of values can be described by writing two numbers seperated by `-`. Units can be typed directly after the number(s) (without intervening spaces). When describing an arithmetic operation within a **Rule** `++` or `--` should be placed after a **Component**. If a particular value for the operation is being defined then it should follow a single `+` or `-`. Also of note, trigger (in)equalities can be indicated within a **Clause** using `>`, `<`, `<=`, `>=`, or `==`. 
+In order to describe slightly more complex patterns there are a few operators that can be used to describe basic arithmetic (addition, subtraction). The same convention can be applied to a **Component**. A range of values can be described by writing two numbers seperated by `-`. Units can be typed directly after the number(s) (without intervening spaces). When describing an arithmetic operation within a **Rule**, `++` or `--` should be placed after a **Component**. If a particular value for the operation is being defined then it should follow a single `+` or `-`. Also of note, trigger (in)equalities can be indicated within a **Clause** using `>`, `<`, `<=`, `>=`, or `==`. 
 
 ```
 cat.weight#10lbs
