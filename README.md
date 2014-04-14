@@ -34,7 +34,7 @@ cat.likes(!dog)
 ```
 
 ###States
-Use `#` followed by an adjective to indicate the state of the entity or a component entity. If the right-sided phrase is a noun phrase it should be instead assigned as a **Component** (shown above). For plural items a number can be placed after `#` and used as if the number were an adjective. `!` can denote the absence of a state.
+Use `#` followed by an adjective to indicate the state of the entity or a component entity. If the right-sided phrase is a noun phrase it should be instead assigned as a **Component** (shown above). For plural items a number can be placed after `#` and used as if the number were an adjective. `!` can denote the absence of a state. States (adverbs) can also be applied after actions.
 ```
 cat#furry
 cat.fur#orange
@@ -47,7 +47,7 @@ cat#!feral
 The real power of Bottlenose is derived from leveraging the "semantic glue" described above in forming dynamic artificial cognitive behaviors. A Cogscript **Rule** is not a rule in a  strict sense; it does not have to be correct all the time and there need not be any true causation, directionality, or temporal seperation. Instead, its purpose is to describe a reflexive cognitivie association or general correlation. Each **Rule** follows the syntax of two **Clauses** seperated by `>>`. A **Clause** can be a plain-phrase denoting existence of a concept, or a **Relationship** assertion, **Action**, or **State**. 
 
 ```
-cat.speaks() >> cat.grammar=bad
+cat.speaks() >> cat.grammar#bad
 ```
 
 A **Compound Clause** can be formed using `&` (*AND*), `,` (*INCLUSIVE OR*), and `|` (*EXCLUSIVE OR*). The `&` would indicate that in order to fulfill the entire **Clause**, statements of both sides of the `&` must be true. Differentiating the utility of `,` and `|` is more intricate. One can think of the `,` as expanding into two rules. An example clause `A >> B , C` can be thought of as `A >> B` (*if A is true, then B could be true*) and `A >> C` (*if A is true, then C could be true*). Contrarily, the statement `A >> B | C` might translate *if A is true, then either B or C could be true, but it is unlikely that B and C would be simultaneously true*. 
