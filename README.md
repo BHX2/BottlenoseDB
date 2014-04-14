@@ -41,16 +41,16 @@ cat.whiskers#long
 ```
 
 ---
-###Behaviors
-The real power of Bottlenose is leveraging the "semantic glue" described above into forming dynamic rules.
+###Behaviors (Rules & Clauses)
+The real power of Bottlenose is derived from leveraging the "semantic glue" described above in forming dynamic behaviors. A Cogscript *Rule* is not a rule in a strict sense; it does not have to be correct all the time and there need not be any true causation. Instead, its purpose is to describe a reflexive cognitivie association or general correlation. Each **Rule** follows the syntax of two *Clauses* seperated by `>>`. 
 
 ###Arithmetic
-In order to describe slightly more complex patterns there are a few operators that can be used to describe basic arithmetic (addition, subtraction). As mentioned above, noun phrases should be written in singular form wherever possible. For plural items a number can be placed after `#` and used as if the number were an adjective. The same convention can be applied to a **Component**. A range of values can be described by writing two numbers seperated by `-`. Units can be typed directly after the number(s) (without intervening spaces). When describing an arithmetic operation within a **Behavior** `++` or `--` should be placed after a **Component**. If a particular value for the operation is being defined then it should follow a single `+` or `-`. Also of note, trigger (in)equalities can be indicated within behaviors by using a single `>`, `<`, `<=`, `>=`, `==`. 
+In order to describe slightly more complex patterns there are a few operators that can be used to describe basic arithmetic (addition, subtraction). As mentioned above, noun phrases should be written in singular form wherever possible. For plural items a number can be placed after `#` and used as if the number were an adjective. The same convention can be applied to a **Component**. A range of values can be described by writing two numbers seperated by `-`. Units can be typed directly after the number(s) (without intervening spaces). When describing an arithmetic operation within a **Behavior** `++` or `--` should be placed after a **Component**. If a particular value for the operation is being defined then it should follow a single `+` or `-`. Also of note, trigger (in)equalities can be indicated within a **Clause** using `>`, `<`, `<=`, `>=`, or `==`. 
 
 ```
 cat.weight#10lbs
 
-cat.eats(iceCream) >> cat.weight+
+cat.eats(iceCream) >> cat.weight++
 cat.eats(quarterPounder) >> cat.weight+0.25lbs
 cat.walks() >> cat.weight-
 
