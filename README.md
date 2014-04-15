@@ -59,7 +59,7 @@ LOLCat, grumpyCat, nyanCat, keyboardCat >> computerScreen.displays(cat)
 cat.location=home >> cat.sleeps() | cat.eats() | cat.plays() | cat.chills()
 ```
 
-Of note, Cogscript allows for robust contextual co-referencing exemplified in the middle example above. An entity (*cat*) referenced within a clause is preferentially assumed to be a reference to a suitable entity (*LOLCat, grumpyCat, nyanCat, keyboardCat*) within the given **Rule** context (even if the reference is not a verbatim match).
+Of note, Cogscript allows for robust contextual co-referencing exemplified in the middle example above. An entity (*cat*) referenced within a clause is preferentially assumed to be a reference to a suitable entity (*LOLCat, grumpyCat, nyanCat, keyboardCat*) within the given **Rule** context (even if the reference is not identical).
 
 If a **Rule** is more meaningful and/or directional, then there is additional syntax that can be added. To denote the first clause supporting or opposing the second clause `>>+` or `>>-` can be used respectively. For example `A >>+ B` might be translated *if A is true, then it is more likely that B is true*. `A >>- B` might be translated *if A is true, then it is less likely that B is true*. 
 
@@ -72,7 +72,7 @@ To take things even further quantitative probabilities can be expressed. The pro
 
 ```
 coin.flips() >> coin#heads[0.5] | coin#tails[0.5]
-magiciansCoin.flips() >> magiciansCoin#heads[1] | magiciansCoin#tails[0]
+magiciansCoin.flips() >> magiciansCoin#heads[1.0] | magiciansCoin#tails[0.0]
 ```
 
 Another use of **Rules** is to hardcode more 'syntactic glue' than is available by default. Using the cat example above we can connect the **Action** of 'owning a cat' to the **Relationship** of 'cat having an owner'. Below, we equate the **Action** `.owns(X)` to the **Relationship** `.owner =X`. Note that because of the directionality imposed by introducing quantitative probability, two statements are neccesary to fully describe the concept. 
