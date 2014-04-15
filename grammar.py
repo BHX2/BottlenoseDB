@@ -38,6 +38,6 @@ grammar = Grammar("""
   concept               = ~"!?[A-Z 0-9]*"i
 """)
 
-# if a cat flips then 99% of the time it lands rightside up, but 1% of the time it lands upside down
+# if a cat flips, then 99% of the time it lands rightside up, but 1% of the time it lands upside down
 print grammar.parse('cat.flips() >> cat.lands(rightsideUp)[0.99] | cat.lands(upsideDown)[0.01]')
   
