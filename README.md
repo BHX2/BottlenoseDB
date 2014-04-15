@@ -51,7 +51,8 @@ cat.speaks() >> cat=/LOLCat
 LOLCat.speaks(words) >> words#misspelled
 ```
 
-A **Compound Clause** can be formed using `&` (*AND*), `,` (*inclusive OR*), or `|` (*exclusive OR*) to join multiple simple **Clauses**. To supply a negative, `!` (*NOT*) can prefix a clause. The `&` would indicate that in order to fulfill the entire **Clause**, expressions on both sides of the `&` must be true. Selecting `,` versus `|` is a more intricate decision. One can think of the `,` as expanding into two **Rules**. As an example `A >> B , C` can be thought of as `A >> B` (*if A is true, then B could be true*) and `A >> C` (*if A is true, then C could be true*). Contrarily, the statement `A >> B | C` might translate *if A is true, then either B or C could be true, but it is unlikely that B and C would be simultaneously true*.
+####Logic
+A **Compound Clause** can be formed using `&` (*AND*), `,` (*inclusive OR*), or `|` (*exclusive OR*) to join multiple simple **Clauses**. To supply a negative, `!` (*NOT*) can prefix a component **Clause**. The `&` would indicate that in order to fulfill the entire **Clause**, expressions on both sides of the `&` must be true. Selecting `,` versus `|` is a more intricate decision. One can think of the `,` as expanding into two **Rules**. As an example `A >> B , C` can be thought of as `A >> B` (*if A is true, then B could be true*) and `A >> C` (*if A is true, then C could be true*). Contrarily, the statement `A >> B | C` might translate *if A is true, then either B or C could be true, but it is unlikely that B and C would be simultaneously true*.
 
 ```
 cat & laserPointer >> cat.chases(laserPointer)
@@ -61,13 +62,15 @@ cat.location=home >> cat.sleeps() | cat.eats() | cat.plays() | cat.chills()
 
 Of note, Cogscript allows for robust contextual co-referencing exemplified in the middle example above. An entity (*cat*) referenced within a **Clause** is preferentially assumed to be a reference to a suitable entity (*LOLCat, grumpyCat, nyanCat, keyboardCat*) within the given **Rule** context (even if the reference is not identical).
 
-If a **Rule** is more meaningful and/or directional, then there is additional syntax that can be added. To denote the first **Clause** supporting or opposing the second **Clause** `>>+` or `>>-` can be used respectively. For example `A >>+ B` might be translated *if A is true, then it is more likely that B is true*. `A >>- B` might be translated *if A is true, then it is less likely that B is true*. 
+####Evidence
+If a **Rule** is more meaningful and/or directional, then there is additional syntax that can be added to indicate **Evidence**. To denote the first **Clause** supporting or opposing the second **Clause** `>>+` or `>>-` can be used respectively. For example `A >>+ B` might be translated *if A is true, then it is more likely that B is true*. `A >>- B` might be translated *if A is true, then it is less likely that B is true*. 
 
 ```
 cat#hungry >>+ cat.plays()
 cat#old >>- cat.plays()
 ```
 
+####Statistical Probability
 To take things even further quantitative probabilities can be expressed. The probability of the second **Clause** given the truth of the first **Clause** can be assigned a numerical value between 0.0 (never co-occurs) and 1.0 (always co-occurs). This value would be placed between brackets, which is itself placed immediately behind the dependent/second **Clause**. 
 
 ```
@@ -82,7 +85,8 @@ cat.owner=person >> person.owns(cat)[1.0]
 person.owns(cat) >> cat.owner=person[1.0]
 ```
 
-Because the use case of expressing a strict bi-directional **Rule** is quite common, a special shorthand was established using `>>>`. `A >>> B` might translate *if A is true then B is ALWAYS true. AND if B is true then A is ALWAYS true*. The following is therefore equivalent to the **Rule** pair above:
+####Laws
+Because the use case of expressing a strict bi-directional **Rule** is quite common, a special shorthand was established using `>>>`. This special use case is called a **Law**. `A >>> B` might translate *if A is true then B is ALWAYS true. AND if B is true then A is ALWAYS true*. The following is therefore equivalent to the **Rule** pair above:
 
 ```
 cat.owner=person >>> person.owns(cat)
