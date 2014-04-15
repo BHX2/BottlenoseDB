@@ -51,10 +51,12 @@ cat.speaks() >> cat=/LOLCat
 LOLCat.speaks(words) >> words#misspelled
 ```
 
-A **Compound Clause** can be formed using `&` (*AND*), `,` (*inclusive OR*), and `|` (*exclusive OR*). The `&` would indicate that in order to fulfill the entire **Clause**, expressions on both sides of the `&` must be true. Selecting `,` versus `|` is a more intricate decision. One can think of the `,` as expanding into two rules. An example clause `A >> B , C` can be thought of as `A >> B` (*if A is true, then B could be true*) and `A >> C` (*if A is true, then C could be true*). Contrarily, the statement `A >> B | C` might translate *if A is true, then either B or C could be true, but it is unlikely that B and C would be simultaneously true*. 
+A **Compound Clause** can be formed using `&` (*AND*), `,` (*inclusive OR*), or `|` (*exclusive OR*) to join multiple simple **Clauses**. The `&` would indicate that in order to fulfill the entire **Clause**, expressions on both sides of the `&` must be true. Selecting `,` versus `|` is a more intricate decision. One can think of the `,` as expanding into two rules. An example clause `A >> B , C` can be thought of as `A >> B` (*if A is true, then B could be true*) and `A >> C` (*if A is true, then C could be true*). Contrarily, the statement `A >> B | C` might translate *if A is true, then either B or C could be true, but it is unlikely that B and C would be simultaneously true*. 
 
 ```
 cat & laserPointer >> cat.chase(laserPointer)
+LOLCat, grumpyCat, nyanCat, keyboardCat >> computerScreen.displays(cat)
+cat.location=home >> cat.sleeps() | cat.eats() | cat.plays() | cat.chills()
 ```
 
 If a **Rule** is more meaningful and/or directional, then there is additional syntax that can be added. To denote the first clause supporting or opposing the second clause `>>+` or `>>-` can be used respectively. For example `A >>+ B` might be translated *if A is true, then it is more likely that B is true*. `A >>- B` might be translated *if A is true, then it is less likely that B is true*. 
