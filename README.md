@@ -1,5 +1,5 @@
 #Bottlenose
-**Bottlenose** is a command-line program written in Python that allows a user to store semantic knowledge representations as a graph network. It uses a simple scripting language for data entry called **Cogscript** that helps the program understand more complex patterns that utilize non-uniform terminology. The most basic operations are as follows:
+**Bottlenose** is a command-line program written in Python that lets a user to store semantic knowledge representations as a graph network. It uses a simple scripting language for data entry called **Cogscript** that helps the program understand more complex patterns that utilize heterogenous terminology. The most basic operations are as follows:
 
 ###Synonyms
 Use `=` to indicate synonymous words or phrases. Multiple synonyms can be defined at once if seperated by commas. All phrases should be written in *camelCase* such that spaces are removed between words, the first word is in all lower case, and all subsequent words are capitalized; capitilazation of proper nouns and abbreviations can be preserved. Examples: *houseCat*, *Garfield*, *LOLCat*. When possible the singular form of noun phrases should be used. Also, all punctuation including single-quotes should be omitted.
@@ -44,7 +44,7 @@ cat#!feral
 
 ---
 ###Rules & Clauses
-The real power of Bottlenose is derived from leveraging the "semantic glue" described above in forming dynamic artificial cognitive behaviors. A Cogscript **Rule** is not a rule in a  strict sense; it does not have to be correct all the time and there need not be any true causation, directionality, or temporal seperation. Instead, its purpose is to describe a reflexive cognitivie association or potential co-occurence. Each **Rule** follows the syntax of two **Clauses** seperated by `>>`. A **Clause** can be a plain-phrase denoting existence of a concept, or a **Relationship** assertion, **Action**, or **State**. 
+The real power of Bottlenose is derived from leveraging the "semantic glue" described above in forming dynamic artificial cognitive beliefs. A Cogscript **Rule** is not a rule in a  strict sense; it does not have to be correct all the time and there need not be any true causation, directionality, or temporal seperation. Instead, its purpose is to describe a reflexive cognitivie association or potential co-occurence. Each **Rule** follows the syntax of two **Clauses** seperated by `>>`. A **Clause** can be a plain-phrase denoting existence of a concept, or a **Relationship** assertion, **Action**, or **State**. 
 
 ```
 cat.speaks() >> cat=/LOLCat
@@ -54,7 +54,7 @@ LOLCat.speaks(words) >> words#misspelled
 A **Compound Clause** can be formed using `&` (*AND*), `,` (*inclusive OR*), or `|` (*exclusive OR*) to join multiple simple **Clauses**. The `&` would indicate that in order to fulfill the entire **Clause**, expressions on both sides of the `&` must be true. Selecting `,` versus `|` is a more intricate decision. One can think of the `,` as expanding into two **Rules**. As an example `A >> B , C` can be thought of as `A >> B` (*if A is true, then B could be true*) and `A >> C` (*if A is true, then C could be true*). Contrarily, the statement `A >> B | C` might translate *if A is true, then either B or C could be true, but it is unlikely that B and C would be simultaneously true*.
 
 ```
-cat & laserPointer >> cat.chase(laserPointer)
+cat & laserPointer >> cat.chases(laserPointer)
 LOLCat, grumpyCat, nyanCat, keyboardCat >> computerScreen.displays(cat)
 cat.location=home >> cat.sleeps() | cat.eats() | cat.plays() | cat.chills()
 ```
@@ -101,3 +101,23 @@ cat.walks() >> cat.weight--
 cat.weight > 20lbs >> cat#fat
 cat.weight <= 5lbs >> cat#skinny
 ```
+
+---
+###Roadmap
+
+1. Describe **Synonym** class: dictionary of phrase --> set of phrases
+2. Instantiate **Synonym** class
+3. Instantiate **Taxonomy** class with *WordNet* classifier (using *pattern.search*)
+4. Instantiate **Action** graph representation class (using *pattern.graph*)
+5. Nodes within the graph store lists of potential **Components**, **Actions**, **States**, **Clauses**
+6. Instantiate belief table class: dictionary of **Clause** --> tuple of [rule-type, array of tuple of [**Clauses**, probability]]
+7. Design a PEG-based parsing interpreter pipeline using *Parsimonious*
+8. Design controller which alters data structures based on interpreted expressions
+9. Implement tabbed autocompletion using *(py)readline* & *rlcompleter*
+10. Polish CLI interface: add intro, help, colors, tables, benchmarks, etc
+11. Implement persistence via pickling
+12. Implement exporting of plain text files in a folder tree
+13. Implement importing of plain text files
+14. Test with limited dataset
+15. Begin work on rule-based activation and querying engine/language
+
