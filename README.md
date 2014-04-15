@@ -111,11 +111,11 @@ cat.weight <= 5lbs >> cat#skinny
 
 1. Make **Synonym** class: dictionary of phrase ==> set of phrases
 2. Make **Taxonomy** class with *WordNet* classifier (using *pattern.search*)
-3. Make **ActionGraph** representation class (using *pattern.graph*)
-4. Nodes within **ActionGraph** keep lists of potential **Components**, **Actions**, **States**, **Clauses**
+3. Make **ConceptGraph** representation class (using *pattern.graph*)
+4. Nodes within **ConceptGraph** keep lists of potential **Components**, **Actions**, **States**, **Clauses**
 5. Design **BeliefTable** class: dictionary of **Clause** ==> [(rule-type, [(**Clause**, probability)])]
 6. Design **CogscriptInterpreter** class: PEG-based parsing interpreter pipeline using *Parsimonious*
-7. Design **CogscriptController** class: alters data structures based on interpreted expressions
+7. Design **BottlenoseController** class: alters data structures based on interpreted expressions
 8. Implement tabbed autocompletion using *(py)readline* & *rlcompleter*
 9. Polish CLI interface: add intro, help, colors, tables, benchmarks, etc
 10. Implement persistence via pickling
