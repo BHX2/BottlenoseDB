@@ -105,14 +105,14 @@ cat.weight <= 5lbs >> cat#skinny
 ---
 ###Roadmap
 
-1. Describe **Synonym** class: dictionary of phrase --> set of phrases
+1. Describe **Synonym** class: dictionary of phrase ==> set of phrases
 2. Instantiate **Synonym** class
 3. Instantiate **Taxonomy** class with *WordNet* classifier (using *pattern.search*)
-4. Instantiate **Action** graph representation class (using *pattern.graph*)
+4. Instantiate **ActionGraph** representation class (using *pattern.graph*)
 5. Nodes within the graph store lists of potential **Components**, **Actions**, **States**, **Clauses**
-6. Instantiate belief table class: dictionary of **Clause** --> tuple of [rule-type, array of tuple of [**Clauses**, probability]]
+6. Instantiate **BeliefTable** class: dictionary of **Clause** ==> [(rule-type, [(**Clause**, probability)])]
 7. Design a PEG-based parsing interpreter pipeline using *Parsimonious*
-8. Design controller which alters data structures based on interpreted expressions
+8. Design controller class which alters data structures based on interpreted expressions
 9. Implement tabbed autocompletion using *(py)readline* & *rlcompleter*
 10. Polish CLI interface: add intro, help, colors, tables, benchmarks, etc
 11. Implement persistence via pickling
