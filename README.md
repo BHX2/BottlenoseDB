@@ -105,19 +105,19 @@ cat.weight <= 5lbs >> cat#skinny
 ---
 ###Roadmap
 
-1. Describe **Synonym** class: dictionary of phrase ==> set of phrases
-2. Instantiate **Synonym** class
-3. Instantiate **Taxonomy** class with *WordNet* classifier (using *pattern.search*)
-4. Instantiate **ActionGraph** representation class (using *pattern.graph*)
-5. Nodes within the graph store lists of potential **Components**, **Actions**, **States**, **Clauses**
-6. Instantiate **BeliefTable** class: dictionary of **Clause** ==> [(rule-type, [(**Clause**, probability)])]
-7. Design a PEG-based parsing interpreter pipeline using *Parsimonious*
-8. Design controller class which alters data structures based on interpreted expressions
-9. Implement tabbed autocompletion using *(py)readline* & *rlcompleter*
-10. Polish CLI interface: add intro, help, colors, tables, benchmarks, etc
-11. Implement persistence via pickling
-12. Implement exporting of plain text files in a folder tree
-13. Implement importing of plain text files
-14. Test with limited dataset
-15. Begin work on rule-based activation and querying engine/language
+1. Make **Synonym** class: dictionary of phrase ==> set of phrases
+2. Make **Taxonomy** class with *WordNet* classifier (using *pattern.search*)
+3. Make **ActionGraph** representation class (using *pattern.graph*)
+4. Nodes within the graph store lists of potential **Components**, **Actions**, **States**, **Clauses**
+5. Design **BeliefTable** class: dictionary of **Clause** ==> [(rule-type, [(**Clause**, probability)])]
+6. Design **CogscriptInterpreter** PEG-based parsing interpreter pipeline using *Parsimonious*
+7. Design **CogscriptController** class which alters data structures based on interpreted expressions
+8. Implement tabbed autocompletion using *(py)readline* & *rlcompleter*
+9. Polish CLI interface: add intro, help, colors, tables, benchmarks, etc
+10. Implement persistence via pickling
+11. Implement exporting of plain text files in a folder tree
+12. Implement importing of plain text files
+13. Test with limited dataset
+14. Begin work on rule-based activation mechanism
+15. Begin work on querying engine/language
 
