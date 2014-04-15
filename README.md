@@ -77,6 +77,12 @@ cat.owner=person >> person.owns(cat)[1.0]
 person.owns(cat) >> cat.owner=person[1.0]
 ```
 
+Because the use case of expressing a strict bi-directional rule is quite common, a special shorthand was established using `>>>`. `A >>> B` might translate *if A is true then B is ALWAYS true. AND if B is true then A is ALWAYS true*. The following is therefore equivalent to the rule pair above:
+
+```
+cat.owner=person >>> person.owns(cat)
+```
+
 ###Arithmetic
 In order to describe slightly more complex patterns there are a few operators that can be used to describe basic arithmetic (addition, subtraction). The same convention can be applied to a **Component**. A range of values can be described by writing two numbers seperated by `-`. Units can be typed directly after the number(s) (without intervening spaces). When describing an arithmetic operation within a **Rule**, `++` or `--` should be placed after a **Component**. If a particular value for the operation is being defined then it should follow a single `+` or `-`. Also of note, trigger (in)equalities can be indicated within a **Clause** using `>`, `<`, `<=`, `>=`, or `==`. 
 
