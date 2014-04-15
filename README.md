@@ -52,7 +52,7 @@ LOLCat.speaks(words) >> words#misspelled
 ```
 
 ####Logic
-A **Compound Clause** can be formed using `&` (*AND*), `,` (*inclusive OR*), or `|` (*exclusive OR*) to join multiple simple **Clauses**. To supply a negative, `!` (*NOT*) can prefix a component **Clause**. The `&` would indicate that in order to fulfill the entire **Clause**, expressions on both sides of the `&` must be true. Selecting `,` versus `|` is a more intricate decision. One can think of the `,` as expanding into two **Rules**. As an example `A >> B , C` can be thought of as `A >> B` (*if A is true, then B could be true*) and `A >> C` (*if A is true, then C could be true*). Contrarily, the statement `A >> B | C` might translate *if A is true, then either B or C could be true, but it is unlikely that B and C would be simultaneously true*.
+A **Compound Clause** can be formed using `&` (*AND*), `,` (*inclusive OR*), or `|` (*exclusive OR*) to join multiple simple **Clauses**. To supply a negative, `!` (*NOT*) can prefix a component **Clause**. `&` indicates that in order to fulfill the entire **Clause**, expressions on both sides of the `&` must be true. Selecting `,` versus `|` is a more intricate decision. One can think of a compound **Rule** with `,` as expanding into two **Rules**. As an example: `A >> B , C` can be thought of as `A >> B` (*if A is true, then B could be true*) and `A >> C` (*if A is true, then C could be true*). Contrarily, the statement `A >> B | C` might translate *if A is true, then either B or C could be true, but it is unlikely that B and C would be simultaneously true*.
 
 ```
 cat & laserPointer >> cat.chases(laserPointer)
@@ -60,10 +60,10 @@ LOLCat, grumpyCat, nyanCat, keyboardCat >> computerScreen.displays(cat)
 cat.location=home >> cat.sleeps() | cat.eats() | cat.plays() | cat.chills()
 ```
 
-Of note, Cogscript allows for robust contextual co-referencing exemplified in the middle example above. An entity (*cat*) referenced within a **Clause** is preferentially assumed to be a reference to a suitable entity (*LOLCat, grumpyCat, nyanCat, keyboardCat*) within the given **Rule** context (even if the reference is not identical).
+Of note, Cogscript allows for robust contextual co-referencing exemplified in the middle example above. The entity (*cat*) referenced within a **Clause** is preferentially assumed to be a reference to a suitable entity (*LOLCat, grumpyCat, nyanCat, keyboardCat*) within the given **Rule** context (even if the reference is not identical).
 
 ####Evidence
-If a **Rule** is more meaningful and/or directional, then there is additional syntax that can be added to indicate **Evidence**. To denote the first **Clause** supporting or opposing the second **Clause** `>>+` or `>>-` can be used respectively. For example `A >>+ B` might be translated *if A is true, then it is more likely that B is true*. `A >>- B` might be translated *if A is true, then it is less likely that B is true*. 
+If a **Rule** is more significant and/or directional, then there is additional syntax that can be added to indicate **Evidence**. To denote that the first **Clause** supports or opposes the second **Clause** `>>+` or `>>-` can be used respectively. For example: `A >>+ B` might be translated *if A is true, then it is more likely that B is true*. `A >>- B` might be translated *if A is true, then it is less likely that B is true*. 
 
 ```
 cat#hungry >>+ cat.plays()
@@ -71,22 +71,22 @@ cat#old >>- cat.plays()
 ```
 
 ####Statistical Probability
-To take things even further quantitative probabilities can be expressed. The probability of the second **Clause** given the truth of the first **Clause** can be assigned a numerical value between 0.0 (never co-occurs) and 1.0 (always co-occurs). This value would be placed between brackets, which is itself placed immediately behind the dependent/second **Clause**. 
+To take things even further, quantitative probabilities can be expressed. The probability of the second **Clause** given the truth of the first **Clause** can be assigned a numerical value between 0.0 (never co-occurs) and 1.0 (always co-occurs). This value would be placed between brackets, which is itself placed immediately behind the dependent/second **Clause**. 
 
 ```
 coin.flips() >> coin#heads[0.5] | coin#tails[0.5]
 magiciansCoin.flips() >> magiciansCoin#heads[1.0] | magiciansCoin#tails[0.0]
 ```
 
-Another use of **Rules** is to hardcode more 'syntactic glue' than is available by default. Using the cat example above we can connect the **Action** of 'owning a cat' to the **Relationship** of 'cat having an owner'. Below, we equate the **Action** `.owns(X)` to the **Relationship** `.owner =X`. Note that because of the directionality imposed by introducing quantitative probability, two statements are neccesary to fully describe the concept. 
+####Laws
+Another use of **Rules** is to hardcode more 'syntactic glue' than is available by default. Using the cat example above we can connect the **Action** of 'owning a cat' to the **Relationship** of 'cat having an owner'. Below, we equate the **Action** `.owns(X)` to the **Relationship** `.owner =X`. Note that because of the directionality imposed by introducing quantitative probability, two expressions are neccesary to fully describe the concept. 
 
 ```
 cat.owner=person >> person.owns(cat)[1.0]
 person.owns(cat) >> cat.owner=person[1.0]
 ```
 
-####Laws
-Because the use case of expressing a strict bi-directional **Rule** is quite common, a special shorthand was established using `>>>`. This special use case is called a **Law**. `A >>> B` might translate *if A is true then B is ALWAYS true. AND if B is true then A is ALWAYS true*. The following is therefore equivalent to the **Rule** pair above:
+Because the use case of expressing a strict bi-directional **Rule** is quite common, a special shorthand is available using `>>>`. This special use case is called a **Law**. `A >>> B` might translate *if A is true then B is ALWAYS true. AND if B is true then A is ALWAYS true*. The following is therefore equivalent to the **Rule** pair above:
 
 ```
 cat.owner=person >>> person.owns(cat)
