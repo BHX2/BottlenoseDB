@@ -50,7 +50,7 @@ The real power of Bottlenose is derived from leveraging the "semantic glue" desc
 cat.speaks() >> cat.grammar#bad
 ```
 
-A **Compound Clause** can be formed using `&` (*AND*), `,` (*INCLUSIVE OR*), and `|` (*EXCLUSIVE OR*). The `&` would indicate that in order to fulfill the entire **Clause**, statements of both sides of the `&` must be true. Differentiating the utility of `,` and `|` is more intricate. One can think of the `,` as expanding into two rules. An example clause `A >> B , C` can be thought of as `A >> B` (*if A is true, then B could be true*) and `A >> C` (*if A is true, then C could be true*). Contrarily, the statement `A >> B | C` might translate *if A is true, then either B or C could be true, but it is unlikely that B and C would be simultaneously true*. 
+A **Compound Clause** can be formed using `&` (*AND*), `,` (*inclusive OR*), and `|` (*exclusive OR*). The `&` would indicate that in order to fulfill the entire **Clause**, expressions on both sides of the `&` must be true. Selecting `,` versus `|` is a more intricate decision. One can think of the `,` as expanding into two rules. An example clause `A >> B , C` can be thought of as `A >> B` (*if A is true, then B could be true*) and `A >> C` (*if A is true, then C could be true*). Contrarily, the statement `A >> B | C` might translate *if A is true, then either B or C could be true, but it is unlikely that B and C would be simultaneously true*. 
 
 ```
 cat & laserPointer >> cat.chase(laserPointer)
@@ -63,7 +63,7 @@ cat#hungry >>+ cat.plays()
 cat#old >>- cat.plays()
 ```
 
-To take things even further quantitative probabilities can be expressed. The probability of the second *Clause* given the truth of the first *Clause* can be assigned a numerical value between 0.0 (never co-occurs) and 1.0 (always co-occurs). This value would be placed between brackets, which is itself placed immediately behind the dependent/second **Clause**. 
+To take things even further quantitative probabilities can be expressed. The probability of the second **Clause** given the truth of the first **Clause** can be assigned a numerical value between 0.0 (never co-occurs) and 1.0 (always co-occurs). This value would be placed between brackets, which is itself placed immediately behind the dependent/second **Clause**. 
 
 ```
 coin.flips() >> coin#heads[0.5] | coin#tails[0.5]
