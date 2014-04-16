@@ -5,24 +5,26 @@ sys.dont_write_bytecode = True
 import utilities
 
 class Synonyms(dict):
-	def equate(self, *phrases):
-		phrases = map(utilities.camelCase, phrases)
-		phraseSets = map(self.list, phrases)
-		mergedSet = set.union(*phraseSets)
-		for phrase in mergedSet:
-			self[phrase] = mergedSet
-			
-	def list(self, phrase):
-		phrase = utilities.camelCase(phrase)
-		listOfSetsWithPhrase = []
-		for key in self:
-			if phrase in self[key]:
-				if self[key] not in listOfSetsWithPhrase:
-					listOfSetsWithPhrase.append(self[key])
-		if len(listOfSetsWithPhrase) == 0:
-			self[phrase] = {phrase}
-		elif len(listOfSetsWithPhrase) > 1 or phrase not in self:
-			mergedSet = set.union(*listOfSetsWithPhrase)
-			for element in mergedSet:
-				self[element] = mergedSet
-		return self[phrase]
+  def equate(self, *phrases):
+    phrases = map(utilities.camelCase, phrases)
+    phraseSets = map(self.list, phrases)
+    mergedSet = set.union(*phraseSets)
+    for phrase in mergedSet:
+      self[phrase] = mergedSet
+      
+  def list(self, phrase):
+    phrase = utilities.camelCase(phrase)
+    listOfSetsWithPhrase = []
+    for key in self:
+      if phrase in self[key]:
+        if self[key] not in listOfSetsWithPhrase:
+          listOfSetsWithPhrase.append(self[key])
+    if len(listOfSetsWithPhrase) == 0:
+      self[phrase] = {phrase}
+    elif len(listOfSetsWithPhrase) > 1:
+      mergedSet = set.union(*listOfSetsWithPhrase)
+      for element in mergedSet:
+        self[element] = mergedSet
+    elif phrase not in self:
+      self[phrase] = listOfSetsWithPhrase[0]
+    return self[phrase]
