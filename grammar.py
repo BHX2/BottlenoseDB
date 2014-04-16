@@ -24,8 +24,8 @@ grammar = Grammar("""
   statement             = arithmetic_operation / taxonomy_assertion / synonym_assertion / state / action / component_assertion / component / concept
   taxonomy_assertion    = concept ("/=" / "=/") concept_or_list
   synonym_assertion     = concept "=" concept_or_list
-  state                 = (action / component_assertion / component / concept) "#" (quantity / adjective)
-  adjective             = ~"!?[A-Z ]*"i
+  state                 = (action / component_assertion / component / concept) "#" (quantity / qualifier)
+  qualifier             = ~"!?[A-Z ]*"i
   quantity              = number units?
   units                 = ~"[A-Z ]*"i
   action                = (component / concept) "." verb "(" concept_or_list? ")" " "*
@@ -39,5 +39,5 @@ grammar = Grammar("""
 """)
 
 # if a cat flips, then 99% of the time it lands rightside up, but 1% of the time it lands upside down
-print grammar.parse('cat.flips() >> cat.lands(rightsideUp)[0.99] | cat.lands(upsideDown)[0.01]')
+print grammar.parse('cat.flips() >> cat.lands()#rightsideUp[0.99] | cat.lands()#upsideDown[0.01]')
   
