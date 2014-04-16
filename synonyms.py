@@ -18,8 +18,7 @@ class Synonyms(dict):
 		# Prepare list response	
 		listToReturn = self[phrase]
 		listOfListsWithPhrase = [listToReturn]
-		# If the search comes back unexpectedly
-		# everything will need to be standardized
+		# If the search comes back unexpectedly everything will need to be standardized
 		fuckeryAfoot = False
 		# Look for occurence in existing list
 		for key in self:
