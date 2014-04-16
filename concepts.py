@@ -23,7 +23,7 @@ class Concept(object):
     Concept.graph.add_node(self)
   
   def component(self, component, target=None, negative=False):
-    if re.match('^!', component): return self.component(component[1:], target, True)
+    if re.match('^!', target): return self.component(component[1:], target, True)
     component = utilities.camelCase(component)
     self.potential['components'].add(component)
     if not negative:
@@ -31,7 +31,8 @@ class Concept(object):
       if isinstance(target, Concept):
         Concept.graph.add_edge(self, target, key='has ' + component)
     else:
-      if not target: self.undirected['components'].remove(component)
+      if not target and component in self.undirected['components']: 
+        self.undirected['components'].remove(component)
       if isinstance(target, Concept):
         Concept.graph.remove_edge(self, target, key='has ' + component)      
   
@@ -44,7 +45,8 @@ class Concept(object):
       if isinstance(target, Concept):
         Concept.graph.add_edge(self, target, key=action)
     else:
-      if not target: self.undirected['actions'].remove(action)
+      if not target and action in self.undirected['actions']:
+        self.undirected['actions'].remove(action)
       if isinstance(target, Concept):
         Concept.graph.remove_edge(self, target, key=action)
         
@@ -59,3 +61,24 @@ class Concept(object):
   
   def clause(self, clause):
     self.clauses.add(clause)
+  
+  def listComponents(self, filter=None):
+    pairs = Concept.graph.out_edges(self, keys=True)
+    for pair in pairs:
+      if re.match('^has ', pair[2]):
+        print self.name + ' ' + pair[2] + ' ' + pair[1].name
+        
+  def listActions(self, filter=None):
+    pairs = Concept.graph.out_edges(self, keys=True)
+    for pair in pairs:
+      if not re.match('^has ', pair[2]):
+        print self.name + ' ' + pair[2] + ' ' + pair[1].name
+  
+  def listStates(self, filter=None):
+    for state in self.states:
+      print self.name + " is " + state
+  
+  def listClauses(self):
+    for clause in self.clauses:
+      print clause
+  
