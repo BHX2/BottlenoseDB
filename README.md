@@ -109,7 +109,7 @@ cat.weight <= 5lbs >> cat#skinny
 ---
 ###Roadmap
 
-1. Make **Synonym** class: dictionary of phrase ==> set of phrases
+1. ~~Make **Synonyms** class: dictionary of phrase ==> set of phrases~~
 2. Make **Taxonomy** class with *WordNet* classifier (using *pattern.search*)
 3. Make **ConceptGraph** representation class (using *pattern.graph*)
 4. Nodes within **ConceptGraph** keep lists of potential **Components**, **Actions**, **States**, **Clauses**
