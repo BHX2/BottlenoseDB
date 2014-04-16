@@ -110,8 +110,8 @@ cat.weight <= 5lbs >> cat#skinny
 ###Roadmap
 
 1. ~~Make **Synonyms** class: dictionary of phrase ==> set of phrases~~
-2. Make **Taxonomy** class with *WordNet* classifier (using *pattern.search*)
-3. Make **ConceptGraph** representation class (using *pattern.graph*)
+2. ~~Make **Taxonomy** class with *WordNet* classifier (using *pattern.search*)~~
+3. Make **ConceptGraph** representation class (using *NetworkX*)
 4. Nodes within **ConceptGraph** keep lists of potential **Components**, **Actions**, **States**, **Clauses**
 5. Design **BeliefTable** class: dictionary of **Clause** ==> [(rule-type, [(**Clause**, probability)])]
 6. Design **CogscriptInterpreter** class: PEG-based parsing interpreter pipeline using *Parsimonious*

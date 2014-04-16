@@ -1,5 +1,13 @@
+import sys
+sys.dont_write_bytecode = True
+# Keeps directory clean by not compiling utilities to bytecode
+
+import utilities
+
 class Synonyms(dict):
 	def equate(self, firstPhrase, *phrases):
+		firstPhrase = utilities.camelCase(firstPhrase)
+		phrases = map(utilities.camelCase, phrases)
 		firstPhraseList = self.list(firstPhrase)
 		phraseLists = map(self.list, phrases)
 		# Merge all phrases into first phrase's list
@@ -12,6 +20,7 @@ class Synonyms(dict):
 			self[phrase] = firstPhraseList
 			
 	def list(self, phrase):
+		phrase = utilities.camelCase(phrase)
 		# Make a new list if new phrase
 		if phrase not in self:
 			self[phrase] = [phrase]
