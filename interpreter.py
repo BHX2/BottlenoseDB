@@ -48,11 +48,18 @@ class Interpreter(NodeVisitor):
       for element in concept_or_list: synonyms.append(element['concept'])
     else:
       synonyms.append(concept_or_list['concept'])
-    print {'synonym_assertion': {'concepts': synonyms}}
     return {'synonym_assertion': {'concepts': synonyms}}
   
+  def visit_state(self, node, (subject, _, description)):
+    return {'state': {'subject': subject, 'description': description}}
+  
+  def visit_quantity(self, node, (number, units)):
+    if units:
+      return {'quantity': number, 'units': units['units']}
+    else:
+      return {'quantity': number, 'units': None}      
+  
   def visit_action(self, node, (actor, _1, verb, _2, target, _3, _4)):
-    print {'action': {'actor': actor, 'act': verb, 'target': target}}
     return {'action': {'actor': actor, 'act': verb, 'target': target}}
   
   def visit_concepts_or_component(self, node, visited_nodes):
@@ -69,7 +76,7 @@ class Interpreter(NodeVisitor):
     return {'component': tree['stem']}
     
   def visit_number(self, node, visited_children):
-    return {'number': float(node)}
+    return float(node.text.strip())
   
   def visit_concept_or_list(self, node, visited_children):
     if isinstance(visited_children, list):
@@ -98,7 +105,7 @@ class Interpreter(NodeVisitor):
       print {node.expr_name: visited_children[0]}
       return {node.expr_name: visited_children[0]}
 
-tree = grammar.parse('cat.meows(dog)')
+tree = grammar.parse('cat.whiskers#long')
 i = Interpreter()
 i.visit(tree)
     
