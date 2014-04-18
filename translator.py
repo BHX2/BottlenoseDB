@@ -17,14 +17,17 @@ grammar = Grammar("""
   shift_clause          = increment / decrement
   increment             = (component / concept) "++"
   decrement             = (component / concept) "--"
-  comparison_clause     =  (component / concept) !">>" (comparison_operator) " "* (quantity / component / concept) 
+  comparison_clause     = (component / concept) !">>" (comparison_operator) " "* (quantity / component / concept) 
   comparison_operator   = "==" / "!=" / ">=" / "<=" / ">" / "<"
-  compound_clause       = simple_clause (logic_operator simple_clause)+
+  compound_clause       = simple_clause logic_unit+
+  logic_unit            = logic_operator simple_clause
   logic_operator        = "&" / "|" / "," 
   simple_clause         = statement probability? " "*
   probability           = "[" number "]"
   statement             = arithmetic_operation / taxonomy_assertion / synonym_assertion / state / action / component_assertion / component / concept
-  taxonomy_assertion    = concept ("/=" / "=/") concept_or_list
+  taxonomy_assertion    = concept (type_includes / is_a) concept_or_list
+  type_includes         = "/="
+  is_a                  = "=/"
   synonym_assertion     = concept "=" concept_or_list
   state                 = (action / component_assertion / component / concept) "#" (quantity / qualifier)
   qualifier             = ~"!?[A-Z ]*"i
@@ -42,6 +45,33 @@ grammar = Grammar("""
 """)
 
 class Translator(NodeVisitor):
+    
+  def visit_logic_unit(self, node, (operator, clause)):
+    return {operator['operator']: [clause['clause']]}
+  
+  def visit_logic_operator(self, node, operator):
+    if (node.text == "&"):
+      return {'operator' : 'AND'}
+    elif (node.text == "|"):
+      return {'operator' : 'XOR'}
+    elif (node.text == ","):
+      return {'operator' : 'OR'}
+    
+  def visit_simple_clause(self, node, (statement, probability, _)):
+    if probability:
+      return {'clause': {'statement': statement['statement'], 'probability': probability['probability']}}
+    else:
+      return {'clause': {'statement': statement['statement']}}
+  
+  def visit_probability(self, node, (_1, number, _2)):
+    return {'probability': number}
+
+  def visit_taxonomy_assertion(self, node, (concept, operator, concept_or_list)):
+    if "is_a" in operator.keys():
+      return {'taxonomy_assertion':{'parent': concept_or_list, 'child': concept}}
+    elif "type_includes" in operator.keys():
+      return {'taxonomy_assertion':{'parent': concept, 'child': concept_or_list}}
+  
   def visit_synonym_assertion(self, node, (concept, _, concept_or_list)):
     synonyms = [concept['concept']]
     if isinstance(concept_or_list, list): 
@@ -57,13 +87,13 @@ class Translator(NodeVisitor):
     if units:
       return {'quantity': number, 'units': units['units']}
     else:
-      return {'quantity': number, 'units': None}      
-  
+      return {'quantity': number, 'units': None}   
+    
   def visit_action(self, node, (actor, _1, verb, _2, target, _3, _4)):
     return {'action': {'actor': actor, 'act': verb, 'target': target}}
   
-  def visit_concepts_or_component(self, node, visited_nodes):
-    return visited_nodes[0]
+  def visit_concepts_or_component(self, node, (concepts_or_component)):
+    return concepts_or_component
   
   def visit_component_assertion(self, node, (target, _, assignment )):
     return {'component_assertion': {'target': target, 'assignment': assignment}}
@@ -75,37 +105,47 @@ class Translator(NodeVisitor):
       tree = {'stem': tree}
     return {'component': tree['stem']}
     
-  def visit_number(self, node, visited_children):
+  def visit_number(self, node, _):
     return float(node.text.strip())
   
   def visit_concept_or_list(self, node, visited_children):
-    if isinstance(visited_children, list):
+    if len(visited_children) == 1:
       return visited_children[0]
     else:
       return visited_children
   
-  def visit_concept_list(self, node, (firstConcept, other_concepts)):
-    concepts = [firstConcept]
-    for expression in node.children[1].children:
-      concepts.append({'concept': expression.children[1].text.strip()})
+  def visit_concept_list(self, node, (first_concept, other_concepts)):
+    concepts = [first_concept]
+    if isinstance(other_concepts, list):
+      concepts.extend(other_concepts)
+    else:
+      concepts.append(other_concepts)
     return concepts
     
   def generic_visit(self, node, visited_children):
-    if not node.expr_name: 
-      if len(visited_children) > 0:
-        return visited_children[0]
+    if not node.expr_name:
+      if isinstance(visited_children, list):
+        response = []
+        if not len(visited_children):
+          return None
+        for child in visited_children:
+          if child:
+            response.append(child)
+        while isinstance(response, list) and len(response) == 1:
+          response = response[0]
+        return response
       else:
         return visited_children
     expression = node.text.strip()
     if re.match('[().]', expression) or not expression: return None
     if not visited_children:
-      print {node.expr_name: node.text.strip()}
+      #print {node.expr_name: node.text.strip()}
       return {node.expr_name: node.text.strip()}
     else:
-      print {node.expr_name: visited_children[0]}
+      #print {node.expr_name: visited_children[0]}
       return {node.expr_name: visited_children[0]}
 
-tree = grammar.parse('cat.whiskers#long')
+tree = grammar.parse('')
 i = Translator()
 i.visit(tree)
     
