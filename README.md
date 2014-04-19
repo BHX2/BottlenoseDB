@@ -61,7 +61,7 @@ cat.location=home >> cat.sleeps() | cat.eats() | cat.plays() | cat.chills()
 Of note, Cogscript allows for robust contextual co-referencing exemplified in the middle example above. The entity (*cat*) referenced within a **Clause** is preferentially assumed to be a reference to a suitable entity (*LOLCat, grumpyCat, nyanCat, keyboardCat*) within the given **Rule** context (even if the reference is not identical).
 
 ####Evidence
-If a **Belief** is more significant and/or directional, then there is additional syntax that can be added to indicate **Evidence**. To denote that the first **Clause** supports or opposes the second **Clause** `>>+` or `>>-` can be used respectively. For example: `A >>+ B` might be translated *if A is true, then it is more likely that B is true*. `A >>- B` might be translated *if A is true, then it is less likely that B is true*. 
+If a **Belief** is more significant then there is additional syntax that can be added to indicate **Evidence**. To denote that the **Clauses** mutually support or oppose each other `>>+` or `>>-` can be used respectively. For example: `A >>+ B` might be translated *if A is true, then it is more likely that B is true* and *if B is true, then it is more likely that A is true*. `A >>- B` might be translated *if A is true, then it is less likely that B is true* and *if B is true, then it is less likely that A is true*. 
 ```
 cat#hungry >>+ cat.plays()
 cat#old >>- cat.plays()
