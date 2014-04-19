@@ -4,8 +4,8 @@ from parsimonious.grammar import Grammar
 from parsimonious.grammar import NodeVisitor
 
 grammar = Grammar("""
-  input                 = rule / statement
-  rule                  = law / evidence / simple_rule
+  input                 = belief / statement
+  belief                = law / evidence / rule
   law                   = dependent_clause (">>>" dependent_clause)+
   evidence              = clause (evidence_operator dependent_clause)+
   evidence_operator     = supports / opposes
@@ -13,7 +13,7 @@ grammar = Grammar("""
   opposes               = ">>-"
   dependent_clause      = clause / arithmetic_operation
   arithmetic_operation  = (component / concept) ("+" / "-") quantity
-  simple_rule           = clause (">>" clause)+
+  rule                  = clause (">>" clause)+
   clause                = (shift_clause / comparison_clause / compound_clause / simple_clause) " "*
   shift_clause          = increment / decrement
   increment             = (component / concept) "++"

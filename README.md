@@ -44,7 +44,7 @@ cat#!feral
 
 ---
 ###Rules & Clauses
-The real power of Bottlenose is derived from leveraging the "semantic glue" described above in forming dynamic artificial cognitive beliefs. A Cogscript **Rule** is not a rule in a  strict sense; it does not have to be correct all the time and there need not be any true causation, directionality, or temporal seperation. Instead, its purpose is to describe a reflexive cognitivie association or potential co-occurence. Each **Rule** follows the syntax of two **Clauses** seperated by `>>`. A **Clause** can be a plain-phrase denoting existence of a concept, or a **Relationship** assertion, **Action**, or **State**. 
+The real power of Bottlenose is derived from leveraging the "semantic glue" described above in forming dynamic artificial cognitive beliefs. Each **Belief** is made up of **Clauses**. A **Clause** is a testable statement referencing a **Concept**, **Relationship** assertion, **Action**, or **State**. The weakest type of **Belief** is a **Rule**. A Cogscript **Rule** is not a rule in a  strict sense; it does not have to be correct all the time and there need not be any true causation, directionality, or temporal seperation. Instead, its purpose is to describe a reflexive cognitive association or potential co-occurence. Each **Rule** follows the syntax of two **Clauses** seperated by `>>`.
 
 ```
 cat.speaks() >> cat=/LOLCat
@@ -112,20 +112,20 @@ cat.weight <= 5lbs >> cat#skinny
 1. ~~Make **Synonyms** class: dictionary of phrase >> set of phrases~~
 2. ~~Make **Taxonomy** class with *WordNet* classifier (using *pattern.search*)~~
 3. Write grammar rules and JSON **Translator** class for parsing Cogscript (using *parsimonious*)
-4. Design **Concept** class with class methods for *lookup()* and *merge()* and holds concept graphs
+4. Design **Concept** class with class methods for *lookup()* and *merge()*, and which also holds concept graphs
 5. Instances of **Concept** only keep track of basic things like *name*, *synonyms*, *graphs*
 6. **Concept** subclasses will include **Nouns**, **Verbs**, **Descriptors**
-7. Concept graphs include: **TaxonomyGraph**, **ComponentGraph**, **ActionGraph**, **RelationshipGraph**
-8. Design **Belief** class with methods for *lookup()* and *reference()* and holds belief graphs
-9. Belief graphs include **ReferenceGraph**, **AssociationGraph**, **EvidenceGraph**, **LawGraph**
-10. Design **DataController** class that takes in Cogscript JSON and alters data structures
-11. Design **BottlenoseController** class: alters data structures based on interpreted expressions
-12. Implement persistence via pickling within **DataController**
-13. Implement export/import to plain text files organized within a folder tree within **DataController**
-14. Implement tabbed autocompletion using *(py)readline* & *rlcompleter*
-15. Polish CLI interface: add intro, help, colors, tables, benchmarks, etc
-16. Design querying engine with associated additional grammar and interpreter 
-17. Implement Cogscript logging, data backup, and undo functionality within **DataController**
-18. Experiment with rule-based artificial cognition
-
-
+7. Concept graphs include: **TaxonomyGraph**, **ComponentGraph**, **ActionGraph**, **RelationshipGraph**, **StateGraph**
+8. Design **Clause** class with a class method for *lookup()* and an instance method for *test()*
+9. Instances of **Clause** store a Cogscript JSON object, truth status, and optionally a numerical threshold and likelihood
+10. Design **Belief** class with methods for *add()* and *remove()*, and which also holds belief graphs
+11. Belief graphs include  **RuleGraph**, **EvidenceGraph**, **LawGraph**
+12. Design **DataController** class that takes in Cogscript JSON and alters data structures
+13. Design **BottlenoseController** class: alters data structures based on interpreted expressions
+14. Implement persistence via pickling within **DataController**
+15. Implement export/import to plain text files organized within a folder tree within **DataController**
+16. Implement tabbed autocompletion using *(py)readline* & *rlcompleter*
+17. Polish CLI interface: add intro, help, colors, tables, benchmarks, etc
+18. Design querying engine with associated additional grammar and interpreter 
+19. Implement Cogscript logging, data backup, and undo functionality within **DataController**
+20. Experiment with rule-based artificial cognition
