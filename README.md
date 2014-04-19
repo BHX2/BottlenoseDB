@@ -45,7 +45,6 @@ cat#!feral
 ---
 ###Rules & Clauses
 The real power of Bottlenose is derived from leveraging the "semantic glue" described above in forming dynamic artificial cognitive beliefs. Each **Belief** is made up of **Clauses**, which ar testable statements referencing existence of a **Concept** or assertions of **Relationship**, **Action**, or **State**. The weakest type of **Belief** is a **Rule**. A Cogscript **Rule** is not a rule in a  strict sense; it does not have to be correct all the time and there need not be any true causation, directionality, or temporal seperation. Instead, its purpose is to describe a reflexive cognitive association or potential co-occurence. Each **Rule** follows the syntax of two **Clauses** seperated by `>>`.
-
 ```
 cat.speaks() >> cat=/LOLCat
 LOLCat.speaks(words) >> words#misspelled
@@ -53,7 +52,6 @@ LOLCat.speaks(words) >> words#misspelled
 
 ####Logic
 A **Compound Clause** can be formed using `&` (*AND*), `,` (*inclusive OR*), or `|` (*exclusive OR*) to join multiple simple **Clauses**. To supply a negative, `!` (*NOT*) can prefix a component **Clause**. `&` indicates that in order to fulfill the entire **Clause**, expressions on both sides of the `&` must be true. Selecting `,` versus `|` is a more intricate decision. One can think of a compound **Rule** with `,` as expanding into two **Rules**. As an example: `A >> B , C` can be thought of as `A >> B` (*if A is true, then B could be true*) and `A >> C` (*if A is true, then C could be true*). Contrarily, the statement `A >> B | C` might translate *if A is true, then either B or C could be true, but it is unlikely that B and C would be simultaneously true*.
-
 ```
 cat & laserPointer >> cat.chases(laserPointer)
 LOLCat, grumpyCat, nyanCat, keyboardCat >> computerScreen.displays(cat)
@@ -63,8 +61,7 @@ cat.location=home >> cat.sleeps() | cat.eats() | cat.plays() | cat.chills()
 Of note, Cogscript allows for robust contextual co-referencing exemplified in the middle example above. The entity (*cat*) referenced within a **Clause** is preferentially assumed to be a reference to a suitable entity (*LOLCat, grumpyCat, nyanCat, keyboardCat*) within the given **Rule** context (even if the reference is not identical).
 
 ####Evidence
-If a **Rule** is more significant and/or directional, then there is additional syntax that can be added to indicate **Evidence**. To denote that the first **Clause** supports or opposes the second **Clause** `>>+` or `>>-` can be used respectively. For example: `A >>+ B` might be translated *if A is true, then it is more likely that B is true*. `A >>- B` might be translated *if A is true, then it is less likely that B is true*. 
-
+If a **Belief** is more significant and/or directional, then there is additional syntax that can be added to indicate **Evidence**. To denote that the first **Clause** supports or opposes the second **Clause** `>>+` or `>>-` can be used respectively. For example: `A >>+ B` might be translated *if A is true, then it is more likely that B is true*. `A >>- B` might be translated *if A is true, then it is less likely that B is true*. 
 ```
 cat#hungry >>+ cat.plays()
 cat#old >>- cat.plays()
@@ -72,29 +69,19 @@ cat#old >>- cat.plays()
 
 ####Statistical Probability
 To take things even further, quantitative probabilities can be expressed. The probability of the second **Clause** given the truth of the first **Clause** can be assigned a numerical value between 0.0 (never co-occurs) and 1.0 (always co-occurs). This value would be placed between brackets, which is itself placed immediately behind the dependent/second **Clause**. 
-
 ```
 coin.flips() >> coin#heads[0.5] | coin#tails[0.5]
 magiciansCoin.flips() >> magiciansCoin#heads[1.0] | magiciansCoin#tails[0.0]
 ```
 
 ####Laws
-Another use of **Rules** is to hardcode more 'syntactic glue' than is available by default. Using the cat example above we can connect the **Action** of 'owning a cat' to the **Relationship** of 'cat having an owner'. Below, we equate the **Action** `.owns(X)` to the **Relationship** `.owner =X`. Note that because of the directionality imposed by introducing quantitative probability, two expressions are neccesary to fully describe the concept. 
-
-```
-cat.owner=person >> person.owns(cat)[1.0]
-person.owns(cat) >> cat.owner=person[1.0]
-```
-
-Because the use case of expressing a strict bi-directional **Rule** is quite common, a special shorthand is available using `>>>`. This special use case is called a **Law**. `A >>> B` might translate *if A is true then B is ALWAYS true. AND if B is true then A is ALWAYS true*. The following is therefore equivalent to the **Rule** pair above:
-
+The strongest **Belief** is a **Law**, which is a strict bi-directional correlation indicated using `>>>`. In general `A >>> B` translates *if A is true then B is ALWAYS true. AND if B is true then A is ALWAYS true*. One use of **Laws** is to hardcode more 'syntactic glue' than is otherwise available. Using the cat example above we can connect the **Action** of 'owning a cat' to the **Relationship** of 'cat having an owner'. Below, we equate the **Action** `.owns(X)` to the **Relationship** `.owner =X`. Of importance, **Laws** are immediately computed into the artificial cognitive model. 
 ```
 cat.owner=person >>> person.owns(cat)
 ```
 
 ###Arithmetic
 In order to describe slightly more complex patterns there are a few operators that can be used to describe basic arithmetic (addition, subtraction). The same convention can be applied to a **Component**. A range of values can be described by writing two numbers seperated by `-`. Units can be typed directly after the number(s) (without intervening spaces). When describing an arithmetic operation within a **Rule**, `++` or `--` should be placed after a **Component**. If a particular value for the operation is being defined then it should follow a single `+` or `-`. Also of note, trigger (in)equalities can be indicated within a **Clause** using `>`, `<`, `<=`, `>=`, or `==`. 
-
 ```
 cat.weight#10lbs
 
