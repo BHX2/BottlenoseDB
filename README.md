@@ -108,7 +108,7 @@ cat.weight <= 5lbs >> cat#skinny
 10. Design **Belief** class with methods for *add()* and *remove()*, and which also holds belief graphs
 11. Belief graphs include  **RuleGraph**, **EvidenceGraph**, **LawGraph**
 12. Design **DataController** class that takes in Cogscript JSON and alters data structures
-13. Design **BottlenoseController** class: alters data structures based on interpreted expressions
+13. Design **BottlenoseController** class that interfaces with command-line input
 14. Implement persistence via pickling within **DataController**
 15. Implement export/import to plain text files organized within a folder tree within **DataController**
 16. Implement tabbed autocompletion using *(py)readline* & *rlcompleter*
