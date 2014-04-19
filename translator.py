@@ -19,7 +19,7 @@ grammar = Grammar("""
   compound_clause       = simple_clause logic_unit+
   logic_unit            = logic_operator simple_clause
   logic_operator        = "&" / "|" / "," 
-  simple_clause         = statement probability? " "*
+  simple_clause         = " "* "!"? statement probability? " "*
   probability           = "[" number "]"
   statement             = arithmetic_operation / quantitative_change / taxonomy_assertion / synonym_assertion / state / action / component_assertion / component / concept
   quantitative_change   = increase / decrease
@@ -91,11 +91,8 @@ class Translator(NodeVisitor):
         response['rule']['clauses'].append(other_clause)
     return response
     
-  def visit_clause(self, node, (clause, _)):
-    if 'clause' in clause:
-      return clause['clause']
-    else:
-      return clause
+  def visit_clause(self, node, (clause, _2)):
+    return clause
       
   def visit_comparison_clause(self, node, (component_or_concept, _1, operator, _, component_concept_or_quantity)):
     return {'comparison': {'variable': component_or_concept, 'sign': operator, 'measure': component_concept_or_quantity}}
@@ -104,7 +101,7 @@ class Translator(NodeVisitor):
     return node.text
   
   def visit_compound_clause(self, node, (simple_clause, logic_units)):
-    clauses = [simple_clause['clause']]
+    clauses = [simple_clause]
     
     index = 0
     string_map = str(index)
@@ -112,7 +109,7 @@ class Translator(NodeVisitor):
     for thing in logic_units:
       # Triggers if there is only one logic unit
       if thing == 'AND' or thing == 'OR' or thing == 'XOR':
-        return {logic_units[0]: [simple_clause['clause'], logic_units[1]]}
+        return {logic_units[0]: [simple_clause, logic_units[1]]}
     
     for (operator, clause) in logic_units:
       index = index + 1
@@ -168,7 +165,7 @@ class Translator(NodeVisitor):
     return response
         
   def visit_logic_unit(self, node, (operator, clause)):
-    return [operator['operator'], clause['clause']]
+    return [operator['operator'], clause]
   
   def visit_logic_operator(self, node, operator):
     if (node.text == "&"):
@@ -178,11 +175,14 @@ class Translator(NodeVisitor):
     elif (node.text == ","):
       return {'operator' : 'OR'}
     
-  def visit_simple_clause(self, node, (statement, probability, _)):
+  def visit_simple_clause(self, node, (_1, negative, statement, probability, _2)):    
+    response = {'statement': statement['statement']}
     if probability:
-      return {'clause': {'statement': statement['statement'], 'probability': probability['probability']}}
+      response['probability'] = probability['probability']
+    if negative == None:
+      return response
     else:
-      return {'clause': {'statement': statement['statement']}}
+      return {'NOT': [response]}
   
   def visit_probability(self, node, (_1, number, _2)):
     return {'probability': number}
