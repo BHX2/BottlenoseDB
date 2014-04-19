@@ -1,4 +1,5 @@
 import re
+import copy
 from parsimonious.grammar import Grammar
 from parsimonious.grammar import NodeVisitor
 
@@ -45,9 +46,67 @@ grammar = Grammar("""
 """)
 
 class Translator(NodeVisitor):
+  def visit_compound_clause(self, node, (simple_clause, logic_units)):
+    clauses = [simple_clause['clause']]
     
+    index = 0
+    string_map = str(index)
+    for (operator, clause) in logic_units:
+      index = index + 1
+      clauses.append(clause)
+      string_map = string_map + operator + str(index)
+    
+    sub_expression_tree = []
+    
+    for (XOR_index, XOR_sub_expression) in enumerate(string_map.split('XOR')):
+      sub_expression_tree.append(list())
+      for (OR_index, OR_sub_expression) in enumerate(XOR_sub_expression.split('OR')):
+        sub_expression_tree[XOR_index].append(list())
+        for (AND_index, AND_sub_expression) in enumerate(OR_sub_expression.split('AND')):
+          sub_expression_tree[XOR_index][OR_index].append(AND_sub_expression)
+    
+    response = dict()
+    if len(sub_expression_tree) > 1:
+      response['XOR'] = list()
+      for (i, XOR_branch) in enumerate(sub_expression_tree):
+        if len(XOR_branch) > 1:
+          response['XOR'].append({'OR': list()})
+          for (j, OR_branch) in enumerate(sub_expression_tree[i]):
+            if len(OR_branch) > 1:
+              response['XOR'][i]['OR'].append({'AND': list()})
+              for (k, AND_branch) in enumerate(sub_expression_tree[i][j]):
+                response['XOR'][i]['OR'][j]['AND'].append(clauses[int(sub_expression_tree[i][j][k])])
+            else:
+              response['XOR'][i]['OR'].append(clauses[int(sub_expression_tree[i][j][0])])
+        else:
+          if len(XOR_branch[0]) > 1:
+            response['XOR'].append({'AND': list()})
+            for (k, AND_branch) in enumerate(sub_expression_tree[i][0]):
+              response['XOR'][i]['AND'].append(clauses[int(sub_expression_tree[i][0][k])])
+          else:
+            response['XOR'].append(clauses[int(sub_expression_tree[i][0][0])])
+    else:
+        if len(sub_expression_tree[0]) > 1:
+          response['OR'] = list()
+          for (j, OR_branch) in enumerate(sub_expression_tree[0]):
+            if len(OR_branch) > 1:
+              response['OR'].append({'AND': list()})
+              for (k, AND_branch) in enumerate(sub_expression_tree[0][j]):
+                response['OR'][j]['AND'].append(clauses[int(sub_expression_tree[0][j][k])])
+            else:
+              response['OR'].append(clauses[int(sub_expression_tree[0][j][0])])
+        else:
+          if len(sub_expression_tree[0][0]) > 1:
+            response['AND'] = list()
+            for (k, AND_branch) in enumerate(sub_expression_tree[0][0]):
+              response['AND'].append(clauses[int(sub_expression_tree[0][0][k])])
+          else: 
+            response = sub_expression_tree[0][0][0]
+    print response
+    return response
+        
   def visit_logic_unit(self, node, (operator, clause)):
-    return {operator['operator']: [clause['clause']]}
+    return [operator['operator'], clause['clause']]
   
   def visit_logic_operator(self, node, operator):
     if (node.text == "&"):
