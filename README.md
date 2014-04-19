@@ -102,9 +102,9 @@ cat.weight <= 5lbs >> cat#skinny
 4. Design **Concept** class with class methods for *lookup()* and *merge()*, and which also holds concept graphs
 5. Instances of **Concept** only keep track of basic things like *name*, *synonyms*, *graphs*
 6. **Concept** subclasses will include **Nouns**, **Verbs**, **Descriptors**
-7. Concept graphs include: **TaxonomyGraph**, **ComponentGraph**, **ActionGraph**, **RelationshipGraph**, **StateGraph**
+7. Concept graphs: **TaxonomyGraph**, **ComponentGraph**, **ActionGraph**, **RelationshipGraph**, **StateGraph**
 8. Design **Clause** class with a class method for *lookup()* and an instance method for *test()*
-9. Instances of **Clause** store a Cogscript JSON object, truth status, and optionally a numerical threshold and likelihood
+9. Instances of **Clause** store a Cogscript JSON object, truth status, numerical threshold and likelihood
 10. Design **Belief** class with methods for *add()* and *remove()*, and which also holds belief graphs
 11. Belief graphs include  **RuleGraph**, **EvidenceGraph**, **LawGraph**
 12. Design **DataController** class that takes in Cogscript JSON and alters data structures
