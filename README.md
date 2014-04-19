@@ -1,5 +1,5 @@
 #Bottlenose
-**Bottlenose** is a command-line program written in Python that lets a user to store semantic knowledge representations as a graph network. It uses a simple scripting language for data entry called **Cogscript** that helps the program understand more complex patterns that utilize heterogenous terminology. The most basic operations are as follows:
+**Bottlenose** is a platform for building artificially intelligent programs. It uses a simple scripting language for building artificial cognitive models called **Cogscript** that allows for processing complex patterns that utilize heterogenous terminology. The most basic operations are as follows:
 
 ###Synonyms
 Use `=` to indicate synonymous words or phrases. Multiple synonyms can be defined at once if seperated by commas. All phrases should be written in *camelCase* such that spaces are removed between words, the first word is in all lower case, and all subsequent words are capitalized; capitilazation of proper nouns and acronyms can be preserved. Examples: *houseCat*, *Garfield*, *LOLCat*. When possible the singular form of noun phrases should be used. Also, all punctuation including single-quotes should be omitted.
@@ -98,12 +98,13 @@ cat.weight <= 5lbs >> cat#skinny
 
 1. ~~Make **Synonyms** class: dictionary of phrase >> set of phrases~~
 2. ~~Make **Taxonomy** class with *WordNet* classifier (using *pattern.search*)~~
-3. Write grammar rules and JSON **Translator** class for parsing Cogscript (using *parsimonious*)
+3. ~~Write grammar rules and JSON **Translator** class for parsing Cogscript (using *parsimonious*)~~
 4. Design **Concept** class with class methods for *lookup()* and *merge()*, and which also holds concept graphs
 5. Instances of **Concept** only keep track of basic things like *name*, *synonyms*, *graphs*
 6. **Concept** subclasses will include **Nouns**, **Verbs**, **Descriptors**
 7. Concept graphs: **TaxonomyGraph**, **ComponentGraph**, **ActionGraph**, **RelationshipGraph**, **StateGraph**
 8. Design **Clause** class with a class method for *lookup()* and an instance method for *test()*
+9. During instantiation a **Clause** calculates implicitly dependent **Clauses** and adds appropriate rules
 9. Instances of **Clause** store a Cogscript JSON object & hashcode, truth status, threshold and likelihood
 10. Design **Belief** class with methods for *add()* and *remove()*, and which also holds belief graphs
 11. Belief graphs include  **RuleGraph**, **EvidenceGraph**, **LawGraph**

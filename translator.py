@@ -6,18 +6,14 @@ from parsimonious.grammar import NodeVisitor
 grammar = Grammar("""
   input                 = belief / statement
   belief                = law / evidence / rule
-  law                   = dependent_clause (">>>" dependent_clause)+
-  evidence              = clause (evidence_operator dependent_clause)+
-  evidence_operator     = supports / opposes
-  supports              = ">>+"
-  opposes               = ">>-"
-  dependent_clause      = clause / arithmetic_operation
-  arithmetic_operation  = (component / concept) ("+" / "-") quantity
+  law                   = clause (">>>" clause)+
+  evidence              = supporting_evidence / opposing_evidence
+  supporting_evidence   = clause (">>+" clause)+
+  opposing_evidence     = clause (">>-" clause)+
+  arithmetic_operation  = (component / concept) arithmetic_operator quantity
+  arithmetic_operator   = "+" / "-"
   rule                  = clause (">>" clause)+
-  clause                = (shift_clause / comparison_clause / compound_clause / simple_clause) " "*
-  shift_clause          = increment / decrement
-  increment             = (component / concept) "++"
-  decrement             = (component / concept) "--"
+  clause                = (comparison_clause / compound_clause / simple_clause) " "*
   comparison_clause     = (component / concept) !">>" (comparison_operator) " "* (quantity / component / concept) 
   comparison_operator   = "==" / "!=" / ">=" / "<=" / ">" / "<"
   compound_clause       = simple_clause logic_unit+
@@ -25,7 +21,11 @@ grammar = Grammar("""
   logic_operator        = "&" / "|" / "," 
   simple_clause         = statement probability? " "*
   probability           = "[" number "]"
-  statement             = arithmetic_operation / taxonomy_assertion / synonym_assertion / state / action / component_assertion / component / concept
+  statement             = arithmetic_operation / quantitative_change / taxonomy_assertion / synonym_assertion / state / action / component_assertion / component / concept
+  quantitative_change   = increase / decrease
+  increase              = (component / concept) "++"
+  decrease              = (component / concept) "--"
+  taxonomy_assertion    = concept (type_includes / is_a) concept_or_list
   taxonomy_assertion    = concept (type_includes / is_a) concept_or_list
   type_includes         = "/="
   is_a                  = "=/"
@@ -46,11 +46,74 @@ grammar = Grammar("""
 """)
 
 class Translator(NodeVisitor):
+  def visit_input(self, node, input):
+    return input[0]
+  
+  def visit_law(self, node, (first_clause, other_clauses)):
+    response = {'law': {'clauses':[first_clause]}}
+    if len(other_clauses) == 1:
+      response['law']['clauses'].append(other_clauses)
+    else:
+      for other_clause in other_clauses:
+        response['law']['clauses'].append(other_clause)
+    return response
+    
+  def visit_opposing_evidence(clause, node, (first_clause, other_clauses)):
+    response = {'opposing_clauses': [first_clause]}
+    if len(other_clauses) == 1:
+      response['opposing_clauses'].append(other_clauses)
+    else:
+      for other_clause in other_clauses:
+        response['opposing_clauses'].append(other_clause)
+    return response 
+    
+  def visit_supporting_evidence(clause, node, (first_clause, other_clauses)):
+    response = {'supporting_clauses': [first_clause]}
+    if len(other_clauses) == 1:
+      response['supporting_clauses'].append(other_clauses)
+    else:
+      for other_clause in other_clauses:
+        response['supporting_clauses'].append(other_clause)
+    return response    
+    
+  def visit_arithmetic_operation(self, node, (concept_or_component, operator, quantity)):
+    return {'arithmetic_operation': {'variable': concept_or_component, 'operator': operator, 'quantity': quantity}}
+    
+  def visit_arithmetic_operator(self, node, _):
+    return node.text
+    
+  def visit_rule(self, node, (first_clause, other_clauses)):
+    response = {'rule': {'clauses':[first_clause]}}
+    if len(other_clauses) == 1:
+      response['rule']['clauses'].append(other_clauses)
+    else:
+      for other_clause in other_clauses:
+        response['rule']['clauses'].append(other_clause)
+    return response
+    
+  def visit_clause(self, node, (clause, _)):
+    if 'clause' in clause:
+      return clause['clause']
+    else:
+      return clause
+      
+  def visit_comparison_clause(self, node, (component_or_concept, _1, operator, _, component_concept_or_quantity)):
+    return {'comparison': {'variable': component_or_concept, 'sign': operator, 'measure': component_concept_or_quantity}}
+  
+  def visit_comparison_operator(self, node, _):
+    return node.text
+  
   def visit_compound_clause(self, node, (simple_clause, logic_units)):
     clauses = [simple_clause['clause']]
     
     index = 0
     string_map = str(index)
+    
+    for thing in logic_units:
+      # Triggers if there is only one logic unit
+      if thing == 'AND' or thing == 'OR' or thing == 'XOR':
+        return {logic_units[0]: [simple_clause['clause'], logic_units[1]]}
+    
     for (operator, clause) in logic_units:
       index = index + 1
       clauses.append(clause)
@@ -102,7 +165,6 @@ class Translator(NodeVisitor):
               response['AND'].append(clauses[int(sub_expression_tree[0][0][k])])
           else: 
             response = sub_expression_tree[0][0][0]
-    print response
     return response
         
   def visit_logic_unit(self, node, (operator, clause)):
@@ -204,7 +266,8 @@ class Translator(NodeVisitor):
       #print {node.expr_name: visited_children[0]}
       return {node.expr_name: visited_children[0]}
 
-tree = grammar.parse('')
-i = Translator()
-i.visit(tree)
-    
+# Mo' money mo' problems --The Notorious B.I.G
+tree = grammar.parse('money++ >>> problem++')
+translator = Translator()
+JSON = translator.visit(tree)
+print JSON
