@@ -25,3 +25,10 @@ def unCamelCase(text):
       else:
         response += (' ' + word.lower())
     return response
+ 
+def sanitize(text):
+  return unCamelCase(camelCase(text))
+  
+def unicodeDecode(patternUnicodeStrings):
+  patternStrings = map(str, patternUnicodeStrings)
+  return map(camelCase, patternStrings)

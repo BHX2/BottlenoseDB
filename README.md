@@ -1,5 +1,5 @@
 #Bottlenose
-**Bottlenose** is a platform for building artificially intelligent programs. It uses a simple scripting language for building artificial cognitive models called **Cogscript** that allows for processing complex patterns that utilize heterogenous terminology. The most basic operations are as follows:
+**Bottlenose** is a platform for building artificially intelligent programs. It uses a simple scripting language called **Cogscript** that allows for processing complex patterns that utilize heterogenous terminology. The basic operations are as follows:
 
 ###Synonyms
 Use `=` to indicate synonymous words or phrases. Multiple synonyms can be defined at once if seperated by commas. All phrases should be written in *camelCase* such that spaces are removed between words, the first word is in all lower case, and all subsequent words are capitalized; capitilazation of proper nouns and acronyms can be preserved. Examples: *houseCat*, *Garfield*, *LOLCat*. When possible the singular form of noun phrases should be used. Also, all punctuation including single-quotes should be omitted.
@@ -47,7 +47,7 @@ cat#!feral
 The real power of Bottlenose is derived from leveraging the "semantic glue" described above in forming dynamic artificial cognitive beliefs. Each **Belief** is made up of **Clauses**, which ar testable statements referencing existence of a **Concept** or assertions of **Relationship**, **Action**, or **State**. The weakest type of **Belief** is a **Rule**. A Cogscript **Rule** is not a rule in a  strict sense; it does not have to be correct all the time and there need not be any true causation, directionality, or temporal seperation. Instead, its purpose is to describe a reflexive cognitive association or potential co-occurence. Each **Rule** follows the syntax of two **Clauses** seperated by `>>`.
 ```
 cat.speaks() >> cat=/LOLCat
-LOLCat.speaks(words) >> words#misspelled
+LOLCat.speaks(comment) >> comment#misspelled
 ```
 
 ####Logic
@@ -96,24 +96,23 @@ cat.weight <= 5lbs >> cat#skinny
 ---
 ###Roadmap
 
-1. ~~Make **Synonyms** class: dictionary of phrase >> set of phrases~~
-2. ~~Make **Taxonomy** class with *WordNet* classifier (using *pattern.search*)~~
-3. ~~Write grammar rules and JSON **Translator** class for parsing Cogscript (using *parsimonious*)~~
-4. Design **Concept** class with class methods for *lookup()* and *merge()*, and which also holds concept graphs
-5. Instances of **Concept** only keep track of basic things like *name*, *synonyms*, *graphs*
-6. **Concept** subclasses will include **Nouns**, **Verbs**, **Descriptors**
-7. Concept graphs: **TaxonomyGraph**, **ComponentGraph**, **ActionGraph**, **RelationshipGraph**, **StateGraph**
-8. Design **Clause** class with a class method for *lookup()* and an instance method for *test()*
-9. During instantiation a **Clause** calculates implicitly dependent **Clauses** and adds appropriate rules
-9. Instances of **Clause** store a Cogscript JSON object & hashcode, truth status, threshold and likelihood
-10. Design **Belief** class with methods for *add()* and *remove()*, and which also holds belief graphs
-11. Belief graphs include  **RuleGraph**, **EvidenceGraph**, **LawGraph**
-12. Design **DataController** class that takes in Cogscript JSON and alters data structures
-13. Design **BottlenoseController** class that interfaces with command-line input
-14. Implement persistence via pickling within **DataController**
-15. Implement export/import to plain text files organized within a folder tree within **DataController**
+1. ~~Write grammar rules and JSON **Translator** class for parsing Cogscript (using *parsimonious*)~~
+2. ~~Design **Concept** class with class methods and objects for keeping track of taxonomy & synonyms~~
+3. **Concept** subclasses include **NounPhrases**, **VerbPhrases**, **Descriptors**
+4. Design **Context** class with graph instances and methods for several types of reference lookup 
+5. Context graphs include**ComponentGraph**, **ActionGraph**, **RelationshipGraph**, **StateGraph**
+6. Design **Clause** class with an instance method for *test()*
+7. During instantiation a **Clause** calculates implicitly dependent **Clauses** and adds appropriate rules
+8. Instances of **Clause** store a Cogscript JSON object & hashcode, truth status, threshold and likelihood
+9. Design **Belief** class with dictionary of clauses and class methods for clause(), *add()* and *remove()*
+10. **Belief** class also holds belief graphs include **RuleGraph**, **EvidenceGraph**, **LawGraph**
+11. Design **Interpreter** class that takes in Cogscript JSON and alters data structures
+12. When **Interpreter** is in *universal context* makes clauses on prototype objects when given statements
+13. Design **BottlenoseController** class that interfaces with command-line input and Interpreter
+14. Implement persistence via pickling within **BottlenoseController**
+15. Implement export/import to plain text files organized within a folder tree within **BottlenoseController**
 16. Implement tabbed autocompletion using *(py)readline* & *rlcompleter*
 17. Polish CLI interface: add intro, help, colors, tables, benchmarks, etc
 18. Design querying engine with associated additional grammar and interpreter 
-19. Implement Cogscript logging, data backup, and undo functionality within **DataController**
+19. Implement Cogscript logging, data backup, and undo functionality within **BottlenoseController**
 20. Experiment with rule-based artificial cognition
