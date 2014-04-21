@@ -4,7 +4,6 @@ from pattern.search import Taxonomy
 from pattern.search import WordNetClassifier
 
 sys.dont_write_bytecode = True
-# Keeps directory clean by not compiling utilities to bytecode
 import utilities
 
 class Concept:
@@ -44,7 +43,10 @@ class Concept:
         return None
       type = self.type
     type = utilities.sanitize(type)
-    response = utilities.unicodeDecode(self.taxonomy.parents(type, recursive=True))
+    if not getattr(self, 'isVerb', False):
+      response = utilities.unicodeDecode(self.taxonomy.parents(type, recursive=True))
+    else:
+      response = utilities.unicodeDecode(self.taxonomy.parents(type, recursive=True, pos='VB'))
     response.append(utilities.camelCase(type))
     return response
     
@@ -55,7 +57,10 @@ class Concept:
       name = self.name
     name = utilities.sanitize(name)
     if name.istitle(): return
-    firstPass = utilities.unicodeDecode(self.taxonomy.children(name, recursive=False))
+    if not getattr(self, 'isVerb', False):
+      firstPass = utilities.unicodeDecode(self.taxonomy.children(name, recursive=False))
+    else:
+      firstPass = utilities.unicodeDecode(self.taxonomy.children(name, recursive=False, pos='VB'))
     response = []
     for thing in firstPass:
       if utilities.sanitize(thing).istitle():
@@ -93,7 +98,10 @@ class Concept:
       parent = term2
     child = utilities.sanitize(child)
     parent = utilities.sanitize(parent)
-    existingParents = map(str, self.taxonomy.parents(child, recursive=True))
+    if not getattr(self, 'isVerb', False):
+      existingParents = map(str, self.taxonomy.parents(child, recursive=True))
+    else:
+      existingParents = map(str, self.taxonomy.parents(child, recursive=True, pos='VB'))
     return parent in existingParents
 
   def equate(self, *phrases):
