@@ -99,8 +99,8 @@ cat.weight <= 5lbs >> cat#skinny
 1. ~~Write grammar rules and JSON **Translator** class for parsing Cogscript (using *parsimonious*)~~
 2. ~~Design **Concept** class with class methods and objects for keeping track of taxonomy & synonyms~~
 3. ~~**Concept** subclasses include **NounPhrases**, **VerbPhrases**, **Descriptors**~~
-4. Design **Context** class with graph instances and methods for several types of reference lookup 
-5. Context graphs include **ComponentGraph**, **ActionGraph**, **RelationshipGraph**, **StateGraph**
+4. ~~Design **Context** class with graph instances, **clauseTable** and related methods~~
+5. ~~Context graphs include **componentGraph**, **actionGraph**, **relationshipGraph**, **stateGraph**~~
 6. Design **Clause** class with an instance method for *test()*
 7. During instantiation a **Clause** calculates implicitly dependent **Clauses** and adds appropriate rules
 8. Instances of **Clause** store a Cogscript JSON object & hashcode, truth status, threshold and likelihood

@@ -3,7 +3,7 @@ import re
 from pattern.en import conjugate
 from pattern.en import singularize
 sys.dont_write_bytecode = True
-from concept import Concept
+from concepts import Concept
 import utilities
 
 class VerbPhrase(Concept):
