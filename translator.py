@@ -189,9 +189,9 @@ class Translator(NodeVisitor):
 
   def visit_taxonomy_assertion(self, node, (concept, operator, concept_or_list)):
     if "is_a" in operator.keys():
-      return {'taxonomy_assertion':{'parent': concept_or_list, 'child': concept}}
+      return {'taxonomy_assertion':{'parent': concept_or_list, 'child': concept, 'type':'is_a'}}
     elif "type_includes" in operator.keys():
-      return {'taxonomy_assertion':{'parent': concept, 'child': concept_or_list}}
+      return {'taxonomy_assertion':{'parent': concept, 'child': concept_or_list, 'type':'type_includes'}}
   
   def visit_synonym_assertion(self, node, (concept, _, concept_or_list)):
     synonyms = [concept['concept']]
@@ -199,7 +199,7 @@ class Translator(NodeVisitor):
       for element in concept_or_list: synonyms.append(element['concept'])
     else:
       synonyms.append(concept_or_list['concept'])
-    return {'synonym_assertion': {'concepts': synonyms}}
+    return {'synonym_assertion': {'concepts': synonyms}, 'subject': concept}
   
   def visit_state(self, node, (subject, _, description)):
     return {'state': {'subject': subject, 'description': description}}
