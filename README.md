@@ -97,7 +97,7 @@ cat.weight <= 5lbs >> cat#skinny
 2. ~~Design **Concept** class with class methods and objects for keeping track of taxonomy & synonyms~~
 3. ~~**Concept** subclasses include **NounPhrases**, **VerbPhrases**, **Descriptors**~~
 4. ~~Design **Context** class with graph instances, **clauseTable** and related methods~~
-5. ~~Context graphs include **componentGraph**, **actionGraph**, **relationshipGraph**, **stateGraph**~~
+5. ~~Context graphs include **componentGraph**, **actionGraph**, **stateGraph**~~
 6. **Context** also keeps a table of clauses with matching concept items and evidence
 7. ~~Design **Clause** class which calculates implicitly dependent **Clauses** upon instantiation~~
 8. ~~Instances of **Clause** store a Cogscript JSON object & hashcode~~
