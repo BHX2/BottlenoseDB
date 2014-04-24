@@ -60,8 +60,6 @@ class Clause:
       dependencies.add(Clause.makeClauseIfNonexistent(clause['statement']))
     elif 'arithmetic_operation' in clause:
       dependencies.add(Clause.makeClauseIfNonexistent(clause['arithmetic_operation']['variable']))
-    elif 'quantitative_change' in clause:
-      dependencies.add(Clause.makeClauseIfNonexistent(clause['quantitative_change'].values()[0]))
     elif 'taxonomy_assertion' in clause:
       if clause['taxonomy_assertion']['type'] == 'type_includes':
         dependencies.add(Clause.makeClauseIfNonexistent(clause['taxonomy_assertion']['parent']))

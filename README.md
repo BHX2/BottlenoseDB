@@ -98,9 +98,9 @@ cat.weight <= 5lbs >> cat#skinny
 3. ~~**Concept** subclasses include **NounPhrases**, **VerbPhrases**, **Descriptors**~~
 4. ~~Design **Context** class with graph instances, **clauseTable** and related methods~~
 5. ~~Context graphs include **componentGraph**, **actionGraph**, **relationshipGraph**, **stateGraph**~~
-6. Design **Clause** class with an instance method for *test()*
-7. During instantiation a **Clause** calculates implicitly dependent **Clauses** and adds appropriate rules
-8. Instances of **Clause** store a Cogscript JSON object & hashcode, truth status, threshold and likelihood
+6. **Context** also keeps a table of clauses with matching concept items and evidence
+7. ~~Design **Clause** class which calculates implicitly dependent **Clauses** upon instantiation~~
+8. ~~Instances of **Clause** store a Cogscript JSON object & hashcode~~
 9. Design **Belief** class with dictionary of clauses and class methods for clause(), *add()* and *remove()*
 10. **Belief** class also holds belief graphs include **RuleGraph**, **EvidenceGraph**, **LawGraph**
 11. Design **Interpreter** class that takes in Cogscript JSON and alters data structures
