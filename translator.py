@@ -21,10 +21,7 @@ grammar = Grammar("""
   logic_operator        = "&" / "|" / "," 
   simple_clause         = " "* "!"? statement probability? " "*
   probability           = "[" number "]"
-  statement             = arithmetic_operation / quantitative_change / taxonomy_assertion / synonym_assertion / state / action / component_assertion / component / concept
-  quantitative_change   = increase / decrease
-  increase              = (component / concept) "++"
-  decrease              = (component / concept) "--"
+  statement             = arithmetic_operation / taxonomy_assertion / synonym_assertion / state / action / component_assertion / component / concept
   taxonomy_assertion    = concept (type_includes / is_a) concept_or_list
   taxonomy_assertion    = concept (type_includes / is_a) concept_or_list
   type_includes         = "/="

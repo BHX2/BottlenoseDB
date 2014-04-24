@@ -13,7 +13,3 @@ class Context:
       return self.clauseTable[clause]
     else:
       return False
-  
-  def setClause(self, clause, setOfConcepts):
-    #TODO: may implement calculation of sets for dependent clauses here
-    self.clauseTable[clause] = setOfConcepts

@@ -9,9 +9,7 @@ class Clause:
   def __init__(self, cogscriptJSON):
     self.cogscriptJSON = cogscriptJSON
     self.hashcode = self.calculateHash(cogscriptJSON)
-    self.truth = False
     self.threshold = None
-    self.likelihood = 0
     Clause.dependencies[self.hashcode] = self.calculateDependencies(self.cogscriptJSON)
     Clause.hashtable[self.hashcode] = self
  
@@ -45,14 +43,11 @@ class Clause:
   @staticmethod
   def calculateDependencies(cogscriptJSON):
     dependencies = set()  
-    # likely list of concepts or statements
     if isinstance(cogscriptJSON, list):
       for child in cogscriptJSON:
         dependencies.add(Clause.makeClauseIfNonexistent(child))
       return dependencies
-    # convenience rename of parameter
     clause = cogscriptJSON
-    # ginormous if-then-else tree
     if 'concept' in clause:
       return None
     elif 'comparison' in clause:
@@ -76,6 +71,7 @@ class Clause:
       dependencies.add(Clause.makeClauseIfNonexistent(clause['synonym_assertion']['subject']))
     elif 'state' in clause:
       dependencies.add(Clause.makeClauseIfNonexistent(clause['state']['subject']))
+      dependencies.add(Clause.makeClauseIfNonexistent(clause['state']['description']))
     elif 'action' in clause:
       if 'actor' in clause['action'] and 'act' in clause['action']:
         dependencies.add(Clause.makeClauseIfNonexistent({'actor-act': {'actor': clause['action']['actor'], 'act': clause['action']['act']}}))
@@ -101,7 +97,6 @@ class Clause:
       dependencies.add(Clause.makeClauseIfNonexistent(clause['stem']))
       if 'branch' in clause:
         dependencies.add(Clause.makeClauseIfNonexistent(clause['branch']))
-    # return back results
     if len(dependencies) > 0:
       return dependencies
     else:
