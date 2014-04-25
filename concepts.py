@@ -17,7 +17,10 @@ class Concept:
     if name: 
       self.name = utilities.camelCase(name)
     else:
-      self.name = os.urandom(16).encode('hex')
+      if type:
+        self.name = type + '-' + os.urandom(5).encode('hex')
+      else:
+        self.name = os.urandom(10).encode('hex')
     if type: 
       self.classify(utilities.sanitize(self.name), utilities.sanitize(type))
     self._instances.add(weakref.ref(self))
