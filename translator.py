@@ -4,7 +4,8 @@ from parsimonious.grammar import Grammar
 from parsimonious.grammar import NodeVisitor
 
 grammar = Grammar("""
-  input                 = belief / statement
+  input                 = query / belief / statement
+  query                 = "?" (concept)
   belief                = law / evidence / rule
   law                   = clause (">>>" clause)+
   evidence              = supporting_evidence / opposing_evidence
@@ -45,6 +46,9 @@ grammar = Grammar("""
 class Translator(NodeVisitor):
   def visit_input(self, node, input):
     return input[0]
+  
+  def visit_query(self, node, (_, query)):
+    return {'query': query}
   
   def visit_law(self, node, (first_clause, other_clauses)):
     response = {'law': {'clauses':[first_clause]}}
@@ -262,9 +266,3 @@ class Translator(NodeVisitor):
     else:
       #print {node.expr_name: visited_children[0]}
       return {node.expr_name: visited_children[0]}
-
-# Mo' money mo' problems --The Notorious B.I.G
-tree = grammar.parse('money++ >>> problem++')
-translator = Translator()
-JSON = translator.visit(tree)
-print JSON

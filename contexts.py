@@ -6,7 +6,7 @@ class Context:
     self.clauseTable = dict()
     self.componentGraph = networkx.DiGraph()
     self.actionGraph = networkx.DiGraph()
-    self.stateGraph = networkx.Graph()
+    self.stateGraph = networkx.DiGraph()
     self._concepts = {'noun_phrases': set(), 'verb_phrases': set(), 'descriptors': set()}
   
   def checkClause(self, clause):
@@ -15,29 +15,46 @@ class Context:
     else:
       return False
 
-  def newNounPhrase(self, nounPhrase):
-    concept = NounPhrase(nounPhrase)
+  def newNounPhrase(self, nounPhrase, type=None):
+    for concept in self._concepts['noun_phrases']:
+      if concept.name == nounPhrase: return concept
+    if type:
+      concept = NounPhrase(nounPhrase, type)
+    else:
+      concept = NounPhrase(nounPhrase)
     self.componentGraph.add_node(concept)
     self.actionGraph.add_node(concept)
     self.stateGraph.add_node(concept)
     self._concepts['noun_phrases'].add(concept)
+    return concept
   
-  def newVerbPhrase(self, verbPhrase):
-    concept = VerbPhrase(verbPhrase)
+  def newVerbPhrase(self, verbPhrase, type=None):
+    for concept in self._concepts['verb_phrases']:
+      if concept.name == verbPhrase: return concept
+    if type:
+      concept = VerbPhrase(verbPhrase, type)
+    else:
+      concept = VerbPhrase(verbPhrase)
     self.actionGraph.add_node(concept)
     self.stateGraph.add_node(concept)
     self._concepts['verb_phrases'].add(concept)
+    return concept
   
-  def newDescriptor(self, descriptor):
-    concept = Descriptor(descriptor)
+  def newDescriptor(self, descriptor, type=None):
+    for concept in self._concepts['descriptors']:
+      if concept.name == descriptor: return concept
+    if type:
+      concept = Descriptor(descriptor, type)
+    else:
+      concept = Descriptor(descriptor)
     self.stateGraph.add_node(descriptor)
-    self._concepts['descriptor'].add(concept)
+    self._concepts['descriptors'].add(concept)
+    return concept
   
-  def setAction(self, actor, act, target):
+  def setAction(self, actor, act, target=None):
     self.actionGraph.add_edge(actor, act)
-    self.actionGraph.add_edge(act, target)
-    if self.relationshipGraph.get_edge_
-    self.relationshipGraph.add_edge(actor, target)
+    if target:
+      self.actionGraph.add_edge(act, target)
     
   def unsetAction(self, actor, act, target=None):
     if target:
@@ -69,28 +86,33 @@ class Context:
     
   def mergeConcepts(self, concept1, concept2):
     #TODO: write this merge method
+    print 'not implemented yet'
+    '''
     if isinstance(concept1, NounPhrase) and isinstance(concept2, NounPhrase):
     elif isinstance(concept1, VerbPhrase) and isinstance(concept2, VerbPhrase):
     elif isinstance(concept1, Descriptor) and isinstance(concept2, Descriptor):
-  
+    '''
+    
   def queryNounPhrases(self, type):
-    response = list()
+    response = set()
     for concept in self._concepts['noun_phrases']:
       if concept.name == type or concept.paternityTest(type):
-        response.append(concept)
+        response.add(concept)
+    return response
         
   def queryVerbPhrases(self, type):
-    response = list()
+    response = set()
     for concept in self._concepts['verb_phrases']:
       if concept.name == type or concept.paternityTest(type):
-        response.append(concept)    
+        response.add(concept)
+    return response        
   
   def queryDescriptor(self, type):
-    response = list()
+    response = set()
     for concept in self._concepts['descriptor']:
       if concept.name == type or concept.paternityTest(type):
-        response.append(concept)
-  
+        response.add(concept)
+    return response
   
       
     
