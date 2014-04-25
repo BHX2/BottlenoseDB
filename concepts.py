@@ -1,3 +1,4 @@
+import os
 import sys
 import weakref
 from pattern.search import Taxonomy
@@ -16,14 +17,9 @@ class Concept:
     if name: 
       self.name = utilities.camelCase(name)
     else:
-      self.name = None
+      self.name = os.urandom(16).encode('hex')
     if type: 
-      type = utilities.sanitize(type)
-      if name:
-        self.classify(utilities.sanitize(name), utilities.sanitize(type))
-      self.type = utilities.camelCase(type)
-    else:
-      self.type = None
+      self.classify(utilities.sanitize(self.name), utilities.sanitize(type))
     self._instances.add(weakref.ref(self))
   
   @classmethod
@@ -37,23 +33,18 @@ class Concept:
         dead.add(reference)
     clss._instances -= dead
     
-  def ancestors(self, type=None):
-    if not type: 
-      if not self.type:
-        return None
-      type = self.type
-    type = utilities.sanitize(type)
+  def ancestors(self, name=None):
+    if not name: 
+      name = self.name
+    name = utilities.sanitize(name)
     if not getattr(self, 'isVerb', False):
-      response = utilities.unicodeDecode(self.taxonomy.parents(type, recursive=True))
+      response = utilities.unicodeDecode(self.taxonomy.parents(name, recursive=True))
     else:
-      response = utilities.unicodeDecode(self.taxonomy.parents(type, recursive=True, pos='VB'))
-    response.append(utilities.camelCase(type))
+      response = utilities.unicodeDecode(self.taxonomy.parents(name, recursive=True, pos='VB'))
     return response
     
   def descendants(self, name=None):
     if not name: 
-      if not self.name:
-        return None
       name = self.name
     name = utilities.sanitize(name)
     if name.istitle(): return
@@ -71,10 +62,7 @@ class Concept:
     return response
     
   def classify(self, term1, term2=None):
-    self.type = utilities.camelCase(term1)
     if not term2:
-      if not self.name:
-        return
       child = self.name
       parent = term1
     else:
