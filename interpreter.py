@@ -16,6 +16,11 @@ class Interpreter:
       for edge in edges:
         if edge[2]['label'] == branchPhrase or edge[1].name == branchPhrase or edge[1].isA(branchPhrase):
           branches.add(edge[1])
+      temp = set()
+      for branch in branches:
+        if branch in self.context:
+          temp.add(branch)
+      branches = temp
       if len(branches) == 0:
         branches = None
       elif len(branches) == 1:
@@ -52,6 +57,11 @@ class Interpreter:
       for edge in edges:
         if edge[2]['label'] == branchPhrase or edge[1].name == branchPhrase or edge[1].isA(branchPhrase):
           branches.add(edge[1])
+      temp = set()
+      for branch in branches:
+        if branch in self.context:
+          temp.add(branch)
+      branches = temp
       if len(branches) == 0:
         if assertBranches:
           branch = self.context.newNounPhrase(None, 'unspecified')
@@ -71,20 +81,30 @@ class Interpreter:
         return (branches, stems)
       else:
         return branches
-            
-  def assertConcept(self, conceptPhrase):
-    self.context.newNounPhrase(conceptPhrase)
+ 
+  def queryConcept(self, JSON):
+    return self.context.queryNounPhrases(JSON['concept'])
+  
+  def queryComponent(self, JSON):
+    return self.retrieveComponent(JSON['component']['stem'], JSON['component']['branch'], assertBranches=False)
+    
+  def assertConcept(self, conceptJSON):
+    return self.context.newNounPhrase(conceptJSON['concept'])
   
   def assertComponent(self, componentJSON):
-    (branches, stems) = self.retrieveComponent(componentJSON['stem'], componentJSON['branch'], returnLastStems=True, assertBranches=True)
+    (branches, stems) = self.retrieveComponent(componentJSON['component']['stem'], componentJSON['component']['branch'], returnLastStems=True, assertBranches=True)
     if not branches:
+      temp = set()
       for stem in stems:    
         branch = self.context.newNounPhrase(None, 'unspecified')
-        branch.classify(componentJSON['branch'])
-        self.context.setComponent(stem, componentJSON['branch'], branch)
+        branch.classify(componentJSON['component']['branch'])
+        self.context.setComponent(stem, componentJSON['component']['branch'], branch)
+        temp.add(branch)
+      branches = temp
+    return branches
   
   def assertComponentAssignment(self, componentAssertionJSON):
-    (branches, stems) = self.retrieveComponent(componentAssertionJSON['target']['component']['stem'], componentAssertionJSON['target']['component']['branch'], returnLastStems=True, assertBranches=True)
+    (branches, stems) = self.retrieveComponent(componentAssertionJSON['component_assignment']['target']['component']['stem'], componentAssertionJSON['component_assignment']['target']['component']['branch'], returnLastStems=True, assertBranches=True)
     if branches:
       if isinstance(branches, set):
         for branch in branches:
@@ -93,20 +113,20 @@ class Interpreter:
         if branches.isA('unspecified'): self.context.remove(branches)
     assignments = list()
     uninstantiatedAssignments = list()
-    if isinstance(componentAssertionJSON['assignment'], list):
-      for concept in componentAssertionJSON['assignment']:
+    if isinstance(componentAssertionJSON['component_assignment']['assignment'], list):
+      for concept in componentAssertionJSON['component_assignment']['assignment']:
           x = self.context.queryNounPhrases(concept['concept'])
           if x: 
             assignments.extend(x)
           else:
             uninstantiatedAssignments.append(concept['concept'])
     else:
-      x = self.context.queryNounPhrases(componentAssertionJSON['assignment']['concept'])
+      x = self.context.queryNounPhrases(componentAssertionJSON['component_assignment']['assignment']['concept'])
       if x: 
         assignments.extend(x)
       else:
-        uninstantiatedAssignments.append(componentAssertionJSON['assignment']['concept'])
-    branchPhrase = componentAssertionJSON['target']['component']['branch']
+        uninstantiatedAssignments.append(componentAssertionJSON['component_assignment']['assignment']['concept'])
+    branchPhrase = componentAssertionJSON['component_assignment']['target']['component']['branch']
     for uninstantiatedAssignment in uninstantiatedAssignments:
       assignment = self.context.newNounPhrase(None, uninstantiatedAssignment)
       assignment.classify(branchPhrase)
@@ -120,45 +140,114 @@ class Interpreter:
     children = list()
     def extractConcept(JSON):
       return JSON['concept']
-    if isinstance(taxonomyAssignmentJSON['parent'], list): 
-      parents.extend(map(extractConcept, taxonomyAssignmentJSON['parent']))
+    if isinstance(taxonomyAssignmentJSON['taxonomy_assignment']['parent'], list): 
+      parents.extend(map(extractConcept, taxonomyAssignmentJSON['taxonomy_assignment']['parent']))
     else:
-      parents.append(taxonomyAssignmentJSON['parent']['concept'])
-    if isinstance(taxonomyAssignmentJSON['child'], list): 
-      children.extend(map(extractConcept, taxonomyAssignmentJSON['child']))
+      parents.append(taxonomyAssignmentJSON['taxonomy_assignment']['parent']['concept'])
+    if isinstance(taxonomyAssignmentJSON['taxonomy_assignment']['child'], list): 
+      children.extend(map(extractConcept, taxonomyAssignmentJSON['taxonomy_assignment']['child']))
     else:
-      children.append(taxonomyAssignmentJSON['child']['concept'])
+      children.append(taxonomyAssignmentJSON['taxonomy_assignment']['child']['concept'])
     c = Concept()
     for parent in parents:
       for child in children:
         c.classify(child, parent)
   
   def assertSynonymAssignment(self, synonymAssignmentJSON):
-    synonyms = synonymAssignmentJSON['concepts']
+    synonyms = synonymAssignmentJSON['synonym_assignment']['concepts']
     Concept().equate(*synonyms)
-        
-  def assertStatement(self, statement):
+    
+  def assertAction(self, actionJSON):
+    actor = None
+    if 'component' in actionJSON['action']['actor']:
+      potentialActors = self.queryComponent(actionJSON['action']['actor'])
+      if potentialActors:
+        if isinstance(potentialActors, set):
+          if len(potentialActors) == 1:
+            (actor,) = potentialActors
+          else:
+            raise Exception('assertAction: Too many suitable actors found')
+        else:
+          actor = potentialActors
+      else:
+        actor = self.assertComponent(actionJSON['action']['actor'])
+        if isinstance(actor, set):
+          if len(actor) == 1:
+            (actor,) = actor
+          else:
+            raise Exception('assertAction: Too many suitable actors found')
+    elif 'concept' in actionJSON['action']['actor']:
+      potentialActors = self.queryConcept(actionJSON['action']['actor'])
+      if potentialActors:
+        if isinstance(potentialActors, set):
+          if len(potentialActors) == 1:
+            (actor,) = potentialActors
+          else:
+            raise Exception('assertAction: Too many suitable actors found')
+        else:
+          actor = potentialActors
+      else:
+        actor = self.assertConcept(actionJSON['action']['actor'])
+        if isinstance(actor, set):
+          if len(actor) == 1:
+            (actor,) = actor
+          else:
+            raise Exception('assertAction: Too many suitable actors found')
+    if not actor:
+      raise Exception('assertAction: No suitable actors found')
+    targets = []
+    if actionJSON['action']['target']:
+      if isinstance(actionJSON['action']['target'], list):
+        for conceptJSON in actionJSON['action']['target']:
+          moreTargets = self.queryConcept(conceptJSON)
+          if not moreTargets:
+            moreTargets = self.assertConcept(conceptJSON)
+          if isinstance(moreTargets, set):
+            targets.extend(moreTargets)
+          else:
+            targets.append(moreTargets)
+      elif 'component' in actionJSON['action']['target']:
+        moreTargets = self.queryComponent(actionJSON['action']['target'])
+        if not moreTargets:
+          moreTargets = self.assertComponent(actionJSON['action']['target'])
+        if isinstance(moreTargets, set):
+          targets.extend(moreTargets)
+        else:
+          targets.append(moreTargets)
+      elif 'concept' in actionJSON['action']['target']:
+        moreTargets = self.queryConcept(actionJSON['action']['target'])
+        if not moreTargets:
+          moreTargets = self.assertConcept(actionJSON['action']['target'])
+        if isinstance(moreTargets, set):
+          targets.extend(moreTargets)
+        else:
+          targets.append(moreTargets)
+    else:
+      act = self.context.newVerbPhrase(actionJSON['action']['act']['verb'])
+      self.context.setAction(actor, act)
+    if targets:
+      for target in targets:
+        act = self.context.newVerbPhrase(actionJSON['action']['act']['verb'])
+        self.context.setAction(actor, act, target)
+            
+  def assertStatement(self, statementJSON):
     #TODO: implement arithmetic operation assertion
-    if 'concept' in statement:
-      self.assertConcept(statement['concept'])
-    elif 'component' in statement:
-      self.assertComponent(statement['component'])
-    elif 'component_assignment' in statement:
-      self.assertComponentAssignment(statement['component_assignment'])
-    elif 'taxonomy_assignment' in statement:
-      self.assertTaxonomyAssignment(statement['taxonomy_assignment'])
-    elif 'synonym_assignment' in  statement:
-      self.assertSynonymAssignment(statement['synonym_assignment'])
-  
-  def queryConcept(self, JSON):
-    return self.context.queryNounPhrases(JSON['concept'])
-  
-  def queryComponent(self, JSON):
-    return self.retrieveComponent(JSON['component']['stem'], JSON['component']['branch'], assertBranches=False)
+    if 'concept' in statementJSON['statement']:
+      self.assertConcept(statementJSON['statement'])
+    elif 'component' in statementJSON['statement']:
+      self.assertComponent(statementJSON['statement'])
+    elif 'component_assignment' in statementJSON['statement']:
+      self.assertComponentAssignment(statementJSON['statement'])
+    elif 'taxonomy_assignment' in statementJSON['statement']:
+      self.assertTaxonomyAssignment(statementJSON['statement'])
+    elif 'synonym_assignment' in  statementJSON['statement']:
+      self.assertSynonymAssignment(statementJSON['statement'])
+    elif 'action' in statementJSON['statement']:
+      self.assertAction(statementJSON['statement'])
           
   def interpret(self, JSON):
     if 'statement' in JSON:
-      self.assertStatement(JSON['statement'])
+      self.assertStatement(JSON)
       return None
     elif 'query' in JSON:
       results = list()

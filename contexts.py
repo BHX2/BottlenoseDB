@@ -42,23 +42,13 @@ class Context:
     self.incorporateConcept(concept)
     return concept
   
-  def newVerbPhrase(self, verbPhrase, type=None):
-    for concept in self._concepts['verb_phrases']:
-      if concept.name == verbPhrase: return concept
-    if type:
-      concept = VerbPhrase(verbPhrase, type)
-    else:
-      concept = VerbPhrase(verbPhrase)
+  def newVerbPhrase(self, verbPhrase):
+    concept = VerbPhrase(None, verbPhrase)
     self.incorporateConcept(concept)
     return concept
   
-  def newDescriptor(self, descriptor, type=None):
-    for concept in self._concepts['descriptors']:
-      if concept.name == descriptor: return concept
-    if type:
-      concept = Descriptor(descriptor, type)
-    else:
-      concept = Descriptor(descriptor)
+  def newDescriptor(self, descriptor):
+    concept = Descriptor(None, descriptor)
     self.incorporateConcept(concept)
     return concept
   
@@ -72,6 +62,11 @@ class Context:
     if concept in self._concepts['descriptors']: self._concepts['descriptors'].remove(concept)
   
   def setAction(self, actor, act, target=None):
+    sharedActs = set(self.actionGraph.successors(actor)).intersection(set(self.actionGraph.predecessors(target)))
+    for sharedAct in sharedActs:
+      if act.parents().intersection(sharedAct.parents()): 
+        self.remove(act)
+        return False
     self.actionGraph.add_edge(actor, act)
     if target:
       self.actionGraph.add_edge(act, target)
@@ -182,13 +177,13 @@ class Context:
         
   def __contains__(self, concept):
     if concept in self._concepts['noun_phrases']:
-      return true
+      return True
     elif concept in self._concepts['verb_phrases']:
-      return true
+      return True
     elif concept in self._concepts['descriptors']:
-      return true
+      return True
     else:
-      return false
+      return False
   
       
     

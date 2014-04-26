@@ -1,3 +1,4 @@
+import os
 import re
 from pattern.en import conjugate
 from pattern.en import singularize
@@ -7,9 +8,12 @@ import utilities
 class VerbPhrase(Concept):
   def __init__(self, name=None, type=None):
     self.isVerb = True
-    if not type:
-      type = str(conjugate(utilities.sanitize(name).split()[0], aspect='progressive'))
-    Concept.__init__(self, name, type)
+    self.type = utilities.camelCase(type)
+    self.name = self.type + '_' + os.urandom(5).encode('hex').lower()
+    broaderVerb = str(utilities.sanitize(type).split()[0])
+    #self.type = str(conjugate(utilities.sanitize(type).split()[0], aspect='progressive'))
+    self.classify(utilities.sanitize(self.name), self.type)
+    self.classify(self.type, broaderVerb)
 	
 class NounPhrase(Concept):
   def __init__(self, name=None, type=None):
