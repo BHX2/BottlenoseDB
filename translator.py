@@ -22,20 +22,19 @@ grammar = Grammar("""
   logic_operator        = "&" / "|" / "," 
   simple_clause         = " "* "!"? statement probability? " "*
   probability           = "[" number "]"
-  statement             = arithmetic_operation / taxonomy_assertion / synonym_assertion / state / action / component_assertion / component / concept
-  taxonomy_assertion    = concept (type_includes / is_a) concept_or_list
-  taxonomy_assertion    = concept (type_includes / is_a) concept_or_list
+  statement             = arithmetic_operation / taxonomy_assignment / synonym_assignment / state / action / component_assignment / component / concept
+  taxonomy_assignment   = concept (type_includes / is_a) concept_or_list
   type_includes         = "/="
   is_a                  = "=/"
-  synonym_assertion     = concept "=" concept_or_list
-  state                 = (action / component_assertion / component / concept) "#" (quantity / qualifier)
+  synonym_assignment    = concept "=" concept_or_list
+  state                 = (action / component_assignment / component / concept) "#" (quantity / qualifier)
   qualifier             = ~"!?[A-Z ]*"i
   quantity              = number units?
   units                 = ~"[A-Z ]*"i
   action                = (component / concept) "." verb "(" concepts_or_component? ")" " "*
   concepts_or_component = component / concept_or_list
   verb                  = ~"[A-Z 0-9]*s[A-Z 0-9]*"i
-  component_assertion   = component "=" concept_or_list
+  component_assignment   = component "=" concept_or_list
   component             = concept ("." concept !"(")+
   number                = ~"[0-9]*\.?[0-9]+"
   concept_or_list       = concept_list / concept
@@ -188,19 +187,19 @@ class Translator(NodeVisitor):
   def visit_probability(self, node, (_1, number, _2)):
     return {'probability': number}
 
-  def visit_taxonomy_assertion(self, node, (concept, operator, concept_or_list)):
+  def visit_taxonomy_assignment(self, node, (concept, operator, concept_or_list)):
     if "is_a" in operator.keys():
-      return {'taxonomy_assertion':{'parent': concept_or_list, 'child': concept, 'type':'is_a'}}
+      return {'taxonomy_assignment':{'parent': concept_or_list, 'child': concept, 'type':'is_a'}}
     elif "type_includes" in operator.keys():
-      return {'taxonomy_assertion':{'parent': concept, 'child': concept_or_list, 'type':'type_includes'}}
+      return {'taxonomy_assignment':{'parent': concept, 'child': concept_or_list, 'type':'type_includes'}}
   
-  def visit_synonym_assertion(self, node, (concept, _, concept_or_list)):
+  def visit_synonym_assignment(self, node, (concept, _, concept_or_list)):
     synonyms = [concept['concept']]
     if isinstance(concept_or_list, list): 
       for element in concept_or_list: synonyms.append(element['concept'])
     else:
       synonyms.append(concept_or_list['concept'])
-    return {'synonym_assertion': {'concepts': synonyms}, 'subject': concept}
+    return {'synonym_assignment': {'concepts': synonyms}, 'subject': concept}
   
   def visit_state(self, node, (subject, _, description)):
     return {'state': {'subject': subject, 'description': description}}
@@ -217,8 +216,8 @@ class Translator(NodeVisitor):
   def visit_concepts_or_component(self, node, (concepts_or_component)):
     return concepts_or_component
   
-  def visit_component_assertion(self, node, (target, _, assignment )):
-    return {'component_assertion': {'target': target, 'assignment': assignment}}
+  def visit_component_assignment(self, node, (target, _, assignment )):
+    return {'component_assignment': {'target': target, 'assignment': assignment}}
     
   def visit_component(self, node, (stem, branch_expressions)):
     tree = {'stem': stem}

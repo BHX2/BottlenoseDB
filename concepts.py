@@ -9,41 +9,54 @@ import utilities
 
 class Concept:
   taxonomy = Taxonomy()
-  taxonomy.classifiers.append(WordNetClassifier())
+  wordnetClassifier = WordNetClassifier()
+  taxonomy.classifiers.append(wordnetClassifier)
   thesaurus = dict()
-  _instances = set()
   
   def __init__(self, name=None, type=None):
     if name: 
       self.name = utilities.camelCase(name)
     else:
       if type:
-        self.name = type + '-' + os.urandom(5).encode('hex')
+        if type.istitle():
+          self.name = utilities.camelCase(type)
+        else:
+          self.name = utilities.camelCase(type) + '-' + os.urandom(5).encode('hex')
       else:
         self.name = os.urandom(10).encode('hex')
     if type: 
       self.classify(utilities.sanitize(self.name), utilities.sanitize(type))
-    self._instances.add(weakref.ref(self))
   
-  @classmethod
-  def instances(clss):
-    dead = set()
-    for reference in clss._instances:
-      instance = reference()
-      if instance is not None:
-        yield instance
-      else:
-        dead.add(reference)
-    clss._instances -= dead
+  def parents(self, name=None):
+    if not name:
+      name = self.name
+    name = utilities.sanitize(name)
+    if name.istitle():
+      self.taxonomy.classifiers = []
+      self.taxonomy.case_sensitive = True
+    if not getattr(self, 'isVerb', False):
+      response = utilities.unicodeDecode(self.taxonomy.parents(name, recursive=False))
+    else:
+      response = utilities.unicodeDecode(self.taxonomy.parents(name, recursive=False, pos='VB'))
+    if name.istitle():
+      self.taxonomy.classifiers.append(self.wordnetClassifier)
+      self.taxonomy.case_sensitive = False
+    return response
     
   def ancestors(self, name=None):
     if not name: 
       name = self.name
     name = utilities.sanitize(name)
+    if name.istitle():
+      self.taxonomy.classifiers = []
+      self.taxonomy.case_sensitive = True
     if not getattr(self, 'isVerb', False):
       response = utilities.unicodeDecode(self.taxonomy.parents(name, recursive=True))
     else:
       response = utilities.unicodeDecode(self.taxonomy.parents(name, recursive=True, pos='VB'))
+    if name.istitle():
+      self.taxonomy.classifiers.append(self.wordnetClassifier)
+      self.taxonomy.case_sensitive = False
     return response
     
   def descendants(self, name=None):
@@ -73,12 +86,12 @@ class Concept:
       parent = term2
     child = utilities.sanitize(child)
     parent = utilities.sanitize(parent)
-    if not self.paternityTest(child, parent) and parent is not child :
+    if not self.isA(child, parent) and not parent.istitle():
       self.taxonomy.case_sensitive = True
       self.taxonomy.append(child, type=parent)
       self.taxonomy.case_sensitive = False
-    
-  def paternityTest(self, term1, term2=None):
+      
+  def isA(self, term1, term2=None):
     if not term2:
       if not self.name:
         return False
@@ -89,10 +102,16 @@ class Concept:
       parent = term2
     child = utilities.sanitize(child)
     parent = utilities.sanitize(parent)
+    if child.istitle() or parent.istitle():
+      self.taxonomy.classifiers = []
+      self.taxonomy.case_sensitive = True
     if not getattr(self, 'isVerb', False):
       existingParents = map(str, self.taxonomy.parents(child, recursive=True))
     else:
       existingParents = map(str, self.taxonomy.parents(child, recursive=True, pos='VB'))
+    if child.istitle() or parent.istitle():
+      self.taxonomy.classifiers.append(self.wordnetClassifier)
+      self.taxonomy.case_sensitive = False
     return parent in existingParents
 
   def equate(self, *phrases):

@@ -60,13 +60,13 @@ class Clause:
       dependencies.add(Clause.makeClauseIfNonexistent(clause['statement']))
     elif 'arithmetic_operation' in clause:
       dependencies.add(Clause.makeClauseIfNonexistent(clause['arithmetic_operation']['variable']))
-    elif 'taxonomy_assertion' in clause:
-      if clause['taxonomy_assertion']['type'] == 'type_includes':
-        dependencies.add(Clause.makeClauseIfNonexistent(clause['taxonomy_assertion']['parent']))
-      elif clause['taxonomy_assertion']['type'] == 'is_a':
-        dependencies.add(Clause.makeClauseIfNonexistent(clause['taxonomy_assertion']['child']))
-    elif 'synonym_assertion' in clause:
-      dependencies.add(Clause.makeClauseIfNonexistent(clause['synonym_assertion']['subject']))
+    elif 'taxonomy_assignment' in clause:
+      if clause['taxonomy_assignment']['type'] == 'type_includes':
+        dependencies.add(Clause.makeClauseIfNonexistent(clause['taxonomy_assignment']['parent']))
+      elif clause['taxonomy_assignment']['type'] == 'is_a':
+        dependencies.add(Clause.makeClauseIfNonexistent(clause['taxonomy_assignment']['child']))
+    elif 'synonym_assignment' in clause:
+      dependencies.add(Clause.makeClauseIfNonexistent(clause['synonym_assignment']['subject']))
     elif 'state' in clause:
       dependencies.add(Clause.makeClauseIfNonexistent(clause['state']['subject']))
       dependencies.add(Clause.makeClauseIfNonexistent(clause['state']['description']))
@@ -86,9 +86,9 @@ class Clause:
     elif 'actor-target' in clause:
       dependencies.add(Clause.makeClauseIfNonexistent(clause['actor-target']['actor']))
       dependencies.add(Clause.makeClauseIfNonexistent(clause['actor-target']['target']))
-    elif 'component_assertion' in clause:
-      dependencies.add(Clause.makeClauseIfNonexistent(clause['component_assertion']['target']))
-      dependencies.add(Clause.makeClauseIfNonexistent(clause['component_assertion']['assignment']))
+    elif 'component_assignment' in clause:
+      dependencies.add(Clause.makeClauseIfNonexistent(clause['component_assignment']['target']))
+      dependencies.add(Clause.makeClauseIfNonexistent(clause['component_assignment']['assignment']))
     elif 'component' in clause:
       dependencies.add(Clause.makeClauseIfNonexistent(clause['component']))
     elif 'stem' in clause:

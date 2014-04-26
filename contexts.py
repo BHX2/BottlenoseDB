@@ -1,5 +1,10 @@
+import sys
+import re
 import networkx
 from phrases import NounPhrase, VerbPhrase, Descriptor
+
+sys.dont_write_bytecode = True
+import utilities
 
 class Context:
   def __init__(self):
@@ -51,6 +56,15 @@ class Context:
     self._concepts['descriptors'].add(concept)
     return concept
   
+  def removeConcept(self, concept):
+    concept.taxonomy.remove(utilities.sanitize(concept.name))
+    if concept in self.actionGraph: self.actionGraph.remove_node(concept)
+    if concept in self.stateGraph: self.stateGraph.remove_node(concept)
+    if concept in self.componentGraph: self.componentGraph.remove_node(concept)
+    if concept in self._concepts['noun_phrases']: self._concepts['noun_phrases'].remove(concept)
+    if concept in self._concepts['verb_phrases']: self._concepts['verb_phrases'].remove(concept)
+    if concept in self._concepts['descriptors']: self._concepts['descriptors'].remove(concept)
+  
   def setAction(self, actor, act, target=None):
     self.actionGraph.add_edge(actor, act)
     if target:
@@ -85,34 +99,78 @@ class Context:
     self.stateGraph.remove_node(state)
     
   def mergeConcepts(self, concept1, concept2):
-    #TODO: write this merge method
-    print 'not implemented yet'
-    '''
+    names = (concept1.name, concept2.name)
     if isinstance(concept1, NounPhrase) and isinstance(concept2, NounPhrase):
+      mergedConcept = self.newNounPhrase(names[1]) if re.match('.+-.+', names[0]) else self.newNounPhrase(names[0])
     elif isinstance(concept1, VerbPhrase) and isinstance(concept2, VerbPhrase):
+      mergedConcept = self.newVerbPhrase(names[1]) if re.match('.+-.+', names[0]) else self.newVerbPhrase(names[0])
     elif isinstance(concept1, Descriptor) and isinstance(concept2, Descriptor):
-    '''
-    
+      mergedConcept = self.newDescriptor(names[1]) if re.match('.+-.+', names[0]) else self.newDescriptor(names[0])
+    else:
+      raise Exception('mergeConcepts: Unmatching phrase types')
+    concept1.equate(concept2.name)
+    for parent in concept1.parents():
+      mergedConcept.classify(parent)
+    for parent in concept2.parents():
+      mergedConcept.classify(parent)
+    graphs = [self.actionGraph, self.componentGraph, self.stateGraph]
+    concepts = [concept1, concept2]
+    for concept in concepts:
+      for graph in graphs:
+        if concept in graph:
+          in_edges = graph.in_edges(concept, data=True)
+          out_edges = graph.out_edges(concept, data=True)
+          for edge in in_edges:
+            graph.add_edge(edge[0], mergedConcept, edge[2])
+          for edge in out_edges:
+            graph.add_edge(mergeConcept, edge[1], edge[2])
+    self.removeConcept(concept1)
+    self.removeConcept(concept2)
+    return mergedConcept
+          
   def queryNounPhrases(self, type):
     response = set()
     for concept in self._concepts['noun_phrases']:
-      if concept.name == type or concept.paternityTest(type):
+      if concept.name == type:
+        response.add(concept)
+        return response
+    for concept in self._concepts['noun_phrases']:
+      if concept.isA(type):
         response.add(concept)
     return response
         
   def queryVerbPhrases(self, type):
     response = set()
     for concept in self._concepts['verb_phrases']:
-      if concept.name == type or concept.paternityTest(type):
+      if concept.name == type:
+        response.add(concept)
+        return response
+    for concept in self._concepts['verb_phrases']:
+      if concept.isA(type):
         response.add(concept)
     return response        
   
   def queryDescriptor(self, type):
     response = set()
     for concept in self._concepts['descriptor']:
-      if concept.name == type or concept.paternityTest(type):
+      if concept.name == type:
+        response.add(concept)
+        return response
+    for concept in self._concepts['descriptor']:
+      if concept.isA(type):
         response.add(concept)
     return response
+  
+  def queryExact(self, name):
+    for concept in self._concepts['noun_phrases']:
+      if concept.name == name:
+        return concept
+    for concept in self._concepts['verb_phrases']:
+      if concept.name == name:
+        return concept
+    for concept in self._concepts['descriptors']:
+      if concept.name == name:
+        return concept
   
       
     
