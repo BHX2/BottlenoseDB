@@ -8,9 +8,9 @@ class Interpreter:
   def __init__(self, context):
     self.context = context
   
-  def retrieveComponent(self, stemJSON, branchPhrase, returnLastStems=False):
+  def retrieveComponent(self, stemJSON, branchPhrase, returnLastStems=False, assertBranches=True):
     if 'stem' in stemJSON:
-      stems = self.retrieveComponent(stemJSON['stem'], stemJSON['branch'])
+      stems = self.retrieveComponent(stemJSON['stem'], stemJSON['branch'], False, assertBranches)
       if not isinstance(stems, set): 
         temp = set()
         temp.add(stems)
@@ -32,13 +32,21 @@ class Interpreter:
     else:
       if 'concept' not in stemJSON: raise Exception('retrieveComponent: Unknown tree structure')
       candidateStems = self.context.queryNounPhrases(stemJSON['concept'])
+      temp = set()
       for candidateStem in candidateStems:
         edges = self.context.componentGraph.out_edges(candidateStem, data=True)
         for edge in edges:
-          if edge[2]['label'] != branchPhrase and edge[1].name != branchPhrase and not edge[1].isA(branchPhrase):
-            candidateStems.remove(edge[1])
+          if edge[2]['label'] == branchPhrase or edge[1].name == branchPhrase or edge[1].isA(branchPhrase):
+            temp.add(edge[0])
+      candidateStems = temp
       if len(candidateStems) == 0:
-        stem = self.context.newNounPhrase(stemJSON['concept'])
+        if assertBranches:
+          stem = self.context.newNounPhrase(stemJSON['concept'])
+        else:
+          if returnLastStems:
+            return (None, None)
+          else:
+            return None
       elif len(candidateStems) > 1:
         raise Exception('retrieveComponent: Too many matching stems')
       else:
@@ -46,12 +54,20 @@ class Interpreter:
       edges = self.context.componentGraph.out_edges(stem, data=True)
       branches = set()
       for edge in edges:
-        if edge[2]['label'] == branchPhrase or edge[1].name == branchPhrase:
+        if edge[2]['label'] == branchPhrase or edge[1].name == branchPhrase or edge[1].isA(branchPhrase):
           branches.add(edge[1])
       if len(branches) == 0:
-        branch = self.context.newNounPhrase(None, 'unspecified')
-        branch.classify(branchPhrase)
-        self.context.setComponent(stem, branchPhrase, branch)
+        if assertBranches:
+          branch = self.context.newNounPhrase(None, 'unspecified')
+          branch.classify(branchPhrase)
+          self.context.setComponent(stem, branchPhrase, branch)
+        else:
+          if returnLastStems:
+            stems = list()
+            stems.append(stem)
+            return (None, stems)
+          else:
+            return None
         branches.add(branch)
       if returnLastStems:
         stems = list()
@@ -64,7 +80,7 @@ class Interpreter:
     self.context.newNounPhrase(conceptPhrase)
   
   def assertComponent(self, componentJSON):
-    (branches, stems) = self.retrieveComponent(componentJSON['stem'], componentJSON['branch'], returnLastStems=True)
+    (branches, stems) = self.retrieveComponent(componentJSON['stem'], componentJSON['branch'], returnLastStems=True, assertBranches=True)
     if not branches:
       for stem in stems:    
         branch = self.context.newNounPhrase(None, 'unspecified')
@@ -72,7 +88,7 @@ class Interpreter:
         self.context.setComponent(stem, componentJSON['branch'], branch)
   
   def assertComponentAssignment(self, componentAssertionJSON):
-    (branches, stems) = self.retrieveComponent(componentAssertionJSON['target']['component']['stem'], componentAssertionJSON['target']['component']['branch'], returnLastStems=True)
+    (branches, stems) = self.retrieveComponent(componentAssertionJSON['target']['component']['stem'], componentAssertionJSON['target']['component']['branch'], returnLastStems=True, assertBranches=True)
     if branches:
       if isinstance(branches, set):
         for branch in branches:
@@ -154,10 +170,10 @@ class Interpreter:
       print 'No matching concepts found.'
   
   def queryComponent(self, componentJSON):
-    branches = self.retrieveComponent(componentJSON['stem'], componentJSON['branch'])
+    branches = self.retrieveComponent(componentJSON['stem'], componentJSON['branch'], assertBranches=False)
     if not branches:
       print 'No matching components found.'
-    elif isinstance(branches, list):
+    elif not isinstance(branches, set):
       self.inspectConcept(branches)
     else:
       for branch in branches:
