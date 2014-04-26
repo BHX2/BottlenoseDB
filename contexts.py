@@ -107,11 +107,11 @@ class Context:
   def mergeConcepts(self, concept1, concept2):
     names = (concept1.name, concept2.name)
     if isinstance(concept1, NounPhrase) and isinstance(concept2, NounPhrase):
-      mergedConcept = self.newNounPhrase(names[1]) if re.match('.+-.+', names[0]) else self.newNounPhrase(names[0])
+      mergedConcept = self.newNounPhrase(names[1]) if re.match('.+:.+', names[0]) else self.newNounPhrase(names[0])
     elif isinstance(concept1, VerbPhrase) and isinstance(concept2, VerbPhrase):
-      mergedConcept = self.newVerbPhrase(names[1]) if re.match('.+-.+', names[0]) else self.newVerbPhrase(names[0])
+      mergedConcept = self.newVerbPhrase(names[1]) if re.match('.+:.+', names[0]) else self.newVerbPhrase(names[0])
     elif isinstance(concept1, Descriptor) and isinstance(concept2, Descriptor):
-      mergedConcept = self.newDescriptor(names[1]) if re.match('.+-.+', names[0]) else self.newDescriptor(names[0])
+      mergedConcept = self.newDescriptor(names[1]) if re.match('.+:.+', names[0]) else self.newDescriptor(names[0])
     else:
       raise Exception('mergeConcepts: Unmatching phrase types')
     concept1.equate(concept2.name)
@@ -135,8 +135,9 @@ class Context:
     return mergedConcept
           
   def queryNounPhrases(self, type):
+    type = utilities.sanitize(type)
     exactMatch = self.queryExact(type, phraseType='NounPhrase')
-    if exactMatch: return exactMatch
+    if exactMatch: return {exactMatch}
     response = set()
     for concept in self._concepts['noun_phrases']:
       if concept.isA(type):
@@ -144,17 +145,19 @@ class Context:
     return response
         
   def queryVerbPhrases(self, type):
+    type = utilities.sanitize(type)
     exactMatch = self.queryExact(type, phraseType='VerbPhrase')
-    if exactMatch: return exactMatch
+    if exactMatch: return {exactMatch}
     response = set()
     for concept in self._concepts['verb_phrases']:
       if concept.isA(type):
         response.add(concept)
     return response        
   
-  def queryDescriptor(self, type):
+  def queryDescriptors(self, type):
+    type = utilities.sanitize(type)
     exactMatch = self.queryExact(type, phraseType='Descriptor')
-    if exactMatch: return exactMatch
+    if exactMatch: return {exactMatch}
     response = set()
     for concept in self._concepts['descriptor']:
       if concept.isA(type):

@@ -92,23 +92,29 @@ class Interpreter:
       else:
         if branches.isA('unspecified'): self.context.remove(branches)
     assignments = list()
+    uninstantiatedAssignments = list()
     if isinstance(componentAssertionJSON['assignment'], list):
       for concept in componentAssertionJSON['assignment']:
-          x = self.context.queryExact(concept['concept'])
-          if x: assignments.append(x)
+          x = self.context.queryNounPhrases(concept['concept'])
+          if x: 
+            assignments.extend(x)
+          else:
+            uninstantiatedAssignments.append(concept['concept'])
     else:
-      x = self.context.queryExact(componentAssertionJSON['assignment']['concept'])
-      if x: assignments.append(x)
-
-    if not assignments:
+      x = self.context.queryNounPhrases(componentAssertionJSON['assignment']['concept'])
+      if x: 
+        assignments.extend(x)
+      else:
+        uninstantiatedAssignments.append(componentAssertionJSON['assignment']['concept'])
+    branchPhrase = componentAssertionJSON['target']['component']['branch']
+    for uninstantiatedAssignment in uninstantiatedAssignments:
+      assignment = self.context.newNounPhrase(None, uninstantiatedAssignment)
+      assignment.classify(branchPhrase)
+      assignments.append(assignment)
+    print assignments
+    for assignment in assignments:
       for stem in stems:    
-        assignment = self.context.newNounPhrase(None, componentAssertionJSON['assignment']['concept'])
-        assignment.classify(componentAssertionJSON['target']['component']['branch'])
-        self.context.setComponent(stem, componentAssertionJSON['target']['component']['branch'], assignment)
-    else:
-      for assignment in assignments:
-        for stem in stems:    
-          self.context.setComponent(stem, componentAssertionJSON['target']['component']['branch'], assignment)
+        self.context.setComponent(stem, branchPhrase, assignment)
   
   def assertTaxonomyAssignment(self, taxonomyAssignmentJSON):
     parents = list()

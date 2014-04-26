@@ -7,6 +7,7 @@ sys.dont_write_bytecode = True
 # Keeps directory clean by not compiling local files to bytecode
 
 from bottlenose import Bottlenose
+import utilities
 
 def inspectConcept(concept, context=None):
   parents = concept.parents()
@@ -16,7 +17,8 @@ def inspectConcept(concept, context=None):
     puts(colored.green(concept.name))
   synonyms = concept.synonyms()
   if synonyms:
-    synonyms.remove(concept.name)
+    name = utilities.sanitize(concept.name)
+    if name in synonyms: synonyms.remove(name)
     if len(synonyms):
       puts('also known as: ' + ', '.join(synonyms))
   if not context: return
