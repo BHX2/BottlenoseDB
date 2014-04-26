@@ -9,15 +9,19 @@ from contexts import Context
 from translator import grammar, Translator
 from interpreter import Interpreter
 
-def main():
-  context = Context()
-  translator = Translator()
-  interpreter = Interpreter(context)
-  while True:
-    cogscript = raw_input("> ")
-    if cogscript == "exit": sys.exit()
-    JSON = translator.visit(grammar.parse(cogscript))
-    interpreter.interpret(JSON)
-  
-if __name__ == '__main__':
-  main()
+class Bottlenose:
+  def __init__(self):
+    self._universalContext = Context()
+    self._context = self._universalContext
+    self._translator = Translator()
+    self._interpreter = Interpreter(self._context)
+    
+  def tell(self, input):
+    JSON = self._translator.visit(grammar.parse(input))
+    results = self._interpreter.interpret(JSON)
+    if isinstance(results, set) or isinstance(results, list):
+      return (list(results), self._context)
+    elif not results:
+      return (None, self._context)
+    else:
+      return ([results], self._context)

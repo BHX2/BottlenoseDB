@@ -1,7 +1,3 @@
-from clint.textui import puts, colored, indent
-
-import sys
-sys.dont_write_bytecode = True
 from concepts import Concept
 
 class Interpreter:
@@ -92,9 +88,9 @@ class Interpreter:
     if branches:
       if isinstance(branches, set):
         for branch in branches:
-          if branch.isA('unspecified'): self.context.removeConcept(branch)
+          if branch.isA('unspecified'): self.context.remove(branch)
       else:
-        if branches.isA('unspecified'): self.context.removeConcept(branches)
+        if branches.isA('unspecified'): self.context.remove(branches)
     assignments = list()
     if isinstance(componentAssertionJSON['assignment'], list):
       for concept in componentAssertionJSON['assignment']:
@@ -143,52 +139,23 @@ class Interpreter:
     elif 'taxonomy_assignment' in statement:
       self.assertTaxonomyAssignment(statement['taxonomy_assignment'])
   
-  def inspectConcept(self, concept):
-    if concept.parents():
-      puts(colored.green(concept.name) + ' is a ' + ', '.join(concept.parents()))
-    else:
-      puts(colored.green(concept.name))
-    for edge in self.context.componentGraph.out_edges(concept, data=True):
-      with indent(2):
-        puts(colored.yellow(edge[0].name) + ' (has ' + edge[2]['label'] + ') --> ' + edge[1].name)
-    for edge in self.context.componentGraph.in_edges(concept, data=True):
-      with indent(2):
-        puts(edge[0].name + ' (has ' + edge[2]['label'] + ') --> ' + colored.yellow(edge[1].name))
-    for actor_act in self.context.actionGraph.edges(concept):
-      with indent(2):
-        puts(actor_act[0].name + ' ' + actor_act[1].name)
-      for act_target in context.actionGraph.edges(actor_act[1]):
-        with indent(8):
-          puts(actor_act[0].name + ' (' + act_target[0].name + ') --> ' + act_target[1].name) 
+  def queryConcept(self, JSON):
+    return self.context.queryNounPhrases(JSON['concept'])
   
-  def queryConcept(self, conceptPhrase):
-    results = self.context.queryNounPhrases(conceptPhrase)
-    if results:
-      for result in results:
-        self.inspectConcept(result)
-    else:
-      print 'No matching concepts found.'
-  
-  def queryComponent(self, componentJSON):
-    branches = self.retrieveComponent(componentJSON['stem'], componentJSON['branch'], assertBranches=False)
-    if not branches:
-      print 'No matching components found.'
-    elif not isinstance(branches, set):
-      self.inspectConcept(branches)
-    else:
-      for branch in branches:
-        self.inspectConcept(branch)
-  
+  def queryComponent(self, JSON):
+    return self.retrieveComponent(JSON['component']['stem'], JSON['component']['branch'], assertBranches=False)
+          
   def interpret(self, JSON):
     if 'statement' in JSON:
       self.assertStatement(JSON['statement'])
+      return None
     elif 'query' in JSON:
+      results = list()
       if 'concept' in JSON['query']:
-        self.queryConcept(JSON['query']['concept'])
-      if 'component' in JSON['query']:
-        self.queryComponent(JSON['query']['component'])
-  
-          
+        results = self.queryConcept(JSON['query'])
+      elif 'component' in JSON['query']:
+        results = self.queryComponent(JSON['query'])
+      return results
     
   
     

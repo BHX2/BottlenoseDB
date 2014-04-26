@@ -1,8 +1,6 @@
-import sys
 import re
 from pattern.en import conjugate
 from pattern.en import singularize
-sys.dont_write_bytecode = True
 from concepts import Concept
 import utilities
 

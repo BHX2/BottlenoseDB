@@ -1,10 +1,7 @@
 import os
-import sys
 import weakref
 from pattern.search import Taxonomy
 from pattern.search import WordNetClassifier
-
-sys.dont_write_bytecode = True
 import utilities
 
 class Concept:

@@ -1,9 +1,6 @@
-import sys
 import re
 import networkx
 from phrases import NounPhrase, VerbPhrase, Descriptor
-
-sys.dont_write_bytecode = True
 import utilities
 
 class Context:
@@ -19,6 +16,20 @@ class Context:
       return self.clauseTable[clause]
     else:
       return False
+  
+  def incorporateConcept(self, concept):
+    if isinstance(concept, NounPhrase):
+      self.componentGraph.add_node(concept)
+      self.actionGraph.add_node(concept)
+      self.stateGraph.add_node(concept)
+      self._concepts['noun_phrases'].add(concept)
+    elif isinstance(concept, VerbPhrase):
+      self.actionGraph.add_node(concept)
+      self.stateGraph.add_node(concept)
+      self._concepts['verb_phrases'].add(concept)
+    elif isinstance(concept, Descriptor):
+      self.stateGraph.add_node(descriptor)
+      self._concepts['descriptors'].add(concept)
 
   def newNounPhrase(self, nounPhrase, type=None):
     for concept in self._concepts['noun_phrases']:
@@ -27,10 +38,7 @@ class Context:
       concept = NounPhrase(nounPhrase, type)
     else:
       concept = NounPhrase(nounPhrase)
-    self.componentGraph.add_node(concept)
-    self.actionGraph.add_node(concept)
-    self.stateGraph.add_node(concept)
-    self._concepts['noun_phrases'].add(concept)
+    self.incorporateConcept(concept)
     return concept
   
   def newVerbPhrase(self, verbPhrase, type=None):
@@ -40,9 +48,7 @@ class Context:
       concept = VerbPhrase(verbPhrase, type)
     else:
       concept = VerbPhrase(verbPhrase)
-    self.actionGraph.add_node(concept)
-    self.stateGraph.add_node(concept)
-    self._concepts['verb_phrases'].add(concept)
+    self.incorporateConcept(concept)
     return concept
   
   def newDescriptor(self, descriptor, type=None):
@@ -52,11 +58,10 @@ class Context:
       concept = Descriptor(descriptor, type)
     else:
       concept = Descriptor(descriptor)
-    self.stateGraph.add_node(descriptor)
-    self._concepts['descriptors'].add(concept)
+    self.incorporateConcept(concept)
     return concept
   
-  def removeConcept(self, concept):
+  def remove(self, concept):
     concept.taxonomy.remove(utilities.sanitize(concept.name))
     if concept in self.actionGraph: self.actionGraph.remove_node(concept)
     if concept in self.stateGraph: self.stateGraph.remove_node(concept)
@@ -124,8 +129,8 @@ class Context:
             graph.add_edge(edge[0], mergedConcept, edge[2])
           for edge in out_edges:
             graph.add_edge(mergeConcept, edge[1], edge[2])
-    self.removeConcept(concept1)
-    self.removeConcept(concept2)
+    self.remove(concept1)
+    self.remove(concept2)
     return mergedConcept
           
   def queryNounPhrases(self, type):
@@ -171,6 +176,16 @@ class Context:
     for concept in self._concepts['descriptors']:
       if concept.name == name:
         return concept
+        
+  def __contains__(self, concept):
+    if concept in self._concepts['noun_phrases']:
+      return true
+    elif concept in self._concepts['verb_phrases']:
+      return true
+    elif concept in self._concepts['descriptors']:
+      return true
+    else:
+      return false
   
       
     
