@@ -127,6 +127,10 @@ class Interpreter:
     for parent in parents:
       for child in children:
         c.classify(child, parent)
+  
+  def assertSynonymAssignment(self, synonymAssignmentJSON):
+    synonyms = synonymAssignmentJSON['concepts']
+    Concept().equate(*synonyms)
         
   def assertStatement(self, statement):
     #TODO: implement arithmetic operation assertion
@@ -138,6 +142,8 @@ class Interpreter:
       self.assertComponentAssignment(statement['component_assignment'])
     elif 'taxonomy_assignment' in statement:
       self.assertTaxonomyAssignment(statement['taxonomy_assignment'])
+    elif 'synonym_assignment' in  statement:
+      self.assertSynonymAssignment(statement['synonym_assignment'])
   
   def queryConcept(self, JSON):
     return self.context.queryNounPhrases(JSON['concept'])

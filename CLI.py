@@ -9,10 +9,16 @@ sys.dont_write_bytecode = True
 from bottlenose import Bottlenose
 
 def inspectConcept(concept, context=None):
-  if concept.parents():
-    puts(colored.green(concept.name) + ' is a ' + ', '.join(concept.parents()))
+  parents = concept.parents()
+  if parents:
+    puts(colored.green(concept.name) + ' is a ' + ', '.join(parents))
   else:
     puts(colored.green(concept.name))
+  synonyms = concept.synonyms()
+  if synonyms:
+    synonyms.remove(concept.name)
+    if len(synonyms):
+      puts('also known as: ' + ', '.join(synonyms))
   if not context: return
   for edge in context.componentGraph.out_edges(concept, data=True):
     with indent(2):

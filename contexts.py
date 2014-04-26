@@ -1,5 +1,6 @@
 import re
 import networkx
+from concepts import Concept
 from phrases import NounPhrase, VerbPhrase, Descriptor
 import utilities
 
@@ -134,48 +135,47 @@ class Context:
     return mergedConcept
           
   def queryNounPhrases(self, type):
+    exactMatch = self.queryExact(type, phraseType='NounPhrase')
+    if exactMatch: return exactMatch
     response = set()
-    for concept in self._concepts['noun_phrases']:
-      if concept.name == type:
-        response.add(concept)
-        return response
     for concept in self._concepts['noun_phrases']:
       if concept.isA(type):
         response.add(concept)
     return response
         
   def queryVerbPhrases(self, type):
+    exactMatch = self.queryExact(type, phraseType='VerbPhrase')
+    if exactMatch: return exactMatch
     response = set()
-    for concept in self._concepts['verb_phrases']:
-      if concept.name == type:
-        response.add(concept)
-        return response
     for concept in self._concepts['verb_phrases']:
       if concept.isA(type):
         response.add(concept)
     return response        
   
   def queryDescriptor(self, type):
+    exactMatch = self.queryExact(type, phraseType='Descriptor')
+    if exactMatch: return exactMatch
     response = set()
-    for concept in self._concepts['descriptor']:
-      if concept.name == type:
-        response.add(concept)
-        return response
     for concept in self._concepts['descriptor']:
       if concept.isA(type):
         response.add(concept)
     return response
   
-  def queryExact(self, name):
-    for concept in self._concepts['noun_phrases']:
-      if concept.name == name:
-        return concept
-    for concept in self._concepts['verb_phrases']:
-      if concept.name == name:
-        return concept
-    for concept in self._concepts['descriptors']:
-      if concept.name == name:
-        return concept
+  def queryExact(self, name, phraseType=None):
+    nameSynonyms = Concept().synonyms(name)
+    if not phraseType or phraseType == 'NounPhrase':
+      for concept in self._concepts['noun_phrases']:
+        if concept.name in nameSynonyms:
+          return concept
+    if not phraseType or phraseType == 'VerbPhrase':
+      for concept in self._concepts['verb_phrases']:
+        if concept.name in nameSynonyms:
+          return concept
+    if not phraseType or phraseType == 'Descriptor':
+      for concept in self._concepts['descriptors']:
+        if concept.name in nameSynonyms:
+          return concept
+    return None
         
   def __contains__(self, concept):
     if concept in self._concepts['noun_phrases']:

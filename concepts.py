@@ -1,4 +1,5 @@
 import os
+import re
 import weakref
 from pattern.search import Taxonomy
 from pattern.search import WordNetClassifier
@@ -20,58 +21,69 @@ class Concept:
         else:
           self.name = utilities.camelCase(type) + '-' + os.urandom(5).encode('hex')
       else:
-        self.name = os.urandom(10).encode('hex')
+        self.name = 'unspecified' + os.urandom(10).encode('hex')
     if type: 
       self.classify(utilities.sanitize(self.name), utilities.sanitize(type))
   
   def parents(self, name=None):
     if not name:
-      name = self.name
-    name = utilities.sanitize(name)
-    if name.istitle():
-      self.taxonomy.classifiers = []
-      self.taxonomy.case_sensitive = True
-    if not getattr(self, 'isVerb', False):
-      response = utilities.unicodeDecode(self.taxonomy.parents(name, recursive=False))
+      names = self.synonyms()
     else:
-      response = utilities.unicodeDecode(self.taxonomy.parents(name, recursive=False, pos='VB'))
-    if name.istitle():
-      self.taxonomy.classifiers.append(self.wordnetClassifier)
-      self.taxonomy.case_sensitive = False
+      names = self.synonyms(name)
+    response = set()
+    for name in names:
+      name = utilities.sanitize(name)
+      if name.istitle():
+        self.taxonomy.classifiers = []
+        self.taxonomy.case_sensitive = True
+      if not getattr(self, 'isVerb', False):
+        response |= set(utilities.unicodeDecode(self.taxonomy.parents(name, recursive=False)))
+      else:
+        response |= set(utilities.unicodeDecode(self.taxonomy.parents(name, recursive=False, pos='VB')))
+      if name.istitle():
+        self.taxonomy.classifiers.append(self.wordnetClassifier)
+        self.taxonomy.case_sensitive = False
     return response
     
   def ancestors(self, name=None):
     if not name: 
-      name = self.name
-    name = utilities.sanitize(name)
-    if name.istitle():
-      self.taxonomy.classifiers = []
-      self.taxonomy.case_sensitive = True
-    if not getattr(self, 'isVerb', False):
-      response = utilities.unicodeDecode(self.taxonomy.parents(name, recursive=True))
+      names = self.synonyms()
     else:
-      response = utilities.unicodeDecode(self.taxonomy.parents(name, recursive=True, pos='VB'))
-    if name.istitle():
-      self.taxonomy.classifiers.append(self.wordnetClassifier)
-      self.taxonomy.case_sensitive = False
+      names = self.synonyms(name)
+    response = set()
+    for name in names:
+      name = utilities.sanitize(name)
+      if name.istitle():
+        self.taxonomy.classifiers = []
+        self.taxonomy.case_sensitive = True
+      if not getattr(self, 'isVerb', False):
+        response |= set(utilities.unicodeDecode(self.taxonomy.parents(name, recursive=True)))
+      else:
+        response |= set(utilities.unicodeDecode(self.taxonomy.parents(name, recursive=True, pos='VB')))
+      if name.istitle():
+        self.taxonomy.classifiers.append(self.wordnetClassifier)
+        self.taxonomy.case_sensitive = False
     return response
     
   def descendants(self, name=None):
     if not name: 
-      name = self.name
-    name = utilities.sanitize(name)
-    if name.istitle(): return
-    if not getattr(self, 'isVerb', False):
-      firstPass = utilities.unicodeDecode(self.taxonomy.children(name, recursive=False))
+      names = self.synonyms()
     else:
-      firstPass = utilities.unicodeDecode(self.taxonomy.children(name, recursive=False, pos='VB'))
-    response = []
-    for thing in firstPass:
-      if utilities.sanitize(thing).istitle():
-        continue
+      names = self.synonyms(name)
+    response = set()
+    for name in names:
+      name = utilities.sanitize(name)
+      if name.istitle(): return
+      if not getattr(self, 'isVerb', False):
+        firstPass = utilities.unicodeDecode(self.taxonomy.children(name, recursive=False))
       else:
-        response.extend(utilities.unicodeDecode(self.descendants(thing)))
-    response.extend(firstPass)
+        firstPass = utilities.unicodeDecode(self.taxonomy.children(name, recursive=False, pos='VB'))
+      for thing in firstPass:
+        if utilities.sanitize(thing).istitle():
+          continue
+        else:
+          response |= set(utilities.unicodeDecode(self.descendants(thing)))
+      response |= set(firstPass)
     return response
     
   def classify(self, term1, term2=None):
@@ -92,27 +104,34 @@ class Concept:
     if not term2:
       if not self.name:
         return False
-      child = self.name
+      childTerms = self.synonyms()
       parent = term1
     else:
-      child = term1
+      childTerms = self.synonyms(term1)
       parent = term2
-    child = utilities.sanitize(child)
-    parent = utilities.sanitize(parent)
-    if child.istitle() or parent.istitle():
-      self.taxonomy.classifiers = []
-      self.taxonomy.case_sensitive = True
-    if not getattr(self, 'isVerb', False):
-      existingParents = map(str, self.taxonomy.parents(child, recursive=True))
-    else:
-      existingParents = map(str, self.taxonomy.parents(child, recursive=True, pos='VB'))
-    if child.istitle() or parent.istitle():
-      self.taxonomy.classifiers.append(self.wordnetClassifier)
-      self.taxonomy.case_sensitive = False
-    return parent in existingParents
+    existingParents = set()
+    for child in childTerms:
+      child = utilities.sanitize(child)
+      parent = utilities.sanitize(parent)
+      if child.istitle() or parent.istitle():
+        self.taxonomy.classifiers = []
+        self.taxonomy.case_sensitive = True
+      if not getattr(self, 'isVerb', False):
+        existingParents |= set(map(str, self.taxonomy.parents(child, recursive=True)))
+      else:
+        existingParents |= set(map(str, self.taxonomy.parents(child, recursive=True, pos='VB')))
+      if child.istitle() or parent.istitle():
+        self.taxonomy.classifiers.append(self.wordnetClassifier)
+        self.taxonomy.case_sensitive = False
+    for term in self.synonyms(parent):
+      if term in existingParents:
+        return True
+    return False
 
   def equate(self, *phrases):
-    if self.name: phrases += (self.name,)
+    if self.name: 
+      if not re.match('^unspecified', self.name):
+        phrases += (self.name,)
     phrases = map(utilities.camelCase, phrases)
     phraseSets = map(self.synonyms, phrases)
     mergedSet = set.union(*phraseSets)
@@ -122,7 +141,7 @@ class Concept:
   def synonyms(self, phrase=None):
     if not phrase:
       if not self.name:
-        return False
+        return None
       phrase = self.name
     phrase = utilities.camelCase(phrase)
     listOfSetsWithPhrase = []
