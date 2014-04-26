@@ -107,11 +107,11 @@ class Context:
   def mergeConcepts(self, concept1, concept2):
     names = (concept1.name, concept2.name)
     if isinstance(concept1, NounPhrase) and isinstance(concept2, NounPhrase):
-      mergedConcept = self.newNounPhrase(names[1]) if re.match('.+:.+', names[0]) else self.newNounPhrase(names[0])
+      mergedConcept = self.newNounPhrase(names[1]) if re.match('.+_.+', names[0]) else self.newNounPhrase(names[0])
     elif isinstance(concept1, VerbPhrase) and isinstance(concept2, VerbPhrase):
-      mergedConcept = self.newVerbPhrase(names[1]) if re.match('.+:.+', names[0]) else self.newVerbPhrase(names[0])
+      mergedConcept = self.newVerbPhrase(names[1]) if re.match('.+_.+', names[0]) else self.newVerbPhrase(names[0])
     elif isinstance(concept1, Descriptor) and isinstance(concept2, Descriptor):
-      mergedConcept = self.newDescriptor(names[1]) if re.match('.+:.+', names[0]) else self.newDescriptor(names[0])
+      mergedConcept = self.newDescriptor(names[1]) if re.match('.+_.+', names[0]) else self.newDescriptor(names[0])
     else:
       raise Exception('mergeConcepts: Unmatching phrase types')
     concept1.equate(concept2.name)
@@ -135,7 +135,7 @@ class Context:
     return mergedConcept
           
   def queryNounPhrases(self, type):
-    type = utilities.sanitize(type)
+    type = utilities.camelCase(type)
     exactMatch = self.queryExact(type, phraseType='NounPhrase')
     if exactMatch: return {exactMatch}
     response = set()
@@ -145,7 +145,7 @@ class Context:
     return response
         
   def queryVerbPhrases(self, type):
-    type = utilities.sanitize(type)
+    type = utilities.camelCase(type)
     exactMatch = self.queryExact(type, phraseType='VerbPhrase')
     if exactMatch: return {exactMatch}
     response = set()
@@ -155,7 +155,7 @@ class Context:
     return response        
   
   def queryDescriptors(self, type):
-    type = utilities.sanitize(type)
+    type = utilities.camelCase(type)
     exactMatch = self.queryExact(type, phraseType='Descriptor')
     if exactMatch: return {exactMatch}
     response = set()

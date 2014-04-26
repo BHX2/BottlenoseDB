@@ -39,7 +39,8 @@ def unCamelCase(text):
     return response
  
 def sanitize(text):
-  return re.sub(r'\s+', '', unCamelCase(camelCase(text)))
+  result = unCamelCase(camelCase(text))
+  return result
   
 def unicodeDecode(patternUnicodeStrings):
   patternStrings = map(str, patternUnicodeStrings)

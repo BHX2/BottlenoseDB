@@ -111,7 +111,6 @@ class Interpreter:
       assignment = self.context.newNounPhrase(None, uninstantiatedAssignment)
       assignment.classify(branchPhrase)
       assignments.append(assignment)
-    print assignments
     for assignment in assignments:
       for stem in stems:    
         self.context.setComponent(stem, branchPhrase, assignment)

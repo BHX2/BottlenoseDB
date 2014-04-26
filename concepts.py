@@ -19,9 +19,9 @@ class Concept:
         if type.istitle():
           self.name = utilities.camelCase(type)
         else:
-          self.name = utilities.camelCase(type) + ':0' + os.urandom(5).encode('hex')
+          self.name = utilities.camelCase(type) + '_' + os.urandom(5).encode('hex').lower()
       else:
-        self.name = 'unspecified' + os.urandom(10).encode('hex')
+        self.name = 'unspecified' + '_' + os.urandom(10).encode('hex').lower()
     if type: 
       self.classify(utilities.sanitize(self.name), utilities.sanitize(type))
   

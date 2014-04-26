@@ -17,8 +17,7 @@ def inspectConcept(concept, context=None):
     puts(colored.green(concept.name))
   synonyms = concept.synonyms()
   if synonyms:
-    name = utilities.sanitize(concept.name)
-    if name in synonyms: synonyms.remove(name)
+    if utilities.camelCase(concept.name) in synonyms: synonyms.remove(utilities.camelCase(concept.name))
     if len(synonyms):
       puts('also known as: ' + ', '.join(synonyms))
   if not context: return

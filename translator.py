@@ -28,18 +28,18 @@ grammar = Grammar("""
   is_a                  = "=/"
   synonym_assignment    = concept "=" concept_or_list
   state                 = (action / component_assignment / component / concept) "#" (quantity / qualifier)
-  qualifier             = ~"!?[A-Z :]*"i
+  qualifier             = ~"!?[A-Z _]*"i
   quantity              = number units?
   units                 = ~"[A-Z ]*"i
   action                = (component / concept) "." verb "(" concepts_or_component? ")" " "*
   concepts_or_component = component / concept_or_list
-  verb                  = ~"[A-Z 0-9]*s[A-Z 0-9 :]*"i
+  verb                  = ~"[A-Z 0-9]*s[A-Z 0-9 _]*"i
   component_assignment   = component "=" concept_or_list
   component             = concept ("." concept !"(")+
   number                = ~"[0-9]*\.?[0-9]+"
   concept_or_list       = concept_list / concept
   concept_list          = concept ("," concept)+
-  concept               = ~"!?[A-Z 0-9 :]*"i
+  concept               = ~"!?[A-Z 0-9 _]*"i
 """)
 
 class Translator(NodeVisitor):
