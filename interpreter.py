@@ -18,7 +18,7 @@ class Interpreter:
       edges = self.context.componentGraph.out_edges(stems, data=True)
       branches = set()
       for edge in edges:
-        if edge[2]['label'] == branchPhrase or edge[1].name == branchPhrase:
+        if edge[2]['label'] == branchPhrase or edge[1].name == branchPhrase or edge[1].isA(branchPhrase):
           branches.add(edge[1])
       if len(branches) == 0:
         branches = None
@@ -35,7 +35,7 @@ class Interpreter:
       for candidateStem in candidateStems:
         edges = self.context.componentGraph.out_edges(candidateStem, data=True)
         for edge in edges:
-          if edge[2]['label'] != branchPhrase and edge[1].name != branchPhrase:
+          if edge[2]['label'] != branchPhrase and edge[1].name != branchPhrase and not edge[1].isA(branchPhrase):
             candidateStems.remove(edge[1])
       if len(candidateStems) == 0:
         stem = self.context.newNounPhrase(stemJSON['concept'])
@@ -127,35 +127,50 @@ class Interpreter:
     elif 'taxonomy_assignment' in statement:
       self.assertTaxonomyAssignment(statement['taxonomy_assignment'])
   
-  def query(self, conceptPhrase):
+  def inspectConcept(self, concept):
+    if concept.parents():
+      puts(colored.green(concept.name) + ' is a ' + ', '.join(concept.parents()))
+    else:
+      puts(colored.green(concept.name))
+    for edge in self.context.componentGraph.out_edges(concept, data=True):
+      with indent(2):
+        puts(colored.yellow(edge[0].name) + ' (has ' + edge[2]['label'] + ') --> ' + edge[1].name)
+    for edge in self.context.componentGraph.in_edges(concept, data=True):
+      with indent(2):
+        puts(edge[0].name + ' (has ' + edge[2]['label'] + ') --> ' + colored.yellow(edge[1].name))
+    for actor_act in self.context.actionGraph.edges(concept):
+      with indent(2):
+        puts(actor_act[0].name + ' ' + actor_act[1].name)
+      for act_target in context.actionGraph.edges(actor_act[1]):
+        with indent(8):
+          puts(actor_act[0].name + ' (' + act_target[0].name + ') --> ' + act_target[1].name) 
+  
+  def queryConcept(self, conceptPhrase):
     results = self.context.queryNounPhrases(conceptPhrase)
     if results:
       for result in results:
-        if result.parents():
-          puts(colored.green(result.name) + ' is a ' + ', '.join(result.parents()))
-        else:
-          puts(colored.green(result.name))
-        for edge in self.context.componentGraph.out_edges(result, data=True):
-          with indent(2):
-            puts(colored.yellow(edge[0].name) + ' (has ' + edge[2]['label'] + ') --> ' + edge[1].name)
-        for edge in self.context.componentGraph.in_edges(result, data=True):
-          with indent(2):
-            puts(edge[0].name + ' (has ' + edge[2]['label'] + ') --> ' + colored.yellow(edge[1].name))
-        for actor_act in self.context.actionGraph.edges(result):
-          with indent(2):
-            puts(actor_act[0].name + ' ' + actor_act[1].name)
-          for act_target in context.actionGraph.edges(actor_act[1]):
-            with indent(8):
-              puts(actor_act[0].name + ' (' + act_target[0].name + ') --> ' + act_target[1].name)
+        self.inspectConcept(result)
     else:
       print 'No matching concepts found.'
+  
+  def queryComponent(self, componentJSON):
+    branches = self.retrieveComponent(componentJSON['stem'], componentJSON['branch'])
+    if not branches:
+      print 'No matching components found.'
+    elif isinstance(branches, list):
+      self.inspectConcept(branches)
+    else:
+      for branch in branches:
+        self.inspectConcept(branch)
   
   def interpret(self, JSON):
     if 'statement' in JSON:
       self.assertStatement(JSON['statement'])
     elif 'query' in JSON:
       if 'concept' in JSON['query']:
-        self.query(JSON['query']['concept'])
+        self.queryConcept(JSON['query']['concept'])
+      if 'component' in JSON['query']:
+        self.queryComponent(JSON['query']['component'])
   
           
     
