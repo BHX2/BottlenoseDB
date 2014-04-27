@@ -1,7 +1,11 @@
+import re
 from concepts import Concept
 
 class Interpreter:
   def __init__(self, context):
+    self.context = context
+    
+  def setContext(self, context):
     self.context = context
   
   def retrieveComponent(self, stemJSON, branchPhrase, returnLastStems=False, assertBranches=True):
@@ -32,7 +36,10 @@ class Interpreter:
         return branches
     else:
       if 'concept' not in stemJSON: raise Exception('retrieveComponent: Unknown tree structure')
-      candidateStems = self.context.queryNounPhrases(stemJSON['concept'])
+      if self.context.isUniversal:
+        candidateStems = {self.context.queryPrototype(stemJSON['concept'], phraseType='NounPhrase')}
+      else:
+        candidateStems = self.context.queryNounPhrases(stemJSON['concept'])
       temp = set()
       for candidateStem in candidateStems:
         edges = self.context.componentGraph.out_edges(candidateStem, data=True)
@@ -42,7 +49,10 @@ class Interpreter:
       candidateStems = temp
       if len(candidateStems) == 0:
         if assertBranches:
-          stem = self.context.newNounPhrase(stemJSON['concept'])
+          if self.context.isUniversal:
+            stem = self.context.queryPrototype(stemJSON['concept'], phraseType='NounPhrase')
+          else:
+            stem = self.context.newNounPhrase(stemJSON['concept'])
         else:
           if returnLastStems:
             return (None, None)
@@ -64,7 +74,7 @@ class Interpreter:
       branches = temp
       if len(branches) == 0:
         if assertBranches:
-          branch = self.context.newNounPhrase(None, 'unspecified')
+          branch = self.context.newNounPhrase('unspecified ' + branchPhrase)
           branch.classify(branchPhrase)
           self.context.setComponent(stem, branchPhrase, branch)
         else:
@@ -90,7 +100,10 @@ class Interpreter:
   
   def queryState(self, JSON):
     if 'concept' in JSON['state']['subject']:
-      potentialSubjects = self.queryConcept(JSON['state']['subject'])
+      if self.context.isUniversal:
+        potentialSubjects = {self.context.queryPrototype(JSON['state']['subject']['concept'], phraseType='NounPhrase')}
+      else:
+        potentialSubjects = self.queryConcept(JSON['state']['subject'])
     elif 'component' in JSON['state']['subject']:
       potentialSubjects = self.queryComponent(JSON['state']['subject'])
     else:
@@ -115,11 +128,17 @@ class Interpreter:
     return response
   
   def assertConcept(self, conceptJSON):
-    return self.context.newNounPhrase(conceptJSON['concept'])
+    if self.context.isUniversal:
+      return self.context.queryPrototype(conceptJSON['concept'], phraseType='NounPhrase')
+    else:
+      return self.context.newNounPhrase(conceptJSON['concept'])
   
   def assertState(self, stateJSON):
     if 'concept' in stateJSON['state']['subject']:
-      subject = self.queryConcept(stateJSON['state']['subject'])
+      if self.context.isUniversal:
+        subject = {self.context.queryPrototype(stateJSON['state']['subject']['concept'], phraseType='NounPhrase')}
+      else:
+        subject = self.queryConcept(stateJSON['state']['subject'])
     elif 'component' in stateJSON['state']['subject']:
       subject = self.queryComponent(stateJSON['state']['subject'])
     else:
@@ -151,7 +170,7 @@ class Interpreter:
     if not branches:
       temp = set()
       for stem in stems:    
-        branch = self.context.newNounPhrase(None, 'unspecified')
+        branch = self.context.newNounPhrase('unspecified ' + componentJSON['component']['branch'])
         branch.classify(componentJSON['component']['branch'])
         self.context.setComponent(stem, componentJSON['component']['branch'], branch)
         temp.add(branch)
@@ -159,37 +178,49 @@ class Interpreter:
     return branches
   
   def assertComponentAssignment(self, componentAssertionJSON):
-    #TODO: implement merger with unspecified rather than just deleting them immediately
     (branches, stems) = self.retrieveComponent(componentAssertionJSON['component_assignment']['target']['component']['stem'], componentAssertionJSON['component_assignment']['target']['component']['branch'], returnLastStems=True, assertBranches=True)
+    unspecifiedBranches = []
     if branches:
       if isinstance(branches, set):
         for branch in branches:
-          if branch.isA('unspecified'): self.context.remove(branch)
+          if re.match('^unspecified', branch.name): unspecifiedBranches.append(branch)
       else:
-        if branches.isA('unspecified'): self.context.remove(branches)
+        if re.match('^unspecified', branches.name): unspecifiedBranches.append(branches)
     assignments = list()
     uninstantiatedAssignments = list()
     if isinstance(componentAssertionJSON['component_assignment']['assignment'], list):
       for concept in componentAssertionJSON['component_assignment']['assignment']:
-          x = self.context.queryNounPhrases(concept['concept'])
+          if self.context.isUniversal:
+            x = {self.context.queryPrototype(concept['concept'], phraseType='NounPhrase')}
+          else:
+            x = self.context.queryNounPhrases(concept['concept'])
           if x: 
             assignments.extend(x)
           else:
             uninstantiatedAssignments.append(concept['concept'])
     else:
-      x = self.context.queryNounPhrases(componentAssertionJSON['component_assignment']['assignment']['concept'])
+      if self.context.isUniversal:
+        x = {self.context.queryPrototype(componentAssertionJSON['component_assignment']['assignment']['concept'], phraseType='NounPhrase')}
+      else:
+        x = self.context.queryNounPhrases(componentAssertionJSON['component_assignment']['assignment']['concept'])
       if x: 
         assignments.extend(x)
       else:
         uninstantiatedAssignments.append(componentAssertionJSON['component_assignment']['assignment']['concept'])
     branchPhrase = componentAssertionJSON['component_assignment']['target']['component']['branch']
     for uninstantiatedAssignment in uninstantiatedAssignments:
-      assignment = self.context.newNounPhrase(None, uninstantiatedAssignment)
+      if self.context.isUniversal:
+        assignment = self.context.queryPrototype(uninstantiatedAssignment, phraseType='NounPhrase')
+      else:
+        assignment = self.context.newNounPhrase(uninstantiatedAssignment)
       assignment.classify(branchPhrase)
       assignments.append(assignment)
     for assignment in assignments:
-      for stem in stems:    
-        self.context.setComponent(stem, branchPhrase, assignment)
+      if len(unspecifiedBranches) > 0:
+        self.context.mergeConcepts(assignment, unspecifiedBranches.pop())
+      else:
+        for stem in stems:    
+          self.context.setComponent(stem, branchPhrase, assignment)
   
   def assertTaxonomyAssignment(self, taxonomyAssignmentJSON):
     parents = list()
@@ -211,6 +242,16 @@ class Interpreter:
   
   def assertSynonymAssignment(self, synonymAssignmentJSON):
     synonyms = synonymAssignmentJSON['synonym_assignment']['concepts']
+    prototypes = []
+    if self.context.isUniversal:
+      for synonym in synonyms:
+        if synonym in self.context.prototypes:
+          prototypes.append(synonym)
+    if prototypes:
+      primaryPrototype = self.context.queryPrototype(synonyms[0], phraseType='NounPhrase')
+      for prototype in prototypes:
+        if not primaryPrototype is prototype:
+          self.context.mergeConcepts(self.context.queryPrototype(prototype, phraseType='NounPhrase'), primaryPrototype)
     Concept().equate(*synonyms)
     
   def assertAction(self, actionJSON):
@@ -233,7 +274,10 @@ class Interpreter:
           else:
             raise Exception('assertAction: Too many suitable actors found')
     elif 'concept' in actionJSON['action']['actor']:
-      potentialActors = self.queryConcept(actionJSON['action']['actor'])
+      if self.context.isUniversal:
+        potentialActors = self.context.queryPrototype(actionJSON['action']['actor']['concept'], phraseType='NounPhrase')
+      else:
+        potentialActors = self.queryConcept(actionJSON['action']['actor'])
       if potentialActors:
         if isinstance(potentialActors, set):
           if len(potentialActors) == 1:
@@ -255,7 +299,10 @@ class Interpreter:
     if actionJSON['action']['target']:
       if isinstance(actionJSON['action']['target'], list):
         for conceptJSON in actionJSON['action']['target']:
-          moreTargets = self.queryConcept(conceptJSON)
+          if self.context.isUniversal:
+            moreTargets = self.context.queryPrototype(conceptJSON['concept'], phraseType='NounPhrase')
+          else:
+            moreTargets = self.queryConcept(conceptJSON)
           if not moreTargets:
             moreTargets = self.assertConcept(conceptJSON)
           if isinstance(moreTargets, set):
@@ -271,7 +318,10 @@ class Interpreter:
         else:
           targets.append(moreTargets)
       elif 'concept' in actionJSON['action']['target']:
-        moreTargets = self.queryConcept(actionJSON['action']['target'])
+        if self.context.isUniversal:
+          moreTargets = self.context.queryPrototype(actionJSON['action']['target']['concept'], phraseType='NounPhrase')
+        else:
+          moreTargets = self.queryConcept(actionJSON['action']['target'])
         if not moreTargets:
           moreTargets = self.assertConcept(actionJSON['action']['target'])
         if isinstance(moreTargets, set):

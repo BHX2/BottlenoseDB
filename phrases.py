@@ -6,34 +6,32 @@ from concepts import Concept
 import utilities
 
 class VerbPhrase(Concept):
-  def __init__(self, name=None, type=None):
+  def __init__(self, name):
     self.isVerb = True
-    self.type = utilities.camelCase(type)
-    self.name = self.type + '_' + os.urandom(5).encode('hex').lower()
-    broaderVerb = str(utilities.sanitize(type).split()[0])
-    #self.type = str(conjugate(utilities.sanitize(type).split()[0], aspect='progressive'))
-    self.classify(utilities.sanitize(self.name), self.type)
-    self.classify(self.type, broaderVerb)
+    type = str(utilities.sanitize(name).split()[0])
+    Concept.__init__(self, name, type)
 	
 class NounPhrase(Concept):
-  def __init__(self, name=None, type=None):
+  def __init__(self, name):
     self.isVerb = False
-    if not type and not utilities.sanitize(name).istitle():
+    if not utilities.sanitize(name).istitle():
       type = str(singularize(utilities.sanitize(name).split()[-1]))
+    else:
+      type = None
     Concept.__init__(self, name, type)
 
 class Descriptor(Concept):
-  def __init__(self, name=None, type=None):
+  def __init__(self, name):
     self.isVerb = False
-    self.type = utilities.camelCase(type)
-    self.name = self.type + '_' + os.urandom(5).encode('hex').lower()
-    quantitative = re.search('(^[0-9.]+)(.*)', self.type)
+    quantitative = re.search('(^[0-9.]+)(.*)', name)
     if quantitative:
       self.quantity = float(quantitative.group(1))
       self.units = quantitative.group(2) if quantitative.group(2) else None
       self.isQuantity = True
+      type = 'quantity'
     else:
       self.quantity = None
       self.units = None
       self.isQuantity = False
-    self.classify(utilities.sanitize(self.name), self.type)
+      type = 'quality'
+    Concept.__init__(self, name, type)

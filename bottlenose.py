@@ -11,8 +11,9 @@ from interpreter import Interpreter
 
 class Bottlenose:
   def __init__(self):
-    self._universalContext = Context()
-    self._context = self._universalContext
+    self._universalContext = Context(universal=True)
+    self._contexts = [self._universalContext, Context()]
+    self._context = self._contexts[1]
     self._translator = Translator()
     self._interpreter = Interpreter(self._context)
     
@@ -25,3 +26,14 @@ class Bottlenose:
       return (None, self._context)
     else:
       return ([results], self._context)
+  
+  def context(self):
+    return self._context
+    
+  def listContexts(self):
+    return self._contexts
+    
+  def setContext(self, index):
+    if index >= 0 and index < len(self._contexts):
+      self._context = self._contexts[index]
+      self._interpreter.setContext(self._contexts[index])

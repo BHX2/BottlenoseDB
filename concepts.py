@@ -14,16 +14,12 @@ class Concept:
   def __init__(self, name=None, type=None):
     if name: 
       self.name = utilities.camelCase(name)
-    else:
-      if type:
-        if type.istitle():
-          self.name = utilities.camelCase(type)
-        else:
-          self.name = utilities.camelCase(type) + '_' + os.urandom(5).encode('hex').lower()
-      else:
-        self.name = 'unspecified' + '_' + os.urandom(10).encode('hex').lower()
+    else: 
+      self.name = None
     if type: 
       self.classify(utilities.sanitize(self.name), utilities.sanitize(type))
+    else:
+      self.type = None
   
   def parents(self, name=None):
     if not name:
@@ -140,8 +136,9 @@ class Concept:
       
   def synonyms(self, phrase=None):
     if not phrase:
-        if not self.name:
-          return None
+      if not self.name:
+        return None
+      else:
         phrase = self.name
     phrase = utilities.camelCase(phrase)
     listOfSetsWithPhrase = []
