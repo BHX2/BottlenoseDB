@@ -5,7 +5,7 @@ from parsimonious.grammar import NodeVisitor
 
 grammar = Grammar("""
   input                 = query / belief / statement
-  query                 = "?" (component / concept)
+  query                 = "?" (state / component / concept)
   belief                = law / evidence / rule
   law                   = clause (">>>" clause)+
   evidence              = supporting_evidence / opposing_evidence

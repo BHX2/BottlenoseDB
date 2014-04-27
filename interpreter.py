@@ -89,22 +89,30 @@ class Interpreter:
     return self.retrieveComponent(JSON['component']['stem'], JSON['component']['branch'], assertBranches=False)
   
   def queryState(self, JSON):
-    potentialSubjects = self.queryConcept(JSON['state']['subject'])
+    if 'concept' in JSON['state']['subject']:
+      potentialSubjects = self.queryConcept(JSON['state']['subject'])
+    elif 'component' in JSON['state']['subject']:
+      potentialSubjects = self.queryComponent(JSON['state']['subject'])
+    else:
+      raise Exception('queryState: Unknown state structure')
     descriptionJSON = JSON['state']['description']
     if 'quantity' in descriptionJSON:
       targetDescriptor = str(descriptionJSON['quantity'])
       if descriptionJSON['units']:
         targetDescriptor += descriptionJSON['units']
     else:
-      targetDescriptor = descriptionJSON['quality']    
-    for potentialSubject in potentialSubjects:
-      descriptors = self.context.stateGraph.succesors(potentialSubject)
-      temp = list()
-      for descriptor in descriptors:
-        temp.extend(descriptor.parents())
-      descriptors = temp
-      if targetDescriptor in descriptors:
-        yield potentialSubject
+      targetDescriptor = descriptionJSON['quality']
+    response = set()
+    if potentialSubjects:
+      for potentialSubject in potentialSubjects:
+        descriptors = self.context.stateGraph.successors(potentialSubject)
+        temp = list()
+        for descriptor in descriptors:
+          temp.extend(descriptor.parents())
+        descriptors = temp
+        if targetDescriptor in descriptors:
+          response.add(potentialSubject)
+    return response
   
   def assertConcept(self, conceptJSON):
     return self.context.newNounPhrase(conceptJSON['concept'])
@@ -305,6 +313,8 @@ class Interpreter:
         results = self.queryConcept(JSON['query'])
       elif 'component' in JSON['query']:
         results = self.queryComponent(JSON['query'])
+      elif 'state' in JSON['query']:
+        results = self.queryState(JSON['query'])
       return results
     
   
