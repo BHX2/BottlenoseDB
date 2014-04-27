@@ -21,6 +21,13 @@ def inspectConcept(concept, context=None):
     if len(synonyms):
       puts('also known as: ' + ', '.join(synonyms))
   if not context: return
+  descriptors = context.stateGraph.successors(concept)
+  temp = list()
+  for descriptor in descriptors:
+    temp.append(descriptor.type)
+  descriptors = temp
+  if descriptors:
+    puts(colored.yellow(concept.name) + ' is ' + ', '.join(descriptors))
   for edge in context.componentGraph.out_edges(concept, data=True):
     with indent(2):
       puts(colored.yellow(edge[0].name) + ' (has ' + edge[2]['label'] + ') --> ' + edge[1].name)

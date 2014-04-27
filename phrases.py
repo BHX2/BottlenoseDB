@@ -24,8 +24,10 @@ class NounPhrase(Concept):
 
 class Descriptor(Concept):
   def __init__(self, name=None, type=None):
-    if name:
-      quantitative = re.search('(^[0-9.]+)(.*)', name)
+    self.isVerb = False
+    self.type = utilities.camelCase(type)
+    self.name = self.type + '_' + os.urandom(5).encode('hex').lower()
+    quantitative = re.search('(^[0-9.]+)(.*)', self.type)
     if quantitative:
       self.quantity = float(quantitative.group(1))
       self.units = quantitative.group(2) if quantitative.group(2) else None
@@ -34,5 +36,4 @@ class Descriptor(Concept):
       self.quantity = None
       self.units = None
       self.isQuantity = False
-    self.isVerb = False
-    Concept.__init__(self, name, type)
+    self.classify(utilities.sanitize(self.name), self.type)

@@ -29,7 +29,7 @@ class Context:
       self.stateGraph.add_node(concept)
       self._concepts['verb_phrases'].add(concept)
     elif isinstance(concept, Descriptor):
-      self.stateGraph.add_node(descriptor)
+      self.stateGraph.add_node(concept)
       self._concepts['descriptors'].add(concept)
 
   def newNounPhrase(self, nounPhrase, type=None):
@@ -62,11 +62,12 @@ class Context:
     if concept in self._concepts['descriptors']: self._concepts['descriptors'].remove(concept)
   
   def setAction(self, actor, act, target=None):
-    sharedActs = set(self.actionGraph.successors(actor)).intersection(set(self.actionGraph.predecessors(target)))
-    for sharedAct in sharedActs:
-      if act.parents().intersection(sharedAct.parents()): 
-        self.remove(act)
-        return False
+    if self.actionGraph.successors(actor) and self.actionGraph.predecessors(target):
+      sharedActs = set(self.actionGraph.successors(actor)).intersection(set(self.actionGraph.predecessors(target)))
+      for sharedAct in sharedActs:
+        if act.parents().intersection(sharedAct.parents()): 
+          self.remove(act)
+          return False
     self.actionGraph.add_edge(actor, act)
     if target:
       self.actionGraph.add_edge(act, target)
@@ -91,8 +92,7 @@ class Context:
     self.componentGraph.remove_edge(parent, child)
   
   def setState(self, subject, descriptor):
-    state = self.newDescriptor(descriptor)
-    self.stateGraph.add_edge(subject, state)
+    self.stateGraph.add_edge(subject, descriptor)
 
   def unsetState(self, subject, state):
     state.stateGraph.remove_edge(subject, state)

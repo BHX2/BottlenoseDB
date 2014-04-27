@@ -87,9 +87,56 @@ class Interpreter:
   
   def queryComponent(self, JSON):
     return self.retrieveComponent(JSON['component']['stem'], JSON['component']['branch'], assertBranches=False)
-    
+  
+  def queryState(self, JSON):
+    potentialSubjects = self.queryConcept(JSON['state']['subject'])
+    descriptionJSON = JSON['state']['description']
+    if 'quantity' in descriptionJSON:
+      targetDescriptor = str(descriptionJSON['quantity'])
+      if descriptionJSON['units']:
+        targetDescriptor += descriptionJSON['units']
+    else:
+      targetDescriptor = descriptionJSON['quality']    
+    for potentialSubject in potentialSubjects:
+      descriptors = self.context.stateGraph.succesors(potentialSubject)
+      temp = list()
+      for descriptor in descriptors:
+        temp.extend(descriptor.parents())
+      descriptors = temp
+      if targetDescriptor in descriptors:
+        yield potentialSubject
+  
   def assertConcept(self, conceptJSON):
     return self.context.newNounPhrase(conceptJSON['concept'])
+  
+  def assertState(self, stateJSON):
+    if 'concept' in stateJSON['state']['subject']:
+      subject = self.queryConcept(stateJSON['state']['subject'])
+    elif 'component' in stateJSON['state']['subject']:
+      subject = self.queryComponent(stateJSON['state']['subject'])
+    else:
+      raise Exception('assertState: Unknown state structure')
+    if not subject:
+      if 'concept' in stateJSON['state']['subject']:
+        subject = self.assertConcept(stateJSON['state']['subject'])
+      elif 'component' in stateJSON['state']['subject']:
+        subject = self.assertComponent(stateJSON['state']['subject'])
+      else:
+        raise Exception('assertState: Unknown state structure')
+    if isinstance(subject, set):
+      if len(subject) == 1:
+        (subject,) = subject
+      elif len(subject) > 1:
+        raise Exception('assertState: Too many potential subjects')
+    descriptionJSON = stateJSON['state']['description']
+    if 'quantity' in descriptionJSON:
+      description = str(descriptionJSON['quantity'])
+      if descriptionJSON['units']:
+        description += descriptionJSON['units']
+    else:
+      description = descriptionJSON['quality']  
+    descriptor = self.context.newDescriptor(description)
+    return self.context.setState(subject, descriptor)
   
   def assertComponent(self, componentJSON):
     (branches, stems) = self.retrieveComponent(componentJSON['component']['stem'], componentJSON['component']['branch'], returnLastStems=True, assertBranches=True)
@@ -104,6 +151,7 @@ class Interpreter:
     return branches
   
   def assertComponentAssignment(self, componentAssertionJSON):
+    #TODO: implement merger with unspecified rather than just deleting them immediately
     (branches, stems) = self.retrieveComponent(componentAssertionJSON['component_assignment']['target']['component']['stem'], componentAssertionJSON['component_assignment']['target']['component']['branch'], returnLastStems=True, assertBranches=True)
     if branches:
       if isinstance(branches, set):
@@ -244,6 +292,8 @@ class Interpreter:
       self.assertSynonymAssignment(statementJSON['statement'])
     elif 'action' in statementJSON['statement']:
       self.assertAction(statementJSON['statement'])
+    elif 'state' in statementJSON['statement']:
+      self.assertState(statementJSON['statement'])
           
   def interpret(self, JSON):
     if 'statement' in JSON:

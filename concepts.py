@@ -140,9 +140,9 @@ class Concept:
       
   def synonyms(self, phrase=None):
     if not phrase:
-      if not self.name:
-        return None
-      phrase = self.name
+        if not self.name:
+          return None
+        phrase = self.name
     phrase = utilities.camelCase(phrase)
     listOfSetsWithPhrase = []
     for key in self.thesaurus:

@@ -27,8 +27,8 @@ grammar = Grammar("""
   type_includes         = "/="
   is_a                  = "=/"
   synonym_assignment    = concept "=" concept_or_list
-  state                 = (action / component_assignment / component / concept) "#" (quantity / qualifier)
-  qualifier             = ~"!?[A-Z _]*"i
+  state                 = (component / concept) "#" (quantity / quality)
+  quality               = ~"!?[A-Z _]*"i
   quantity              = number units?
   units                 = ~"[A-Z ]*"i
   action                = (component / concept) "." verb "(" concepts_or_component? ")" " "*
