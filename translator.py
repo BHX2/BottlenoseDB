@@ -5,7 +5,7 @@ from parsimonious.grammar import NodeVisitor
 
 grammar = Grammar("""
   input                 = query / belief / statement
-  query                 = "?" (state / component / concept)
+  query                 = "?" (state / action / component / concept)
   belief                = law / evidence / rule
   law                   = clause (">>>" clause)+
   evidence              = supporting_evidence / opposing_evidence
@@ -33,8 +33,9 @@ grammar = Grammar("""
   units                 = ~"[A-Z ]*"i
   action                = (component / concept) "." verb "(" concepts_or_component? ")" " "*
   concepts_or_component = component / concept_or_list
+  verb_entity           = verb "()"
   verb                  = ~"[A-Z 0-9]*s[A-Z 0-9 _]*"i
-  component_assignment   = component "=" concept_or_list
+  component_assignment  = component "=" concept_or_list
   component             = concept ("." concept !"(")+
   number                = ~"[0-9]*\.?[0-9]+"
   concept_or_list       = concept_list / concept
@@ -212,6 +213,9 @@ class Translator(NodeVisitor):
     
   def visit_action(self, node, (actor, _1, verb, _2, target, _3, _4)):
     return {'action': {'actor': actor, 'act': verb, 'target': target}}
+    
+  def visit_verb_entity(self, node, (verb, _)):
+    return {'verb': verb}
   
   def visit_concepts_or_component(self, node, (concepts_or_component)):
     return concepts_or_component

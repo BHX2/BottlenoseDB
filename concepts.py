@@ -59,6 +59,11 @@ class Concept:
       if name.istitle():
         self.taxonomy.classifiers.append(self.wordnetClassifier)
         self.taxonomy.case_sensitive = False
+        temp = set()
+        for term in response:
+          if not utilities.sanitize(term).istitle():
+            temp |= set(utilities.unicodeDecode(self.taxonomy.parents(utilities.sanitize(term), recursive=True)))
+        response |= temp
     return response
     
   def descendants(self, name=None):
@@ -119,6 +124,11 @@ class Concept:
       if child.istitle() or parent.istitle():
         self.taxonomy.classifiers.append(self.wordnetClassifier)
         self.taxonomy.case_sensitive = False
+        temp = set()
+        for term in existingParents:
+          if not utilities.sanitize(term).istitle():
+            temp |= set(map(str, self.taxonomy.parents(utilities.sanitize(term), recursive=True)))
+        existingParents |= temp
     for term in self.synonyms(parent):
       if term in existingParents:
         return True

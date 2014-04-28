@@ -149,7 +149,7 @@ class Context:
           for edge in in_edges:
             graph.add_edge(edge[0], mergedConcept, edge[2])
           for edge in out_edges:
-            graph.add_edge(mergeConcept, edge[1], edge[2])
+            graph.add_edge(mergedConcept, edge[1], edge[2])
     self.remove(concept1)
     self.remove(concept2)
     return mergedConcept

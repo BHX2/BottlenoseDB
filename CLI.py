@@ -14,6 +14,7 @@ import utilities
 def switchContext(bottlenose):
   currentContext = bottlenose.context()
   i = 1
+  puts()
   for context in bottlenose.listContexts():
     if context is currentContext:
       with indent(2):
@@ -106,13 +107,19 @@ def main():
         (response, context) = bottlenose.tell(input)
         if isinstance(response, list):
           if not response:
-            print 'No matching concepts found.'
+            with indent(2):
+              puts(colored.red('No matching concepts found.'))
           else:
             for result in response:
               inspectConcept(result, context)
             puts()
-      except:
-        puts(colored.red('Unknown command or incoherent Cogscript.'))
+      except Exception as error:
+        if error.args:
+          with indent(2):
+            puts(colored.red(str(error.args[0])))
+        else:
+          with indent(2):
+            puts(colored.red('Unknown command or incoherent Cogscript.'))
         traceback.print_exc()
 if __name__ == '__main__':
   main()

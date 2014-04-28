@@ -52,7 +52,13 @@ class Interpreter:
           if self.context.isUniversal:
             stem = self.context.queryPrototype(stemJSON['concept'], phraseType='NounPhrase')
           else:
-            stem = self.context.newNounPhrase(stemJSON['concept'])
+            stems = self.context.queryNounPhrases(stemJSON['concept'])
+            if len(stems) == 0:
+              stem = self.context.newNounPhrase(stemJSON['concept'])
+            elif len(stems) == 1:
+              (stem,) = stems
+            else:
+              raise Exception('retrieveComponent: Too many matching stems')
         else:
           if returnLastStems:
             return (None, None)
@@ -96,7 +102,11 @@ class Interpreter:
     return self.context.queryNounPhrases(JSON['concept'])
   
   def queryComponent(self, JSON):
-    return self.retrieveComponent(JSON['component']['stem'], JSON['component']['branch'], assertBranches=False)
+    response = self.retrieveComponent(JSON['component']['stem'], JSON['component']['branch'], assertBranches=False)
+    if not response:
+      return []
+    else:
+      return response
   
   def queryState(self, JSON):
     if 'concept' in JSON['state']['subject']:
@@ -121,12 +131,78 @@ class Interpreter:
         descriptors = self.context.stateGraph.successors(potentialSubject)
         temp = list()
         for descriptor in descriptors:
-          temp.extend(descriptor.parents())
+          temp.extend(descriptor.ancestors())
         descriptors = temp
         if targetDescriptor in descriptors:
           response.add(potentialSubject)
     return response
   
+  def queryAction(self, actionJSON, returnActor=True, returnTarget=False):
+    if not returnActor and not returnTarget: return {}
+    if 'concept' in actionJSON['action']['actor']:
+      if self.context.isUniversal:
+        potentialActors = {self.context.queryPrototype(actionJSON['action']['actor']['concept'], phraseType='NounPhrase')}
+      else:
+        potentialActors = self.queryConcept(actionJSON['action']['actor'])
+    elif 'component' in actionJSON['action']['actor']:
+      potentialActors = self.queryComponent(actionJSON['action']['actor'])
+    else:
+      raise Exception('queryAction: Unknown action structure')
+    if not potentialActors:
+      return {}
+    temp = set()
+    temp2 = set()
+    for potentialActor in potentialActors:
+      acts = self.context.actionGraph.successors(potentialActor)
+      for act in acts:
+        if act.name == actionJSON['action']['act']['verb'] or act.isA(actionJSON['action']['act']['verb']):
+          if potentialActor in self.context:
+            temp.add(potentialActor)
+            temp2.add(act)
+    potentialActors = temp
+    potentialActs = temp2
+    if not actionJSON['action']['target']:
+      if returnActor:
+        return potentialActors
+      else:
+        return {}
+    temp3 = set()
+    temp4 = set()
+    for potentialAct in potentialActs:
+      potentialTargets = self.context.actionGraph.successors(potentialAct)
+      for potentialTarget in potentialTargets:
+        if potentialTarget not in self.context: continue
+        if isinstance(actionJSON['action']['target'], list):
+          for target in actionJSON['action']['target']:
+            if potentialTarget.name == actionJSON['action']['target']['concept'] or potentialTarget.isA(actionJSON['action']['target']['concept']):
+              temp3.add(potentialTarget)
+              temp4.add(potentialAct)
+              break
+        elif 'concept' in actionJSON['action']['target']:
+          if potentialTarget.name == actionJSON['action']['target']['concept'] or potentialTarget.isA(actionJSON['action']['target']['concept']):
+            temp3.add(potentialTarget)
+            temp4.add(potentialAct)
+        elif 'component' in actionJSON['action']['target']:
+          if potentialTarget in self.queryComponent(actionJSON['action']['target']):
+            temp3.add(potentialTarget)
+            temp4.add(potentialAct)
+        else:
+          raise Exception('queryAction: Unknown action structure')
+    targets = temp3
+    if returnTarget and not returnActor:
+      return targets
+    acts = temp4
+    roles = set()
+    for act in acts:
+      roles |= set(self.context.actionGraph.predecessors(act))
+    actors = potentialActors.intersection(roles)
+    if returnActor and returnTarget:
+      return actors | targets
+    elif returnTarget:
+      return targets
+    elif returnActor:
+      return actors
+    
   def assertConcept(self, conceptJSON):
     if self.context.isUniversal:
       return self.context.queryPrototype(conceptJSON['concept'], phraseType='NounPhrase')
@@ -239,6 +315,13 @@ class Interpreter:
     for parent in parents:
       for child in children:
         c.classify(child, parent)
+    for child in children:
+      examples = self.context.queryNounPhrases(child)
+      if not examples:
+        if self.context.isUniversal:
+          self.context.queryPrototype(child, phraseType='NounPhrase')
+        else:
+          self.context.newNounPhrase(child)
   
   def assertSynonymAssignment(self, synonymAssignmentJSON):
     synonyms = synonymAssignmentJSON['synonym_assignment']['concepts']
@@ -365,6 +448,8 @@ class Interpreter:
         results = self.queryComponent(JSON['query'])
       elif 'state' in JSON['query']:
         results = self.queryState(JSON['query'])
+      elif 'action' in JSON['query']:
+        results = self.queryAction(JSON['query'], returnActor=True)
       return results
     
   

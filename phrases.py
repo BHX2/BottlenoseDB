@@ -33,5 +33,5 @@ class Descriptor(Concept):
       self.quantity = None
       self.units = None
       self.isQuantity = False
-      type = 'quality'
+      type = name
     Concept.__init__(self, name, type)
