@@ -421,6 +421,7 @@ class Interpreter:
             
   def assertStatement(self, statementJSON):
     #TODO: implement arithmetic operation assertion
+    #TODO: implement variable assignment
     if 'concept' in statementJSON['statement']:
       self.assertConcept(statementJSON['statement'])
     elif 'component' in statementJSON['statement']:
