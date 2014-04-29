@@ -7,11 +7,9 @@ import utilities
 
 class Concept:
   taxonomy = Taxonomy()
-  wordnetClassifier = WordNetClassifier()
-  taxonomy.classifiers.append(wordnetClassifier)
   thesaurus = dict()
   
-  def __init__(self, name=None, type=None):
+  def __init__(self, name=None, type=None, bootstrapVocabulary=False):
     if name: 
       self.name = utilities.camelCase(name)
     else: 
@@ -20,6 +18,12 @@ class Concept:
       self.classify(utilities.sanitize(self.name), utilities.sanitize(type))
     else:
       self.type = None
+    if bootstrapVocabulary:
+      self.bootstrapVocabulary = True
+      self.wordnetClassifier = WordNetClassifier()
+      self.taxonomy.classifiers.append(self.wordnetClassifier)
+    else:
+      self.bootstrapVocabulary = False
   
   def parents(self, name=None):
     if not name:
@@ -37,7 +41,8 @@ class Concept:
       else:
         response |= set(utilities.unicodeDecode(self.taxonomy.parents(name, recursive=False, pos='VB')))
       if name.istitle():
-        self.taxonomy.classifiers.append(self.wordnetClassifier)
+        if self.bootstrapVocabulary:
+          self.taxonomy.classifiers.append(self.wordnetClassifier)
         self.taxonomy.case_sensitive = False
     return response
     
@@ -57,7 +62,8 @@ class Concept:
       else:
         response |= set(utilities.unicodeDecode(self.taxonomy.parents(name, recursive=True, pos='VB')))
       if name.istitle():
-        self.taxonomy.classifiers.append(self.wordnetClassifier)
+        if self.bootstrapVocabulary:
+          self.taxonomy.classifiers.append(self.wordnetClassifier)
         self.taxonomy.case_sensitive = False
         temp = set()
         for term in response:
@@ -88,6 +94,11 @@ class Concept:
     return response
     
   def classify(self, term1, term2=None):
+    if re.match('^!', term1):
+      return False
+    if term2:
+      if re.match('^!', term2):
+        return False
     if not term2:
       child = self.name
       parent = term1
@@ -122,7 +133,8 @@ class Concept:
       else:
         existingParents |= set(map(str, self.taxonomy.parents(child, recursive=True, pos='VB')))
       if child.istitle() or parent.istitle():
-        self.taxonomy.classifiers.append(self.wordnetClassifier)
+        if self.bootstrapVocabulary:
+          self.taxonomy.classifiers.append(self.wordnetClassifier)
         self.taxonomy.case_sensitive = False
         temp = set()
         for term in existingParents:

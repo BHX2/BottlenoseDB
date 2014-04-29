@@ -24,24 +24,24 @@ grammar = Grammar("""
   probability           = "[" number "]"
   statement             = arithmetic_operation / variable_assignment / taxonomy_assignment / synonym_assignment / state / action / component_assignment / component / concept
   variable_assignment   = variable " "* "=" (state / action / component / concept)
-  variable              = ~"[A-Z]"
+  variable              = ~"\s*[A-Z]\s*"
   taxonomy_assignment   = concept (type_includes / is_a) concept_or_list
   type_includes         = "/="
   is_a                  = "=/"
   synonym_assignment    = concept "=" concept_or_list
   state                 = (component / concept) "#" (quantity / quality)
-  quality               = ~"!?[A-Z]*"i
+  quality               = ~"\s*!?[A-Z]*\s*"i
   quantity              = number units?
-  units                 = ~"[A-Z ]*"i
+  units                 = ~"\s*[A-Z]*\s*"i
   action                = (component / concept) "." verb "(" concepts_or_component? ")" " "*
   concepts_or_component = component / concept_or_list
-  verb                  = ~"[A-Z 0-9]*s[A-Z 0-9]*"i
+  verb                  = ~"\s*[A-Z0-9]*s[A-Z0-9]*\s*"i
   component_assignment  = component "=" concept_or_list
   component             = concept ("." concept !"(")+
-  number                = ~"[0-9]*\.?[0-9]+"
+  number                = ~"\s*[0-9]*\.?[0-9]+\s*"
   concept_or_list       = concept_list / concept
   concept_list          = concept ("," concept)+
-  concept               = ~"!?[A-Z 0-9]*"i
+  concept               = ~"\s*!?[A-Z0-9]*\s*"i
 """)
 
 class Translator(NodeVisitor):

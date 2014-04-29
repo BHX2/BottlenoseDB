@@ -2,7 +2,9 @@ import re
 import string
 
 def camelCase(text):
-  isNegative = re.match('^!', text)
+  isNegative = re.match('(^!)(.*)', text)
+  if isNegative:
+    text = isNegative.group(2)
   response = ''
   isQuantitative = True if re.search('(^[0-9.]+)(.*)', text) else False
   if isQuantitative:
@@ -12,12 +14,15 @@ def camelCase(text):
   words = text.replace("'s", "s").translate(string.maketrans(string.punctuation, ' '*len(string.punctuation))).split()
   if words: response += words.pop(0)
   if isNegative:
-    response += '!' + response
+    response = '!' + response
   for word in words:
     response += word.capitalize()
   return response
   
 def unCamelCase(text):
+  isNegative = re.match('(^!)(.*)', text)
+  if isNegative:
+    text = isNegative.group(2)
   response = ''
   isQuantitative = True if re.search('(^[0-9.]+)(.*)', text) else False
   if isQuantitative:
@@ -36,6 +41,8 @@ def unCamelCase(text):
         response += (' ' + word)
       else:
         response += (' ' + word.lower())
+    if isNegative:
+      response = '!' + response
     return response
  
 def sanitize(text):

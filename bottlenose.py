@@ -10,7 +10,8 @@ from translator import grammar, Translator
 from interpreter import Interpreter
 
 class Bottlenose:
-  def __init__(self):
+  def __init__(self, bootstrapVocabulary=False):
+    Concept(bootstrapVocabulary)
     self._universalContext = Context(universal=True)
     self._contexts = [self._universalContext, Context()]
     self._context = self._contexts[1]

@@ -102,6 +102,8 @@ def main():
       switchContext(bottlenose)
     elif input == ':universal' or input == ':u':
       bottlenose.setContext(0)
+    elif input.strip() == '':
+      continue
     else:
       try:
         (response, context) = bottlenose.tell(input)

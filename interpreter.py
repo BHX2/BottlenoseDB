@@ -18,7 +18,7 @@ class Interpreter:
       edges = self.context.componentGraph.out_edges(stems, data=True)
       branches = set()
       for edge in edges:
-        if edge[2]['label'] == branchPhrase or edge[1].name == branchPhrase or edge[1].isA(branchPhrase):
+        if edge[2]['label'] == branchPhrase or branchPhrase in edge[1].synonyms() or edge[1].isA(branchPhrase):
           branches.add(edge[1])
       temp = set()
       for branch in branches:
@@ -44,7 +44,7 @@ class Interpreter:
       for candidateStem in candidateStems:
         edges = self.context.componentGraph.out_edges(candidateStem, data=True)
         for edge in edges:
-          if edge[2]['label'] == branchPhrase or edge[1].name == branchPhrase or edge[1].isA(branchPhrase):
+          if edge[2]['label'] == branchPhrase or branchPhrase in edge[1].synonyms() or edge[1].isA(branchPhrase):
             temp.add(edge[0])
       candidateStems = temp
       if len(candidateStems) == 0:
@@ -71,7 +71,7 @@ class Interpreter:
       edges = self.context.componentGraph.out_edges(stem, data=True)
       branches = set()
       for edge in edges:
-        if edge[2]['label'] == branchPhrase or edge[1].name == branchPhrase or edge[1].isA(branchPhrase):
+        if edge[2]['label'] == branchPhrase or branchPhrase in edge[1].synonyms() or edge[1].isA(branchPhrase):
           branches.add(edge[1])
       temp = set()
       for branch in branches:
@@ -109,6 +109,9 @@ class Interpreter:
       return response
   
   def queryState(self, JSON):
+    if 'quality' in JSON['state']['description']:
+      if re.match('^!', JSON['state']['description']['quality']):
+        raise Exception('Negatives can not be used as filtering criteria.')
     if 'concept' in JSON['state']['subject']:
       if self.context.isUniversal:
         potentialSubjects = {self.context.queryPrototype(JSON['state']['subject']['concept'], phraseType='NounPhrase')}
@@ -138,6 +141,14 @@ class Interpreter:
     return response
   
   def queryAction(self, actionJSON, returnActor=True, returnTarget=False):
+    if actionJSON['action']['target']:
+      if 'concept' in actionJSON['action']['target']:
+        if re.match('^!', actionJSON['action']['target']['concept']):
+          raise Exception('Negatives can not be used as filtering criteria.')
+      elif isinstance(actionJSON['action']['target'], list):
+        for target in actionJSON['action']['target']:
+          if re.match('^!', target['concept']):
+            raise Exception('Negatives can not be used as filtering criteria.')
     if not returnActor and not returnTarget: return {}
     if 'concept' in actionJSON['action']['actor']:
       if self.context.isUniversal:
@@ -155,7 +166,7 @@ class Interpreter:
     for potentialActor in potentialActors:
       acts = self.context.actionGraph.successors(potentialActor)
       for act in acts:
-        if act.name == actionJSON['action']['act']['verb'] or act.isA(actionJSON['action']['act']['verb']):
+        if actionJSON['action']['act']['verb'] in act.synonyms() or act.isA(actionJSON['action']['act']['verb']):
           if potentialActor in self.context:
             temp.add(potentialActor)
             temp2.add(act)
@@ -174,12 +185,12 @@ class Interpreter:
         if potentialTarget not in self.context: continue
         if isinstance(actionJSON['action']['target'], list):
           for target in actionJSON['action']['target']:
-            if potentialTarget.name == actionJSON['action']['target']['concept'] or potentialTarget.isA(actionJSON['action']['target']['concept']):
+            if actionJSON['action']['target']['concept'] in potentialTarget.synonyms() or potentialTarget.isA(actionJSON['action']['target']['concept']):
               temp3.add(potentialTarget)
               temp4.add(potentialAct)
               break
         elif 'concept' in actionJSON['action']['target']:
-          if potentialTarget.name == actionJSON['action']['target']['concept'] or potentialTarget.isA(actionJSON['action']['target']['concept']):
+          if actionJSON['action']['target']['concept'] in potentialTarget.synonyms() or potentialTarget.isA(actionJSON['action']['target']['concept']):
             temp3.add(potentialTarget)
             temp4.add(potentialAct)
         elif 'component' in actionJSON['action']['target']:
@@ -204,10 +215,10 @@ class Interpreter:
       return actors
     
   def assertConcept(self, conceptJSON):
-    if self.context.isUniversal:
-      return self.context.queryPrototype(conceptJSON['concept'], phraseType='NounPhrase')
-    else:
-      return self.context.newNounPhrase(conceptJSON['concept'])
+      if self.context.isUniversal:
+        return self.context.queryPrototype(conceptJSON['concept'], phraseType='NounPhrase')
+      else:
+        return self.context.newNounPhrase(conceptJSON['concept'])
   
   def assertState(self, stateJSON):
     if 'concept' in stateJSON['state']['subject']:
@@ -253,8 +264,36 @@ class Interpreter:
       branches = temp
     return branches
   
+  def removeComponentAssignment(self, stems, branchPhrase, branches, affirmativeConcept):
+    if not branches: return 
+    matchingBranches = set()
+    if isinstance(branches, set):
+      for branch in branches:
+        if affirmativeConcept in branch.synonyms() or branch.isA(affirmativeConcept):         
+          matchingBranches.add(branch)
+    else:
+      if affirmativeConcept in branches.synonyms() or branches.isA(affirmativeConcept):   
+        matchingBranches = {branches}
+    potentialEdges = self.context.componentGraph.out_edges(stems, data=True)
+    temp = list()
+    for potentialEdge in potentialEdges:
+      if potentialEdge[1] in matchingBranches and potentialEdge[2]['label'] == branchPhrase:
+        self.context.componentGraph.remove_edge(potentialEdge[0], potentialEdge[1])
+  
   def assertComponentAssignment(self, componentAssertionJSON):
     (branches, stems) = self.retrieveComponent(componentAssertionJSON['component_assignment']['target']['component']['stem'], componentAssertionJSON['component_assignment']['target']['component']['branch'], returnLastStems=True, assertBranches=True)
+    def checkIfNegativeAssignment(concept):
+      if re.match('^!', concept['concept']):
+        affirmativeConcept = concept['concept'][1:]
+        branchPhrase = componentAssertionJSON['component_assignment']['target']['component']['branch']
+        self.removeComponentAssignment(stems, branchPhrase, branches, affirmativeConcept)
+        return True
+      else:
+        return False
+    if isinstance(componentAssertionJSON['component_assignment']['assignment'], list):
+      componentAssertionJSON['component_assignment']['assignment'][:] = [x for x in componentAssertionJSON['component_assignment']['assignment'] if not checkIfNegativeAssignment(x)]
+    else:
+      if checkIfNegativeAssignment(componentAssertionJSON['component_assignment']['assignment']): return
     unspecifiedBranches = []
     if branches:
       if isinstance(branches, set):
@@ -423,7 +462,24 @@ class Interpreter:
     #TODO: implement arithmetic operation assertion
     #TODO: implement variable assignment
     if 'concept' in statementJSON['statement']:
-      self.assertConcept(statementJSON['statement'])
+      if re.match('^!', statementJSON['statement']['concept']):
+        affirmativeConcept = statementJSON['statement']['concept'][1:]
+        if not affirmativeConcept:
+          return self.context.newNounPhrase('!')
+        if self.context.isUniversal:
+          match = self.context.queryPrototype(affirmativeConcept, phraseType='NounPhrase')
+          if match:
+            self.context.remove(match)
+        else:
+          matches = self.context.queryNounPhrases(affirmativeConcept)
+          if matches:
+            if len(matches) == 1:
+              (match,) = matches
+              self.context.remove(match)
+            if len(matches) > 1:
+              raise Exception('assertConcept: Too many matching concepts')
+      else:
+        self.assertConcept(statementJSON['statement'])
     elif 'component' in statementJSON['statement']:
       self.assertComponent(statementJSON['statement'])
     elif 'component_assignment' in statementJSON['statement']:

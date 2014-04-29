@@ -72,6 +72,15 @@ class Context:
       if concept is self.conceptHashTable[hash]:
         del self.conceptHashTable[hash]
         break
+    if isinstance(concept, NounPhrase):
+      if concept in self.actionGraph:
+        acts = self.actionGraph.successors(concept)
+        for act in acts:
+          self.remove(act)
+      if concept in self.stateGraph:
+        descriptions = self.stateGraph.successors(concept)
+        for description in descriptions:
+          self.remove(description)
     if concept in self.actionGraph: self.actionGraph.remove_node(concept)
     if concept in self.stateGraph: self.stateGraph.remove_node(concept)
     if concept in self.componentGraph: self.componentGraph.remove_node(concept)
@@ -80,16 +89,41 @@ class Context:
     if concept in self.concepts['descriptors']: self.concepts['descriptors'].remove(concept)
   
   def setAction(self, actor, act, target=None):
-    if self.actionGraph.successors(actor) and self.actionGraph.predecessors(target):
-      sharedActs = set(self.actionGraph.successors(actor)).intersection(set(self.actionGraph.predecessors(target)))
-      for sharedAct in sharedActs:
-        if act.parents().intersection(sharedAct.parents()): 
-          self.remove(act)
-          return False
-    self.actionGraph.add_edge(actor, act)
     if target:
-      self.actionGraph.add_edge(act, target)
-    
+      if target.name == '!':
+        potentialMatchingActs = self.actionGraph.successors(actor)
+        for potentialMatchingAct in potentialMatchingActs:
+          if act.name in potentialMatchingAct.synonyms() or potentialMatchingAct.isA(act.name):
+            self.remove(potentialMatchingAct)
+        self.remove(act)
+        self.remove(target)
+        return
+      elif re.match('^!', target.name):
+        affirmativeTarget = target.name[1:]
+        potentialMatchingActs = self.actionGraph.successors(actor)
+        temp = set()
+        for potentialMatchingAct in potentialMatchingActs:
+          if act.name in potentialMatchingAct.synonyms() or potentialMatchingAct.isA(act.name):
+            temp.add(potentialMatchingAct)
+        potentialMatchingActs = temp
+        for potentialMatchingAct in potentialMatchingActs:
+          potentiallyMatchingTargets = self.actionGraph.successors(potentialMatchingAct)
+          for potentiallyMatchingTarget in potentiallyMatchingTargets:
+            if affirmativeTarget in potentiallyMatchingTarget.synonyms() or potentiallyMatchingTarget.isA(affirmativeTarget):
+              self.remove(potentialMatchingAct)
+        self.remove(act)
+        self.remove(target)
+        return
+      else:
+        if self.actionGraph.successors(actor) and self.actionGraph.predecessors(target):
+          sharedActs = set(self.actionGraph.successors(actor)).intersection(set(self.actionGraph.predecessors(target)))
+          for sharedAct in sharedActs:
+            if act.parents().intersection(sharedAct.parents()): 
+              self.remove(act)
+              return False
+        self.actionGraph.add_edge(act, target)
+    self.actionGraph.add_edge(actor, act)
+        
   def unsetAction(self, actor, act, target=None):
     if target:
       self.actionGraph.remove_edge(act, target)
@@ -110,12 +144,22 @@ class Context:
     self.componentGraph.remove_edge(parent, child)
   
   def setState(self, subject, descriptor):
-    self.stateGraph.add_edge(subject, descriptor)
+    if re.match('^!', descriptor.name):
+      affirmativeDescriptor = descriptor.name[1:]
+      if affirmativeDescriptor != '':
+        potentialMatches = self.stateGraph.successors(subject)
+        for potentialMatch in potentialMatches:
+          if affirmativeDescriptor in potentialMatch.synonyms() or potentialMatch.isA(affirmativeDescriptor):
+            self.unsetState(subject, potentialMatch)
+      self.remove(descriptor)
+    else:
+      self.stateGraph.add_edge(subject, descriptor)
 
   def unsetState(self, subject, state):
-    state.stateGraph.remove_edge(subject, state)
+    self.stateGraph.remove_edge(subject, state)
     self.concepts['descriptors'].remove(state)
     self.stateGraph.remove_node(state)
+    self.remove(state)
     
   def mergeConcepts(self, concept1, concept2):
     names = (concept1.name, concept2.name)
