@@ -280,20 +280,20 @@ class Interpreter:
       if potentialEdge[1] in matchingBranches and potentialEdge[2]['label'] == branchPhrase:
         self.context.componentGraph.remove_edge(potentialEdge[0], potentialEdge[1])
   
-  def assertComponentAssignment(self, componentAssertionJSON):
-    (branches, stems) = self.retrieveComponent(componentAssertionJSON['component_assignment']['target']['component']['stem'], componentAssertionJSON['component_assignment']['target']['component']['branch'], returnLastStems=True, assertBranches=True)
+  def assertComponentAddition(self, componentAdditionJSON):
+    (branches, stems) = self.retrieveComponent(componentAdditionJSON['component_addition']['target']['component']['stem'], componentAdditionJSON['component_addition']['target']['component']['branch'], returnLastStems=True, assertBranches=True)
     def checkIfNegativeAssignment(concept):
       if re.match('^!', concept['concept']):
         affirmativeConcept = concept['concept'][1:]
-        branchPhrase = componentAssertionJSON['component_assignment']['target']['component']['branch']
+        branchPhrase = componentAdditionJSON['component_addition']['target']['component']['branch']
         self.removeComponentAssignment(stems, branchPhrase, branches, affirmativeConcept)
         return True
       else:
         return False
-    if isinstance(componentAssertionJSON['component_assignment']['assignment'], list):
-      componentAssertionJSON['component_assignment']['assignment'][:] = [x for x in componentAssertionJSON['component_assignment']['assignment'] if not checkIfNegativeAssignment(x)]
+    if isinstance(componentAdditionJSON['component_addition']['assignment'], list):
+      componentAdditionJSON['component_addition']['assignment'][:] = [x for x in componentAssertionJSON['component_addition']['assignment'] if not checkIfNegativeAssignment(x)]
     else:
-      if checkIfNegativeAssignment(componentAssertionJSON['component_assignment']['assignment']): return
+      if checkIfNegativeAssignment(componentAdditionJSON['component_addition']['assignment']): return
     unspecifiedBranches = []
     if branches:
       if isinstance(branches, set):
@@ -303,8 +303,8 @@ class Interpreter:
         if re.match('^unspecified', branches.name): unspecifiedBranches.append(branches)
     assignments = list()
     uninstantiatedAssignments = list()
-    if isinstance(componentAssertionJSON['component_assignment']['assignment'], list):
-      for concept in componentAssertionJSON['component_assignment']['assignment']:
+    if isinstance(componentAdditionJSON['component_addition']['assignment'], list):
+      for concept in componentAdditionJSON['component_addition']['assignment']:
           if self.context.isUniversal:
             x = {self.context.queryPrototype(concept['concept'], phraseType='NounPhrase')}
           else:
@@ -315,14 +315,14 @@ class Interpreter:
             uninstantiatedAssignments.append(concept['concept'])
     else:
       if self.context.isUniversal:
-        x = {self.context.queryPrototype(componentAssertionJSON['component_assignment']['assignment']['concept'], phraseType='NounPhrase')}
+        x = {self.context.queryPrototype(componentAdditionJSON['component_addition']['assignment']['concept'], phraseType='NounPhrase')}
       else:
-        x = self.context.queryNounPhrases(componentAssertionJSON['component_assignment']['assignment']['concept'])
+        x = self.context.queryNounPhrases(componentAdditionJSON['component_addition']['assignment']['concept'])
       if x: 
         assignments.extend(x)
       else:
-        uninstantiatedAssignments.append(componentAssertionJSON['component_assignment']['assignment']['concept'])
-    branchPhrase = componentAssertionJSON['component_assignment']['target']['component']['branch']
+        uninstantiatedAssignments.append(componentAdditionJSON['component_addition']['assignment']['concept'])
+    branchPhrase = componentAdditionJSON['component_addition']['target']['component']['branch']
     for uninstantiatedAssignment in uninstantiatedAssignments:
       if self.context.isUniversal:
         assignment = self.context.queryPrototype(uninstantiatedAssignment, phraseType='NounPhrase')
@@ -482,8 +482,8 @@ class Interpreter:
         self.assertConcept(statementJSON['statement'])
     elif 'component' in statementJSON['statement']:
       self.assertComponent(statementJSON['statement'])
-    elif 'component_assignment' in statementJSON['statement']:
-      self.assertComponentAssignment(statementJSON['statement'])
+    elif 'component_addition' in statementJSON['statement']:
+      self.assertComponentAddition(statementJSON['statement'])
     elif 'taxonomy_assignment' in statementJSON['statement']:
       self.assertTaxonomyAssignment(statementJSON['statement'])
     elif 'synonym_assignment' in  statementJSON['statement']:

@@ -6,11 +6,8 @@ from parsimonious.grammar import NodeVisitor
 grammar = Grammar("""
   input                 = query / belief / statement
   query                 = "?" (state / action / component / concept)
-  belief                = law / evidence / rule
+  belief                = law / rule
   law                   = clause (">>>" clause)+
-  evidence              = supporting_evidence / opposing_evidence
-  supporting_evidence   = clause (">>+" clause)+
-  opposing_evidence     = clause (">>-" clause)+
   arithmetic_operation  = (component / concept) arithmetic_operator quantity
   arithmetic_operator   = "+" / "-"
   rule                  = clause (">>" clause)+
@@ -22,13 +19,11 @@ grammar = Grammar("""
   logic_operator        = "&" / "|" / "," 
   simple_clause         = " "* "!"? statement probability? " "*
   probability           = "[" number "]"
-  statement             = arithmetic_operation / variable_assignment / taxonomy_assignment / synonym_assignment / state / action / component_assignment / component / concept
-  variable_assignment   = variable " "* "=" (state / action / component / concept)
-  variable              = ~"\s*[A-Z]\s*"
+  statement             = arithmetic_operation / taxonomy_assignment / synonym_assignment / state / action / component_addition / component_assignment / component / concept
   taxonomy_assignment   = concept (type_includes / is_a) concept_or_list
   type_includes         = "/="
   is_a                  = "=/"
-  synonym_assignment    = concept "=" concept_or_list
+  synonym_assignment    = concept "~" concept_or_list
   state                 = (component / concept) "#" (quantity / quality)
   quality               = ~"\s*!?[A-Z]*\s*"i
   quantity              = number units?
@@ -36,7 +31,8 @@ grammar = Grammar("""
   action                = (component / concept) "." verb "(" concepts_or_component? ")" " "*
   concepts_or_component = component / concept_or_list
   verb                  = ~"\s*[A-Z0-9]*s[A-Z0-9]*\s*"i
-  component_assignment  = component "=" concept_or_list
+  component_assignment  = component "=" concept
+  component_addition    = component "=" concept_or_list
   component             = concept ("." concept !"(")+
   number                = ~"\s*[0-9]*\.?[0-9]+\s*"
   concept_or_list       = concept_list / concept
@@ -59,25 +55,7 @@ class Translator(NodeVisitor):
       for other_clause in other_clauses:
         response['law']['clauses'].append(other_clause)
     return response
-    
-  def visit_opposing_evidence(clause, node, (first_clause, other_clauses)):
-    response = {'opposing_clauses': [first_clause]}
-    if len(other_clauses) == 1:
-      response['opposing_clauses'].append(other_clauses)
-    else:
-      for other_clause in other_clauses:
-        response['opposing_clauses'].append(other_clause)
-    return response 
-    
-  def visit_supporting_evidence(clause, node, (first_clause, other_clauses)):
-    response = {'supporting_clauses': [first_clause]}
-    if len(other_clauses) == 1:
-      response['supporting_clauses'].append(other_clauses)
-    else:
-      for other_clause in other_clauses:
-        response['supporting_clauses'].append(other_clause)
-    return response    
-    
+
   def visit_arithmetic_operation(self, node, (concept_or_component, operator, quantity)):
     return {'arithmetic_operation': {'variable': concept_or_component, 'operator': operator, 'quantity': quantity}}
     
@@ -173,7 +151,7 @@ class Translator(NodeVisitor):
     if (node.text == "&"):
       return {'operator' : 'AND'}
     elif (node.text == "|"):
-      return {'operator' : 'XOR'}
+      return {'operator' : 'OR'}
     elif (node.text == ","):
       return {'operator' : 'OR'}
     
@@ -188,9 +166,6 @@ class Translator(NodeVisitor):
   
   def visit_probability(self, node, (_1, number, _2)):
     return {'probability': number}
-
-  def visit_variable_assignment(self, node, (variable, _1, _2, assignment)):
-    return {'variable_assignment': {'variable': variable['variable'], 'assignment': assignment}}
   
   def visit_taxonomy_assignment(self, node, (concept, operator, concept_or_list)):
     if "is_a" in operator.keys():
@@ -223,9 +198,12 @@ class Translator(NodeVisitor):
   
   def visit_concepts_or_component(self, node, (concepts_or_component)):
     return concepts_or_component
-  
+
   def visit_component_assignment(self, node, (target, _, assignment )):
     return {'component_assignment': {'target': target, 'assignment': assignment}}
+    
+  def visit_component_addition(self, node, (target, _, assignment )):
+    return {'component_addition': {'target': target, 'assignment': assignment}}
     
   def visit_component(self, node, (stem, branch_expressions)):
     tree = {'stem': stem}

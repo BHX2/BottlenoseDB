@@ -89,6 +89,7 @@ class Context:
     if concept in self.concepts['descriptors']: self.concepts['descriptors'].remove(concept)
   
   def setAction(self, actor, act, target=None):
+    #TODO: if actor has same one or more of the same acts and any have targets there shouldn't be any successorless acts
     if target:
       if target.name == '!':
         potentialMatchingActs = self.actionGraph.successors(actor)

@@ -1,10 +1,10 @@
 #Bottlenose
-**Bottlenose** is a platform for building artificially intelligent programs. The engine is written in Python and uses a simple scripting language called **Cogscript** to streamline communication of logic while allowing compensation for robust natural language vocabularies.
+**Bottlenose** is a platform for building artificially intelligent programs. The engine is written in Python and uses a simple scripting language to streamline communication of logic while allowing compensation for robust natural language vocabularies.
 
 ###Synonyms
-Use `=` to indicate synonymous words or phrases. Multiple synonyms can be defined at once if seperated by commas. All phrases should be written in *camelCase* such that spaces are removed between words, the first word is in all lower case, and all subsequent words are capitalized; capitilazation of proper nouns and acronyms can be preserved. Examples: *houseCat*, *Garfield*, *LOLCat*. When possible the singular form of noun phrases should be used. Also, all punctuation including single-quotes should be omitted.
+Use `=` to indicate synonymous words or phrases. Multiple synonyms can be defined at once if seperated by commas. All phrases should be written in *camelCase* such that spaces are removed between words, the first word is in all lower case, and all subsequent words are capitalized; capitilazation of proper nouns and acronyms can be preserved. Examples: *houseCat*, *Garfield*, *LOLCat*. In general the singular form of noun phrases should be used. Also, all punctuation including single-quotes should be omitted.
 ```
-cat = kitty, feline
+cat ~ kitty, feline
 ```
 
 ###Taxonomy
@@ -18,10 +18,10 @@ mammal /= cat
 ```
 
 ###Components / Relationships
-Use `.` to indicate the existence of a component or relationship. This can be paired with `=` to assign the role. Both the component/relationship and any assigned entities should be noun phrases. If the attribute is in the form of a verb phrase use **Actions** as described below. Again note that all phrases should be singular.
+Use `.` to indicate the existence of a component or relationship. This can be paired with `=` to assign the role to a single entity or with `+=` to a relationship that is not exclusively singular. In the latter case multiple relationships can be added at once using commas to delimit a list of concepts. Both the component/relationship and any assigned entities should be noun phrases. If the attribute is in the form of a verb phrase use **Actions** as described below. Again note that all phrases should be singular.
 ```
 cat.owner = John
-cat.hobby = eating, sleeping, sunbathing
+cat.hobby += eating, sleeping, sunbathing
 ```
 
 ###Actions
@@ -51,31 +51,17 @@ LOLCat.speaks(comment) >> comment#misspelled
 ```
 
 ####Logic
-A **Compound Clause** can be formed using `&` (*AND*), `,` (*inclusive OR*), or `|` (*exclusive OR*) to join multiple simple **Clauses**. To supply a negative, `!` (*NOT*) can prefix a component **Clause**. `&` indicates that in order to fulfill the entire **Clause**, expressions on both sides of the `&` must be true. Selecting `,` versus `|` is a more intricate decision. One can think of a compound **Rule** with `,` as expanding into two **Rules**. As an example: `A >> B , C` can be thought of as `A >> B` (*if A is true, then B could be true*) and `A >> C` (*if A is true, then C could be true*). Contrarily, the statement `A >> B | C` might translate *if A is true, then either B or C could be true, but it is unlikely that B and C would be simultaneously true*.
+A **Compound Clause** can be formed using `&` (*AND*) or `|` (*OR*) to join multiple simple **Clauses**. To supply a negative, `!` (*NOT*) can prefix a component **Clause**. `&` indicates that in order to fulfill the entire **Clause**, expressions on both sides of the `&` must be true. `|` indicates that only one **Clause** needs to be true. If the dependent **Clause** is multi-part comma-delimitation can be used.
 ```
 cat & laserPointer >> cat.chases(laserPointer)
-LOLCat, grumpyCat, nyanCat, keyboardCat >> computerScreen.displays(cat)
-cat.location=home >> cat.sleeps() | cat.eats() | cat.plays() | cat.chills()
+LOLCat | grumpyCat | nyanCat | keyboardCat >> computerScreen.displays(cat)
+cat.location=home >> cat.sleeps(), cat.eats(), cat.plays(), cat.chills()
 ```
 
 Of note, Cogscript allows for robust contextual co-referencing exemplified in the middle example above. The entity (*cat*) referenced within a **Clause** is preferentially assumed to be a reference to a suitable entity (*LOLCat, grumpyCat, nyanCat, keyboardCat*) within the given **Rule** context (even if the reference is not identical).
 
-####Evidence
-If a **Belief** is more significant then there is additional syntax that can be added to indicate **Evidence**. To denote that the **Clauses** mutually support or oppose each other `>>+` or `>>-` can be used respectively. For example: `A >>+ B` might be translated *if A is true, then it is more likely that B is true* and *if B is true, then it is more likely that A is true*. `A >>- B` might be translated *if A is true, then it is less likely that B is true* and *if B is true, then it is less likely that A is true*. 
-```
-cat#hungry >>+ cat.plays()
-cat#old >>- cat.plays()
-```
-
-####Statistical Probability
-To take things even further, quantitative probabilities can be expressed. The probability of the second **Clause** given the truth of the first **Clause** can be assigned a numerical value between 0.0 (never co-occurs) and 1.0 (always co-occurs). This value would be placed between brackets, which is itself placed immediately behind the dependent/second **Clause**. 
-```
-coin.flips() >> coin#heads[0.5] | coin#tails[0.5]
-magiciansCoin.flips() >> magiciansCoin#heads[1.0] | magiciansCoin#tails[0.0]
-```
-
 ####Laws
-The strongest **Belief** is a **Law**, which is a strict bi-directional correlation indicated using `>>>`. In general `A >>> B` translates *if A is true then B is ALWAYS true. AND if B is true then A is ALWAYS true*. One use of **Laws** is to hardcode more 'syntactic glue' than is otherwise available. Using the cat example above we can connect the **Action** of 'owning a cat' to the **Relationship** of 'cat having an owner'. Below, we equate the **Action** `.owns(X)` to the **Relationship** `.owner =X`. Of importance, **Laws** are immediately computed into the artificial cognitive model. 
+The strongest **Belief** is a **Law**, which is a strict bi-directional correlation indicated using `>>>`. In general `A >>> B` translates *if A is true then B is ALWAYS true. One use of **Laws** is to hardcode more 'syntactic glue' than is otherwise available. Using the cat example above we can connect the **Action** of 'owning a cat' to the **Relationship** of 'cat having an owner'. Below, we equate the **Action** `.owns(X)` to the **Relationship** `.owner =X`. Of importance, **Laws** are immediately computed into the artificial cognitive model. 
 ```
 cat.owner=person >>> person.owns(cat)
 ```
