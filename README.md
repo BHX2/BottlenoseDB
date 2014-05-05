@@ -2,7 +2,7 @@
 **Bottlenose** is a platform for building artificially intelligent programs. The engine is written in Python and uses a simple scripting language to streamline communication of logic while allowing compensation for robust natural language vocabularies.
 
 ###Synonyms
-Use `=` to indicate synonymous words or phrases. Multiple synonyms can be defined at once if seperated by commas. All phrases should be written in *camelCase* such that spaces are removed between words, the first word is in all lower case, and all subsequent words are capitalized; capitilazation of proper nouns and acronyms can be preserved. Examples: *houseCat*, *Garfield*, *LOLCat*. In general the singular form of noun phrases should be used. Also, all punctuation including single-quotes should be omitted.
+Use `~` to indicate synonymous words or phrases. Multiple synonyms can be defined at once if seperated by commas. All phrases should be written in *camelCase* such that spaces are removed between words, the first word is in all lower case, and all subsequent words are capitalized; capitilazation of proper nouns and acronyms can be preserved. Examples: *houseCat*, *Garfield*, *LOLCat*. In general the singular form of noun phrases should be used. Also, all punctuation including single-quotes should be omitted.
 ```
 cat ~ kitty, feline
 ```
@@ -87,15 +87,14 @@ cat.weight <= 5lbs >> cat#skinny
 6. **Context** also keeps a table of clauses with matching concept items and evidence
 7. ~~Design **Clause** class which calculates implicitly dependent **Clauses** upon instantiation~~
 8. ~~Instances of **Clause** store a Cogscript JSON object & hashcode~~
-9. Design **Belief** class with dictionary of clauses and class methods for clause(), *add()* and *remove()*
-10. **Belief** class also holds belief graphs include **RuleGraph**, **EvidenceGraph**, **LawGraph**
-11. Design **Interpreter** class that takes in Cogscript JSON and alters data structures
-12. When **Interpreter** is in *universal context* makes clauses on prototype objects when given statements
-13. Design **BottlenoseController** class that interfaces with command-line input and Interpreter
-14. Implement persistence via pickling within **BottlenoseController**
-15. Implement export/import to plain text files organized within a folder tree within **BottlenoseController**
-16. Implement tabbed autocompletion using *(py)readline* & *rlcompleter*
-17. Polish CLI interface: add intro, help, colors, tables, benchmarks, etc
-18. Design querying engine with associated additional grammar and interpreter 
-19. Implement Cogscript logging, data backup, and undo functionality within **BottlenoseController**
-20. Experiment with rule-based artificial cognition
+9. Design **Interpreter** class that takes in Cogscript JSON and alters data structures
+10. When **Interpreter** is in *universal context* makes clauses on prototype objects when given statements
+11. Design **Belief** class with dictionary of clauses and class methods for clause(), *add()* and *remove()*
+12. **Belief** class also holds belief graphs include **RuleGraph**, **EvidenceGraph**, **LawGraph**
+13. Implement persistence via pickling within **BottlenoseController**
+14. Implement export/import to plain text files organized within a folder tree within **BottlenoseController**
+15. Implement tabbed autocompletion using *(py)readline* & *rlcompleter*
+16. Polish CLI interface: add intro, help, colors, tables, benchmarks, etc
+17. Design querying engine with associated additional grammar and interpreter 
+18. Implement Cogscript logging, data backup, and undo functionality within **BottlenoseController**
+19. Experiment with rule-based artificial cognition
