@@ -1,5 +1,5 @@
 #Bottlenose
-**Bottlenose** is a platform for building artificially intelligent programs. The engine is written in Python and uses a simple scripting language to streamline communication of logic while allowing compensation for robust natural language vocabularies.
+Bottlenose is a platform for building artificially intelligent programs. The engine is written in Python and uses a simple scripting language to streamline communication of logic while allowing compensation for robust natural language vocabularies.
 
 ###Synonyms
 Use `~` to indicate synonymous words or phrases. Multiple synonyms can be defined at once if seperated by commas. All phrases should be written in *camelCase* such that spaces are removed between words, the first word is in all lower case, and all subsequent words are capitalized; capitilazation of proper nouns and acronyms can be preserved. Examples: *houseCat*, *Garfield*, *LOLCat*. In general the singular form of noun phrases should be used. Also, all punctuation including single-quotes should be omitted.
@@ -11,23 +11,21 @@ cat ~ kitty, feline
 Use `=/` to indicate an *is-a-type-of* relationship. Alternatively use `/=` to indicate the converse relationship. 
 ```
 cat =/ mammal
-```
-OR
-```
-mammal /= cat
+animal /= mammal
 ```
 
 ###Components / Relationships
-Use `.` to indicate the existence of a component or relationship. This can be paired with `=` to assign the role to a single entity or with `+=` to a relationship that is not exclusively singular. In the latter case multiple relationships can be added at once using commas to delimit a list of concepts. Both the component/relationship and any assigned entities should be noun phrases. If the attribute is in the form of a verb phrase use **Actions** as described below. Again note that all phrases should be singular.
+Use `.` to indicate the existence of a component or relationship. This can be paired with `=` to assign the role to a single entity or with `+=` to add a relationship that is not exclusively singular. In the latter case multiple relationships can be added at once using commas to delimit a list of concepts. Both the component/relationship and any assigned entities should be noun phrases. If the attribute is in the form of a verb phrase use **Actions** as described below. Again note that all phrases should be singular.
 ```
 cat.owner = John
 cat.hobby += eating, sleeping, sunbathing
 ```
 
 ###Actions
-Use `.` followed by a verb phrase and parentheses to indicate an action. All verb phrases should be affirmative and in the present tense. Comma-seperated direct objects may be placed within the parentheses. In order to indicate a negative verb phrase `!` should be prefixed before the direct object rather than introducing negatives alongside the verb component.
+Use `.` followed by a verb phrase and parentheses to indicate an action. All verb phrases should be affirmative and in the present tense. Comma-seperated direct objects may be placed within the parentheses. In order to indicate a negative verb phrase `!` should be prefixed before the direct object rather than introducing negatives alongside the verb component. To indicate the complete termination of an action with or without direct objects `!` should be placed alone within the parantheses
 ```
 cat.sleeps()
+cat.sleeps(!)
 cat.eats(mouse)
 cat.playsWith(yarn)
 cat.likes(!dog)
@@ -44,7 +42,7 @@ cat#!feral
 
 ---
 ###Rules & Clauses
-The real power of Bottlenose is derived from leveraging the "semantic glue" described above in forming dynamic artificial cognitive beliefs. Each **Belief** is made up of **Clauses**, which ar testable statements referencing existence of a **Concept** or assertions of **Relationship**, **Action**, or **State**. The weakest type of **Belief** is a **Rule**. A Cogscript **Rule** is not a rule in a  strict sense; it does not have to be correct all the time and there need not be any true causation, directionality, or temporal seperation. Instead, its purpose is to describe a reflexive cognitive association or potential co-occurence. Each **Rule** follows the syntax of two **Clauses** seperated by `>>`.
+The real power of Bottlenose is derived from leveraging the "semantic glue" described above in forming dynamic artificial cognitive beliefs. Each **Belief** is made up of **Clauses**, which ar testable statements referencing existence of a **Concept** or assertions of **Relationship**, **Action**, or **State**. The weakest type of **Belief** is a **Rule**. A Cogscript **Rule** is not a rule in a  strict sense; it does not have to be correct all the time and there need not be any true causation, or temporal seperation. Instead, its purpose is to describe a reflexive cognitive association or potential co-occurence. Each **Rule** follows the syntax of two **Clauses** seperated by `>>`. `A >> B` denotes *if A then B is more likely*. Unlike **Laws** described below, the dependent clause (B in this example) is not asserted. Instead the possibility is introduced and accessible via querying with a number indicating summation of evidence.
 ```
 cat.speaks() >> cat=/LOLCat
 LOLCat.speaks(comment) >> comment#misspelled
@@ -61,7 +59,7 @@ cat.location=home >> cat.sleeps(), cat.eats(), cat.plays(), cat.chills()
 Of note, Cogscript allows for robust contextual co-referencing exemplified in the middle example above. The entity (*cat*) referenced within a **Clause** is preferentially assumed to be a reference to a suitable entity (*LOLCat, grumpyCat, nyanCat, keyboardCat*) within the given **Rule** context (even if the reference is not identical).
 
 ####Laws
-The strongest **Belief** is a **Law**, which is a strict bi-directional correlation indicated using `>>>`. In general `A >>> B` translates *if A is true then B is ALWAYS true. One use of **Laws** is to hardcode more 'syntactic glue' than is otherwise available. Using the cat example above we can connect the **Action** of 'owning a cat' to the **Relationship** of 'cat having an owner'. Below, we equate the **Action** `.owns(X)` to the **Relationship** `.owner =X`. Of importance, **Laws** are immediately computed into the artificial cognitive model. 
+The strongest **Belief** is a **Law**, which is a strict correlation indicated using `>>>`. In general `A >>> B` translates *if A is true then B is ALWAYS true. One use of **Laws** is to hardcode more 'syntactic glue' than is otherwise available. Using the cat example above we can connect the **Action** of 'owning a cat' to the **Relationship** of 'cat having an owner'. Below, we equate the **Action** `.owns(X)` to the **Relationship** `.owner =X`. Of importance, **Laws** are immediately computed into the artificial cognitive model. 
 ```
 cat.owner=person >>> person.owns(cat)
 ```
