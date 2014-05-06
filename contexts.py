@@ -23,6 +23,7 @@ class Context:
     self.stateGraph = networkx.DiGraph()
     self.concepts = {'noun_phrases': set(), 'verb_phrases': set(), 'descriptors': set()}
     self.conceptHashTable = dict()
+    self.taxonomyTable = dict()
     self.prototypes = dict()
   
   def rename(self, newName):
@@ -220,6 +221,12 @@ class Context:
  
   def queryNounPhrases(self, type):
     response = set()
+    if re.match('.*\*$', type.strip()):
+      type = type[:-1]
+      concept = NounPhrase(type)
+      self.incorporateConcept(concept)
+      response.add(concept)
+      return response
     type = utilities.camelCase(type)
     exactMatch = self.queryExact(type, phraseType='NounPhrase')
     if exactMatch: response.add(exactMatch)

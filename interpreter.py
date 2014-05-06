@@ -264,22 +264,60 @@ class Interpreter:
       branches = temp
     return branches
   
-  def removeComponentAssignment(self, stems, branchPhrase, branches, affirmativeConcept):
+  def removeComponentAssignment(self, stems, branchPhrase, branches, affirmativeConcept=None):
     if not branches: return 
     matchingBranches = set()
-    if isinstance(branches, set):
-      for branch in branches:
-        if affirmativeConcept in branch.synonyms() or branch.isA(affirmativeConcept):         
+    if not affirmativeConcept:
+      if isinstance(branches, set):
+        for branch in branches:
           matchingBranches.add(branch)
-    else:
-      if affirmativeConcept in branches.synonyms() or branches.isA(affirmativeConcept):   
+      else:
         matchingBranches = {branches}
+    else:
+      if isinstance(branches, set):
+        for branch in branches:
+          if affirmativeConcept in branch.synonyms() or branch.isA(affirmativeConcept):         
+            matchingBranches.add(branch)
+      else:
+        if affirmativeConcept in branches.synonyms() or branches.isA(affirmativeConcept):   
+          matchingBranches = {branches}
     potentialEdges = self.context.componentGraph.out_edges(stems, data=True)
     temp = list()
     for potentialEdge in potentialEdges:
       if potentialEdge[1] in matchingBranches and potentialEdge[2]['label'] == branchPhrase:
         self.context.componentGraph.remove_edge(potentialEdge[0], potentialEdge[1])
-  
+        
+  def assertComponentAssignment(self, componentAssignmentJSON):
+    (branches, stems) = self.retrieveComponent(componentAssignmentJSON['component_assignment']['target']['component']['stem'], componentAssignmentJSON['component_assignment']['target']['component']['branch'], returnLastStems=True, assertBranches=True)
+    branchPhrase = componentAssignmentJSON['component_assignment']['target']['component']['branch']
+    def checkIfNegativeAssignment(concept):
+      if re.match('^!', concept['concept']):
+        affirmativeConcept = concept['concept'][1:]
+        self.removeComponentAssignment(stems, branchPhrase, branches, affirmativeConcept)
+        return True
+      else:
+        return False    
+    if checkIfNegativeAssignment(componentAssignmentJSON['component_assignment']['assignment']): return
+    if branches:
+      if isinstance(branches, set):
+        for branch in branches:
+          self.removeComponentAssignment(stems, branchPhrase, branch)
+      else:
+        self.removeComponentAssignment(stems, branchPhrase, branches)
+    if self.context.isUniversal:
+      assignment = {self.context.queryPrototype(componentAssignmentJSON['component_assignment']['assignment']['concept'], phraseType='NounPhrase')}
+    else:
+      assignment = self.context.queryNounPhrases(componentAssignmentJSON['component_assignment']['assignment']['concept'])
+    if not assignment:
+      assignment = self.context.newNounPhrase(componentAssignmentJSON['component_assignment']['assignment']['concept'])
+    if isinstance(assignment, set):
+      if len(assignment) == 1:
+        (assignment,) = assignment
+      elif len(assignment) > 1:
+        raise Exception('assertComponentAssignment: Too many potential assignments')
+    for stem in stems:    
+      self.context.setComponent(stem, branchPhrase, assignment)
+    
   def assertComponentAddition(self, componentAdditionJSON):
     (branches, stems) = self.retrieveComponent(componentAdditionJSON['component_addition']['target']['component']['stem'], componentAdditionJSON['component_addition']['target']['component']['branch'], returnLastStems=True, assertBranches=True)
     def checkIfNegativeAssignment(concept):
@@ -291,7 +329,7 @@ class Interpreter:
       else:
         return False
     if isinstance(componentAdditionJSON['component_addition']['assignment'], list):
-      componentAdditionJSON['component_addition']['assignment'][:] = [x for x in componentAssertionJSON['component_addition']['assignment'] if not checkIfNegativeAssignment(x)]
+      componentAdditionJSON['component_addition']['assignment'][:] = [x for x in componentAdditionJSON['component_addition']['assignment'] if not checkIfNegativeAssignment(x)]
     else:
       if checkIfNegativeAssignment(componentAdditionJSON['component_addition']['assignment']): return
     unspecifiedBranches = []
@@ -337,16 +375,24 @@ class Interpreter:
         for stem in stems:    
           self.context.setComponent(stem, branchPhrase, assignment)
   
+  def potentiateComponentTaxonomy(self, componentJSON, parentJSON):
+    print 'potentiateComponentTaxonomy: Yet to be implemented method'
+  
   def assertTaxonomyAssignment(self, taxonomyAssignmentJSON):
     parents = list()
     children = list()
     def extractConcept(JSON):
       return JSON['concept']
-    if isinstance(taxonomyAssignmentJSON['taxonomy_assignment']['parent'], list): 
+    if 'component' in taxonomyAssignmentJSON['taxonomy_assignment']['parent']:
+      raise Exception('assertTaxonomyAssignment: Cannot use /= to assert taxonomy of a component')
+    elif isinstance(taxonomyAssignmentJSON['taxonomy_assignment']['parent'], list): 
       parents.extend(map(extractConcept, taxonomyAssignmentJSON['taxonomy_assignment']['parent']))
     else:
       parents.append(taxonomyAssignmentJSON['taxonomy_assignment']['parent']['concept'])
-    if isinstance(taxonomyAssignmentJSON['taxonomy_assignment']['child'], list): 
+    if 'component' in taxonomyAssignmentJSON['taxonomy_assignment']['child']:
+      self.potentiateComponentTaxonomy(taxonomyAssignmentJSON['taxonomy_assignment']['child'], taxonomyAssignmentJSON['taxonomy_assignment']['parent'])
+      return
+    elif isinstance(taxonomyAssignmentJSON['taxonomy_assignment']['child'], list): 
       children.extend(map(extractConcept, taxonomyAssignmentJSON['taxonomy_assignment']['child']))
     else:
       children.append(taxonomyAssignmentJSON['taxonomy_assignment']['child']['concept'])
@@ -482,6 +528,8 @@ class Interpreter:
         self.assertConcept(statementJSON['statement'])
     elif 'component' in statementJSON['statement']:
       self.assertComponent(statementJSON['statement'])
+    elif 'component_assignment' in statementJSON['statement']:
+      self.assertComponentAssignment(statementJSON['statement'])
     elif 'component_addition' in statementJSON['statement']:
       self.assertComponentAddition(statementJSON['statement'])
     elif 'taxonomy_assignment' in statementJSON['statement']:

@@ -14,6 +14,8 @@ class VerbPhrase(Concept):
 class NounPhrase(Concept):
   def __init__(self, name):
     self.isVerb = False
+    if re.match('.*\*$', name.strip()):
+      name = name[:-1]
     if not utilities.sanitize(name).istitle():
       type = str(singularize(utilities.sanitize(name).split()[-1]))
     else:
