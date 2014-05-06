@@ -1,5 +1,6 @@
 import re
 from concepts import Concept
+from pattern.en import singularize
 
 class Interpreter:
   def __init__(self, context):
@@ -9,6 +10,7 @@ class Interpreter:
     self.context = context
   
   def retrieveComponent(self, stemJSON, branchPhrase, returnLastStems=False, assertBranches=True):
+    branchPhrase = str(singularize(branchPhrase))
     if 'stem' in stemJSON:
       stems = self.retrieveComponent(stemJSON['stem'], stemJSON['branch'], False, assertBranches)
       if not isinstance(stems, set): 
@@ -265,6 +267,7 @@ class Interpreter:
     return branches
   
   def removeComponentAssignment(self, stems, branchPhrase, branches, affirmativeConcept=None):
+    branchPhrase = str(singularize(branchPhrase))
     if not branches: return 
     matchingBranches = set()
     if not affirmativeConcept:
@@ -290,6 +293,7 @@ class Interpreter:
   def assertComponentAssignment(self, componentAssignmentJSON):
     (branches, stems) = self.retrieveComponent(componentAssignmentJSON['component_assignment']['target']['component']['stem'], componentAssignmentJSON['component_assignment']['target']['component']['branch'], returnLastStems=True, assertBranches=True)
     branchPhrase = componentAssignmentJSON['component_assignment']['target']['component']['branch']
+    branchPhrase = str(singularize(branchPhrase))
     def checkIfNegativeAssignment(concept):
       if re.match('^!', concept['concept']):
         affirmativeConcept = concept['concept'][1:]
@@ -324,6 +328,7 @@ class Interpreter:
       if re.match('^!', concept['concept']):
         affirmativeConcept = concept['concept'][1:]
         branchPhrase = componentAdditionJSON['component_addition']['target']['component']['branch']
+        branchPhrase = str(singularize(branchPhrase))
         self.removeComponentAssignment(stems, branchPhrase, branches, affirmativeConcept)
         return True
       else:
@@ -361,6 +366,7 @@ class Interpreter:
       else:
         uninstantiatedAssignments.append(componentAdditionJSON['component_addition']['assignment']['concept'])
     branchPhrase = componentAdditionJSON['component_addition']['target']['component']['branch']
+    branchPhrase = str(singularize(branchPhrase))
     for uninstantiatedAssignment in uninstantiatedAssignments:
       if self.context.isUniversal:
         assignment = self.context.queryPrototype(uninstantiatedAssignment, phraseType='NounPhrase')

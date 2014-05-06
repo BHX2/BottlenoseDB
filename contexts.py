@@ -23,8 +23,11 @@ class Context:
     self.stateGraph = networkx.DiGraph()
     self.concepts = {'noun_phrases': set(), 'verb_phrases': set(), 'descriptors': set()}
     self.conceptHashTable = dict()
-    self.taxonomyTable = dict()
     self.prototypes = dict()
+    self.potentialTaxonomy = dict()
+    self.potentialComponentGraph = networkx.DiGraph()
+    self.potentialActionGraph = networkx.DiGraph()
+    self.potentialStateGraph = networkx.DiGraph()
   
   def rename(self, newName):
     self.name = newName
