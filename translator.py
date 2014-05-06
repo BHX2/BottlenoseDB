@@ -4,7 +4,7 @@ from parsimonious.grammar import Grammar
 from parsimonious.grammar import NodeVisitor
 
 grammar = Grammar("""
-  input                 = query / belief / statement
+  input                 = belief / statement
   query                 = "?" (state / action / direct_object / component / concept)
   belief                = law / rule
   law                   = clause (">>>" clause)+
@@ -39,14 +39,15 @@ grammar = Grammar("""
   number                = ~"\s*[0-9]*\.?[0-9]+\s*"
   concept_or_list       = concept_list / concept
   concept_list          = concept ("," concept)+
-  concept               = ~"\s*!?[A-Z0-9]*\*?\s*"i
+  concept               = " "* (query / simple_concept) " "*
+  simple_concept        = ~"\s*!?[A-Z0-9]*\*?\s*"i
 """)
 
 class Translator(NodeVisitor):
   def visit_input(self, node, input):
     return input[0]
   
-  def visit_query(self, node, (_, query)):
+  def visit_query(self, node, (_1, query)):
     return {'query': query}
   
   def visit_law(self, node, (first_clause, other_clauses)):
@@ -237,6 +238,12 @@ class Translator(NodeVisitor):
       concepts.append(other_concepts)
     return concepts
     
+  def visit_concept(self, node, (_1, query_or_concept, _2)):
+    if 'simple_concept' in query_or_concept:
+      return {'concept': query_or_concept['simple_concept']}
+    else:
+      return {'concept': query_or_concept}
+  
   def generic_visit(self, node, visited_children):
     if not node.expr_name:
       if isinstance(visited_children, list):

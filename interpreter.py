@@ -550,25 +550,31 @@ class Interpreter:
       self.assertAction(statementJSON['statement'])
     elif 'state' in statementJSON['statement']:
       self.assertState(statementJSON['statement'])
-          
+  
+  def query(self, queryJSON):
+    results = list()
+    if 'concept' in queryJSON['query']:
+      results = self.queryConcept(queryJSON['query'])
+    elif 'component' in queryJSON['query']:
+      results = self.queryComponent(queryJSON['query'])
+    elif 'state' in queryJSON['query']:
+      results = self.queryState(queryJSON['query'])
+    elif 'action' in queryJSON['query']:
+      if not queryJSON['query']['action']['actor']:
+        results = self.queryAction(queryJSON['query'], returnActor=False, returnTarget=True )
+      else:
+        results = self.queryAction(queryJSON['query'], returnActor=True, returnTarget=False)
+    return results
+  
   def interpret(self, JSON):
-    if 'statement' in JSON:
+    if JSON.keys() == ['statement'] and \
+       JSON['statement'].keys() == ['concept'] and \
+       isinstance(JSON['statement']['concept'], dict) and\
+       JSON['statement']['concept'].keys() == ['query']:
+        return self.query(JSON['statement']['concept'])
+    elif 'statement' in JSON:
       self.assertStatement(JSON)
       return None
-    elif 'query' in JSON:
-      results = list()
-      if 'concept' in JSON['query']:
-        results = self.queryConcept(JSON['query'])
-      elif 'component' in JSON['query']:
-        results = self.queryComponent(JSON['query'])
-      elif 'state' in JSON['query']:
-        results = self.queryState(JSON['query'])
-      elif 'action' in JSON['query']:
-        if not JSON['query']['action']['actor']:
-          results = self.queryAction(JSON['query'], returnActor=False, returnTarget=True )
-        else:
-          results = self.queryAction(JSON['query'], returnActor=True, returnTarget=False)
-      return results
     
   
     

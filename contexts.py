@@ -4,6 +4,7 @@ import os
 import networkx
 from concepts import Concept
 from phrases import NounPhrase, VerbPhrase, Descriptor
+from interpreter import Interpreter
 import utilities
 
 class Context:
@@ -223,6 +224,9 @@ class Context:
     return concept    
  
   def queryNounPhrases(self, type):
+    if 'query' in type:
+      interpreter = Interpreter(self)
+      return set(interpreter.query(type))
     response = set()
     if re.match('.*\*$', type.strip()):
       type = type[:-1]
