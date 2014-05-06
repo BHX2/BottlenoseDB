@@ -389,6 +389,23 @@ class Interpreter:
         for stem in stems:
           self.context.setComponent(stem, branchPhrase, assignment)
   
+  def assertComponentSubtraction(self, componentSubtractionJSON):
+    newComponentAdditionJSON = {'component_addition': {'target': componentSubtractionJSON['component_subtraction']['target'], 'assignment': None}}
+    if isinstance(componentSubtractionJSON['component_subtraction']['unassignment'], list):
+      newComponentAdditionJSON['component_addition']['assignment'] = list()
+      for unassignment in componentSubtractionJSON['component_subtraction']['unassignment']:
+        if re.match('^!', unassignment['concept']):
+          newComponentAdditionJSON['component_addition']['assignment'].append({'concept': unassignment['concept'][1:]})
+        else:
+          newComponentAdditionJSON['component_addition']['assignment'].append({'concept': '!' + unassignment['concept']})
+    else:
+      unassignment = componentSubtractionJSON['component_subtraction']['unassignment']['concept']
+      if re.match('^!', unassignment):
+        newComponentAdditionJSON['component_addition']['assignment'] = {'concept': unassignment[1:]}
+      else:
+        newComponentAdditionJSON['component_addition']['assignment'] = {'concept': '!' + unassignment}
+    self.assertComponentAddition(newComponentAdditionJSON)
+  
   def potentiateComponentTaxonomy(self, componentJSON, parentJSON):
     print 'potentiateComponentTaxonomy: Yet to be implemented method'
   
@@ -556,6 +573,8 @@ class Interpreter:
       self.assertComponentAssignment(statementJSON['statement'])
     elif 'component_addition' in statementJSON['statement']:
       self.assertComponentAddition(statementJSON['statement'])
+    elif 'component_subtraction' in statementJSON['statement']:
+      self.assertComponentSubtraction(statementJSON['statement'])
     elif 'taxonomy_assignment' in statementJSON['statement']:
       self.assertTaxonomyAssignment(statementJSON['statement'])
     elif 'synonym_assignment' in  statementJSON['statement']:

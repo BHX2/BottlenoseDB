@@ -19,7 +19,7 @@ grammar = Grammar("""
   logic_operator        = "&" / "|" / "," 
   simple_clause         = " "* "!"? statement probability? " "*
   probability           = "[" number "]"
-  statement             = arithmetic_operation / taxonomy_assignment / synonym_assignment / state / action / component_addition / component_assignment / component / concept
+  statement             = arithmetic_operation / taxonomy_assignment / synonym_assignment / state / action / component_addition / component_subtraction / component_assignment / component / concept
   taxonomy_assignment   = concept_or_component (type_includes / is_a) concept_or_list
   type_includes         = "/="
   is_a                  = "=/"
@@ -35,6 +35,7 @@ grammar = Grammar("""
   verb                  = ~"\s*[A-Z0-9]*s[A-Z0-9]*\s*"i
   component_assignment  = component "=" concept
   component_addition    = component "+=" concept_or_list
+  component_subtraction = component "-=" concept_or_list
   component             = concept ("." concept !"(")+
   number                = ~"\s*[0-9]*\.?[0-9]+\s*"
   concept_or_list       = concept_list / concept
@@ -213,7 +214,10 @@ class Translator(NodeVisitor):
     
   def visit_component_addition(self, node, (target, _, assignment)):
     return {'component_addition': {'target': target, 'assignment': assignment}}
-    
+
+  def visit_component_subtraction(self, node, (target, _, unassignment)):
+    return {'component_subtraction': {'target': target, 'unassignment': unassignment}}    
+  
   def visit_component(self, node, (stem, branch_expressions)):
     tree = {'stem': stem}
     for branch_expression in node.children[1].children:

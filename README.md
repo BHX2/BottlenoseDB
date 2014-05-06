@@ -17,10 +17,11 @@ animal /= mammal
 Both taxonomy and synonyms are applied universally to all language expressed thereafter rather than being pinned down to individual instances. The following scripting elements apply to particular instances of concepts.
 
 ###Components / Relationships
-Use `.` to indicate the existence of a component or relationship. This can be paired with `=` to assign the role to a single entity or with `+=` to add a relationship that is not exclusively singular. In the latter case multiple relationships can be added at once using commas to delimit a list of concepts. Both the component/relationship and any assigned entities should be noun phrases. If the attribute is in the form of a verb phrase use **Actions** as described below. Again note that all phrases should be singular.
+Use `.` to indicate the existence of a component or relationship. This can be paired with `=` to assign the role to a single entity or with `+=` to add a relationship that is not exclusively singular. In the latter case multiple relationships can be added at once using commas to delimit a list of concepts. Both the component/relationship and any assigned entities should be noun phrases. If the attribute is in the form of a verb phrase use **Actions** as described below. Again note that all phrases should be singular. To remove an entity simply use `-=`.
 ```
 cat.owner = John
-cat.favoriteFood += tuna, catnip, oatmeal
+cat.favoriteFood += tuna, catnip, oatmeal, grass
+cat.favoriteFood -= grass
 ```
 
 ###Actions
@@ -43,7 +44,7 @@ cat#!feral
 ```
 
 ###Queries
-Bottlenose also allows for concepts (specifically those expressed via noun phrases) to be queried. Queries are denoted with a preceding `?` (query operator). Queries can be used anywhere a concept is used; they can also be used on their own to inspect conceptual instances from the command-line interface (as shown in the below example). A basic query can be a noun phrase alone or a component (in which case the component rather than the parent concept is returned). Within a **Statement** or **Clause** these basic queries function the same as their counterparts without `?`; thus, their primary utility is inspection from command-line. More complex queries allow one to filter by state using the appropriate **State** expression with preceding `?`. To filter to subjects associated with a particular verb (with or without direct-object as additional filtering criteria) simply use the query operator before a normal **Action** expression. If the subject and `.` are omitted (to leave only verb, parentheses, and direct object) then the query returns direct objects. Queries are particularly useful within **Clauses** (described below) to narrow down concepts before asserting statements. Of note, negatives (`!`) cannot be used within queries.
+Bottlenose also allows for concepts (specifically those expressed via noun phrases) to be queried. Queries are denoted with a preceding `?` (query operator). Queries can be used anywhere a concept is used; they can also be used on their own to inspect conceptual instances from the command-line interface (as shown in the below example). A basic query can be a noun phrase alone or a component (in which case the component rather than the parent concept is returned). Within a statement or **Clause** these basic queries function the same as their counterparts without `?`; thus, their primary utility is inspection from command-line. More complex queries allow one to filter by state using the appropriate **State** expression with preceding `?`. To filter to subjects associated with a particular verb (with or without direct-object as additional filtering criteria) simply use the query operator before a normal **Action** expression. If the subject and `.` are omitted (to leave only verb, parentheses, and direct object) then the query returns direct objects. Queries are particularly useful within **Clauses** (described below) to narrow down concepts before asserting statements. Of note, negatives (`!`) cannot be used within queries.
 ```
 ?cat
 
