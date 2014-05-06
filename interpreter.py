@@ -378,7 +378,7 @@ class Interpreter:
       if len(unspecifiedBranches) > 0:
         self.context.mergeConcepts(assignment, unspecifiedBranches.pop())
       else:
-        for stem in stems:    
+        for stem in stems:
           self.context.setComponent(stem, branchPhrase, assignment)
   
   def potentiateComponentTaxonomy(self, componentJSON, parentJSON):

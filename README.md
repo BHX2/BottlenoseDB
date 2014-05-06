@@ -85,8 +85,8 @@ cat.weight <= 5lbs >> cat#skinny
 6. **Context** also keeps a table of clauses with matching concept items and evidence
 7. ~~Design **Clause** class which calculates implicitly dependent **Clauses** upon instantiation~~
 8. ~~Instances of **Clause** store a Cogscript JSON object & hashcode~~
-9. Design **Interpreter** class that takes in Cogscript JSON and alters data structures
-10. When **Interpreter** is in *universal context* makes clauses on prototype objects when given statements
+9. ~~Design **Interpreter** class that takes in Cogscript JSON and alters data structures~~
+10. ~~When **Interpreter** is in *universal context* makes clauses on prototype objects when given statements~~
 11. Design **Belief** class with dictionary of clauses and class methods for clause(), *add()* and *remove()*
 12. **Belief** class also holds belief graphs include **RuleGraph**, **EvidenceGraph**, **LawGraph**
 13. Implement persistence via pickling within **BottlenoseController**
