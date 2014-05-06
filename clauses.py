@@ -1,16 +1,14 @@
 import copy
 
-#TODO: test soundness of dependency calculator with several Cogscript JSONs
-
 class Clause:
   dependencies = dict()
   hashtable = dict()
   
-  def __init__(self, cogscriptJSON):
-    self.cogscriptJSON = cogscriptJSON
-    self.hashcode = self.calculateHash(cogscriptJSON)
+  def __init__(self, JSON):
+    self.JSON = JSON
+    self.hashcode = self.calculateHash(JSON)
     self.threshold = None
-    Clause.dependencies[self.hashcode] = self.calculateDependencies(self.cogscriptJSON)
+    Clause.dependencies[self.hashcode] = self.calculateDependencies(self.JSON)
     Clause.hashtable[self.hashcode] = self
  
   @staticmethod
@@ -25,48 +23,57 @@ class Clause:
     return hash(tuple(frozenset(sorted(new_obj.items()))))
   
   @staticmethod
-  def checkForClause(cogscriptJSON):
-    hashcode = Clause.calculateHash(cogscriptJSON)
+  def checkForClause(JSON):
+    hashcode = Clause.calculateHash(JSON)
     if hashcode in Clause.dependencies:
       return hashcode
     else:
       return False
   
   @staticmethod
-  def makeClauseIfNonexistent(cogscriptJSON):
-    clause = Clause.checkForClause(cogscriptJSON) 
+  def makeClauseIfNonexistent(JSON):
+    clause = Clause.checkForClause(JSON) 
     if clause:
       return clause
     else:
-      return Clause(cogscriptJSON).hashcode
+      return Clause(JSON).hashcode
   
   @staticmethod
-  def calculateDependencies(cogscriptJSON):
+  def calculateDependencies(JSON):
     dependencies = set()  
-    if isinstance(cogscriptJSON, list):
-      for child in cogscriptJSON:
+    if isinstance(JSON, list):
+      for child in JSON:
         dependencies.add(Clause.makeClauseIfNonexistent(child))
       return dependencies
-    clause = cogscriptJSON
+    clause = JSON
     if 'concept' in clause:
-      return None
+      if 'query' in clause:
+        dependencies.add(Clause.makeClauseIfNonexistent(clause['concept']['query'])
+      else:
+        return None
     elif 'comparison' in clause:
       dependencies.add(Clause.makeClauseIfNonexistent(clause['comparison']['variable']))
+      if 'component' in clause['comparison']['measure'] or 'concept' in clause['comparison']['measure']
       dependencies.add(Clause.makeClauseIfNonexistent(clause['comparison']['measure']))
-    elif 'AND' in clause or 'OR' in clause or 'XOR' in clause or 'NOT' in clause:
+    elif 'AND' in clause:
       for subclause in clause.values():
         dependencies.add(Clause.makeClauseIfNonexistent(subclause))
+    elif 'OR' in clause or 'XOR' in clause:
+      for subclause in clause.values():
+        dependencies.add(Clause.makeClauseIfNonexistent(subclause))
+    elif 'NOT' in clause:
+      return None
     elif 'statement' in clause:
       dependencies.add(Clause.makeClauseIfNonexistent(clause['statement']))
     elif 'arithmetic_operation' in clause:
       dependencies.add(Clause.makeClauseIfNonexistent(clause['arithmetic_operation']['variable']))
     elif 'taxonomy_assignment' in clause:
-      if clause['taxonomy_assignment']['type'] == 'type_includes':
-        dependencies.add(Clause.makeClauseIfNonexistent(clause['taxonomy_assignment']['parent']))
-      elif clause['taxonomy_assignment']['type'] == 'is_a':
+      if clause['taxonomy_assignment']['type'] == 'is_a':
         dependencies.add(Clause.makeClauseIfNonexistent(clause['taxonomy_assignment']['child']))
+      else:
+        raise Exception('calculateDependencies: /= should not be used within clauses')
     elif 'synonym_assignment' in clause:
-      dependencies.add(Clause.makeClauseIfNonexistent(clause['synonym_assignment']['subject']))
+      raise Exception('calculateDependencies: Synonym assignments should not be used within clauses')
     elif 'state' in clause:
       dependencies.add(Clause.makeClauseIfNonexistent(clause['state']['subject']))
       dependencies.add(Clause.makeClauseIfNonexistent(clause['state']['description']))
@@ -86,7 +93,7 @@ class Clause:
     elif 'actor-target' in clause:
       dependencies.add(Clause.makeClauseIfNonexistent(clause['actor-target']['actor']))
       dependencies.add(Clause.makeClauseIfNonexistent(clause['actor-target']['target']))
-    elif 'component_assignment' in clause:
+    elif 'component_assignment' in clause or 'component_addition' in clause:
       dependencies.add(Clause.makeClauseIfNonexistent(clause['component_assignment']['target']))
       dependencies.add(Clause.makeClauseIfNonexistent(clause['component_assignment']['assignment']))
     elif 'component' in clause:

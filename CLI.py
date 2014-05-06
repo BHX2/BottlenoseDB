@@ -121,7 +121,7 @@ def main():
             puts(colored.red(str(error.args[0])))
         else:
           with indent(2):
-            puts(colored.red('Unknown command or incoherent Cogscript.'))
+            puts(colored.red('Unknown command or incoherent scripting.'))
         traceback.print_exc()
 if __name__ == '__main__':
   main()
