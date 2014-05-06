@@ -1,6 +1,7 @@
 import re
 import datetime
 import os
+from collections import deque
 import networkx
 from concepts import Concept
 from phrases import NounPhrase, VerbPhrase, Descriptor
@@ -18,7 +19,6 @@ class Context:
         now = datetime.datetime.now()
         self.name = 'Context from ' + str(now.month) + '/' + str(now.day) + '/' + str(now.year) + ' at ' + str(now.hour) + ':' + str(now.minute)
     self.isUniversal = universal
-    self.clauseTable = dict()
     self.componentGraph = networkx.DiGraph()
     self.actionGraph = networkx.DiGraph()
     self.stateGraph = networkx.DiGraph()
@@ -29,16 +29,11 @@ class Context:
     self.potentialComponentGraph = networkx.DiGraph()
     self.potentialActionGraph = networkx.DiGraph()
     self.potentialStateGraph = networkx.DiGraph()
+    self.shortTermMemory = deque(maxlen=50)
   
   def rename(self, newName):
     self.name = newName
-  
-  def checkClause(self, clause):
-    if clause in self.clauseTable:
-      return self.clauseTable[clause]
-    else:
-      return False
-  
+
   def incorporateConcept(self, concept, prototype=False):
     hash = os.urandom(5).encode('hex')
     self.conceptHashTable[hash] = concept
@@ -49,6 +44,7 @@ class Context:
       self.actionGraph.add_node(concept)
       self.stateGraph.add_node(concept)
       self.concepts['noun_phrases'].add(concept)
+      self.shortTermMemory.appendleft(concept)
     elif isinstance(concept, VerbPhrase):
       self.actionGraph.add_node(concept)
       self.stateGraph.add_node(concept)
@@ -78,6 +74,8 @@ class Context:
         del self.conceptHashTable[hash]
         break
     if isinstance(concept, NounPhrase):
+      if concept in self.shortTermMemory:
+        self.shortTermMemory.remove(concept)
       if concept in self.actionGraph:
         acts = self.actionGraph.successors(concept)
         for act in acts:
@@ -95,12 +93,16 @@ class Context:
   
   def setAction(self, actor, act, target=None):
     #TODO: if actor has same one or more of the same acts and any have targets there shouldn't be any successorless acts
-    if target:
+    if not target:
+      self.actionGraph.add_edge(actor, act)
+      self.shortTermMemory.appendleft(actor)
+    else:
       if target.name == '!':
         potentialMatchingActs = self.actionGraph.successors(actor)
         for potentialMatchingAct in potentialMatchingActs:
           if act.name in potentialMatchingAct.synonyms() or potentialMatchingAct.isA(act.name):
             self.remove(potentialMatchingAct)
+        self.shortTermMemory.appendleft(actor)
         self.remove(act)
         self.remove(target)
         return
@@ -117,6 +119,7 @@ class Context:
           for potentiallyMatchingTarget in potentiallyMatchingTargets:
             if affirmativeTarget in potentiallyMatchingTarget.synonyms() or potentiallyMatchingTarget.isA(affirmativeTarget):
               self.remove(potentialMatchingAct)
+        self.shortTermMemory.appendleft(actor)
         self.remove(act)
         self.remove(target)
         return
@@ -128,16 +131,20 @@ class Context:
               self.remove(act)
               return False
         self.actionGraph.add_edge(act, target)
-    self.actionGraph.add_edge(actor, act)
+        self.actionGraph.add_edge(actor, act)
+        self.shortTermMemory.appendleft(actor)
+        self.shortTermMemory.appendleft(target)
         
   def unsetAction(self, actor, act, target=None):
     if target:
       self.actionGraph.remove_edge(act, target)
+      self.shortTermMemory.appendleft(target)
     if len(self.actionGraph.out_edges(act)) == 0:
         self.actionGraph.remove_edge(actor, act)
         self.concepts['verb_phrases'].remove(act)
         self.stateGraph.remove_node(act)
         self.actionGraph.remove_node(act)
+    self.shortTermMemory.appendleft(actor)
   
   def setComponent(self, parent, label, child=None):
     if child:
@@ -145,9 +152,13 @@ class Context:
     else:
       child = self.newNounPhrase(label)
       self.componentGraph.add_edge(parent, child, label=label)
+    self.shortTermMemory.appendleft(parent)
+    self.shortTermMemory.appendleft(child)
       
   def unsetComponent(self, parent, child):
     self.componentGraph.remove_edge(parent, child)
+    self.shortTermMemory.appendleft(parent)
+    self.shortTermMemory.appendleft(child)
   
   def setState(self, subject, descriptor):
     if re.match('^!', descriptor.name):
@@ -160,12 +171,14 @@ class Context:
       self.remove(descriptor)
     else:
       self.stateGraph.add_edge(subject, descriptor)
+    self.shortTermMemory.appendleft(subject)
 
   def unsetState(self, subject, state):
     self.stateGraph.remove_edge(subject, state)
     self.concepts['descriptors'].remove(state)
     self.stateGraph.remove_node(state)
     self.remove(state)
+    self.shortTermMemory.appendleft(subject)
     
   def mergeConcepts(self, concept1, concept2):
     names = (concept1.name, concept2.name)
@@ -202,6 +215,7 @@ class Context:
             graph.add_edge(mergedConcept, edge[1], edge[2])
     self.remove(concept1)
     self.remove(concept2)
+    self.shortTermMemory.appendleft(mergedConcept)
     return mergedConcept
 
   def queryPrototype(self, name, phraseType):
@@ -285,7 +299,16 @@ class Context:
       return self.conceptHashTable[hash]
     else:
       return None
-      
+  
+  def findLastReferenced(self, concepts):
+    if isinstance(concepts, set):
+      for reference in self.shortTermMemory:
+        if reference in concepts:
+          return reference
+      raise Exception('findLastReferenced: No appropriate recent references')
+    else:
+      raise Exception('findLastReferenced: Expected set of concepts')
+  
   def __contains__(self, concept):
     if concept in self.concepts['noun_phrases']:
       return True

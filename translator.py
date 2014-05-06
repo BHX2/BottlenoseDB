@@ -239,10 +239,16 @@ class Translator(NodeVisitor):
     return concepts
     
   def visit_concept(self, node, (_1, query_or_concept, _2)):
-    if 'simple_concept' in query_or_concept:
-      return {'concept': query_or_concept['simple_concept']}
+    if query_or_concept:
+      if 'simple_concept' in query_or_concept:
+        if query_or_concept['simple_concept']:
+          return {'concept': query_or_concept['simple_concept']}
+        else:
+          return None
+      else:
+        return {'concept': query_or_concept}
     else:
-      return {'concept': query_or_concept}
+      return None
   
   def generic_visit(self, node, visited_children):
     if not node.expr_name:

@@ -3,7 +3,6 @@ from contexts import Context
 def Subcontext(Context):
   def __init__(self, supercontext)
     self.isUniversal = False
-    self.clauseTable = dict()
     self.supercontext = supercontext
     self.componentGraph = self.supercontext.componentGraph
     self.actionGraph = self.supercontext.actionGraph

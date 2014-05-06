@@ -60,14 +60,16 @@ class Interpreter:
             elif len(stems) == 1:
               (stem,) = stems
             else:
-              raise Exception('retrieveComponent: Too many matching stems')
+              stem = self.context.findLastReferenced(stems)
+              #raise Exception('retrieveComponent: Too many matching stems')
         else:
           if returnLastStems:
             return (None, None)
           else:
             return None
       elif len(candidateStems) > 1:
-        raise Exception('retrieveComponent: Too many matching stems')
+        stem = self.context.findLastReferenced(candidateStems)
+        #raise Exception('retrieveComponent: Too many matching stems')
       else:
         (stem,) = candidateStems
       edges = self.context.componentGraph.out_edges(stem, data=True)
@@ -247,7 +249,8 @@ class Interpreter:
       if len(subject) == 1:
         (subject,) = subject
       elif len(subject) > 1:
-        raise Exception('assertState: Too many potential subjects')
+        subject = self.context.findLastReferenced(subject)
+        #raise Exception('assertState: Too many potential subjects')
     descriptionJSON = stateJSON['state']['description']
     if 'quantity' in descriptionJSON:
       description = str(descriptionJSON['quantity'])
@@ -322,7 +325,8 @@ class Interpreter:
       if len(assignment) == 1:
         (assignment,) = assignment
       elif len(assignment) > 1:
-        raise Exception('assertComponentAssignment: Too many potential assignments')
+        assignment = self.context.findLastReferenced(assignment)
+        #raise Exception('assertComponentAssignment: Too many potential assignments')
     for stem in stems:    
       self.context.setComponent(stem, branchPhrase, assignment)
     
@@ -441,7 +445,8 @@ class Interpreter:
           if len(potentialActors) == 1:
             (actor,) = potentialActors
           else:
-            raise Exception('assertAction: Too many suitable actors found')
+            actor = self.context.findLastReferenced(potentialActors)
+            #raise Exception('assertAction: Too many suitable actors found')
         else:
           actor = potentialActors
       else:
@@ -450,7 +455,8 @@ class Interpreter:
           if len(actor) == 1:
             (actor,) = actor
           else:
-            raise Exception('assertAction: Too many suitable actors found')
+            actor = self.context.findLastReferenced(actor)
+            #raise Exception('assertAction: Too many suitable actors found')
     elif 'concept' in actionJSON['action']['actor']:
       if self.context.isUniversal:
         potentialActors = self.context.queryPrototype(actionJSON['action']['actor']['concept'], phraseType='NounPhrase')
@@ -461,7 +467,8 @@ class Interpreter:
           if len(potentialActors) == 1:
             (actor,) = potentialActors
           else:
-            raise Exception('assertAction: Too many suitable actors found')
+            actor = self.context.findLastReferenced(potentialActors)
+            #raise Exception('assertAction: Too many suitable actors found')
         else:
           actor = potentialActors
       else:
@@ -470,7 +477,8 @@ class Interpreter:
           if len(actor) == 1:
             (actor,) = actor
           else:
-            raise Exception('assertAction: Too many suitable actors found')
+            actor = self.context.findLastReferenced(actor)
+            #raise Exception('assertAction: Too many suitable actors found')
     if not actor:
       raise Exception('assertAction: No suitable actors found')
     targets = []
@@ -503,7 +511,11 @@ class Interpreter:
         if not moreTargets:
           moreTargets = self.assertConcept(actionJSON['action']['target'])
         if isinstance(moreTargets, set):
-          targets.extend(moreTargets)
+          if len(moreTargets) == 1: 
+            targets.extend(moreTargets)
+          else:
+            targets.append(self.context.findLastReferenced(moreTargets))
+            #raise Exception('assertAction: Too many suitable targets found')
         else:
           targets.append(moreTargets)
     else:
@@ -533,7 +545,9 @@ class Interpreter:
               (match,) = matches
               self.context.remove(match)
             if len(matches) > 1:
-              raise Exception('assertConcept: Too many matching concepts')
+              match = self.context.findLastReferenced(matches)
+              self.context.remove(match)
+              #raise Exception('assertConcept: Too many matching concepts')
       else:
         self.assertConcept(statementJSON['statement'])
     elif 'component' in statementJSON['statement']:
