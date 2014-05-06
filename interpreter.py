@@ -152,33 +152,37 @@ class Interpreter:
           if re.match('^!', target['concept']):
             raise Exception('Negatives can not be used as filtering criteria.')
     if not returnActor and not returnTarget: return {}
-    if 'concept' in actionJSON['action']['actor']:
-      if self.context.isUniversal:
-        potentialActors = {self.context.queryPrototype(actionJSON['action']['actor']['concept'], phraseType='NounPhrase')}
-      else:
-        potentialActors = self.queryConcept(actionJSON['action']['actor'])
-    elif 'component' in actionJSON['action']['actor']:
-      potentialActors = self.queryComponent(actionJSON['action']['actor'])
+    if not actionJSON['action']['actor']:
+      potentialActors = set()
+      potentialActs = self.context.queryVerbPhrases(actionJSON['action']['act']['verb'])
     else:
-      raise Exception('queryAction: Unknown action structure')
-    if not potentialActors:
-      return {}
-    temp = set()
-    temp2 = set()
-    for potentialActor in potentialActors:
-      acts = self.context.actionGraph.successors(potentialActor)
-      for act in acts:
-        if actionJSON['action']['act']['verb'] in act.synonyms() or act.isA(actionJSON['action']['act']['verb']):
-          if potentialActor in self.context:
-            temp.add(potentialActor)
-            temp2.add(act)
-    potentialActors = temp
-    potentialActs = temp2
-    if not actionJSON['action']['target']:
-      if returnActor:
-        return potentialActors
+      if 'concept' in actionJSON['action']['actor']:
+        if self.context.isUniversal:
+          potentialActors = {self.context.queryPrototype(actionJSON['action']['actor']['concept'], phraseType='NounPhrase')}
+        else:
+          potentialActors = self.queryConcept(actionJSON['action']['actor'])
+      elif 'component' in actionJSON['action']['actor']:
+        potentialActors = self.queryComponent(actionJSON['action']['actor'])
       else:
+        raise Exception('queryAction: Unknown action structure')
+      if not potentialActors:
         return {}
+      temp = set()
+      temp2 = set()
+      for potentialActor in potentialActors:
+        acts = self.context.actionGraph.successors(potentialActor)
+        for act in acts:
+          if actionJSON['action']['act']['verb'] in act.synonyms() or act.isA(actionJSON['action']['act']['verb']):
+            if potentialActor in self.context:
+              temp.add(potentialActor)
+              temp2.add(act)
+      potentialActors = temp
+      potentialActs = temp2
+      if not actionJSON['action']['target']:
+        if returnActor:
+          return potentialActors
+        else:
+          return {}
     temp3 = set()
     temp4 = set()
     for potentialAct in potentialActs:
@@ -560,7 +564,10 @@ class Interpreter:
       elif 'state' in JSON['query']:
         results = self.queryState(JSON['query'])
       elif 'action' in JSON['query']:
-        results = self.queryAction(JSON['query'], returnActor=True)
+        if not JSON['query']['action']['actor']:
+          results = self.queryAction(JSON['query'], returnActor=False, returnTarget=True )
+        else:
+          results = self.queryAction(JSON['query'], returnActor=True, returnTarget=False)
       return results
     
   

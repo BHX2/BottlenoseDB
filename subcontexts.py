@@ -5,12 +5,16 @@ def Subcontext(Context):
     self.isUniversal = False
     self.clauseTable = dict()
     self.supercontext = supercontext
-    self.componentGraph = self.supercontext.DiGraph()
-    self.actionGraph = self.supercontext.DiGraph()
-    self.stateGraph = self.supercontext.DiGraph()
+    self.componentGraph = self.supercontext.componentGraph
+    self.actionGraph = self.supercontext.actionGraph
+    self.stateGraph = self.supercontext.stateGraph
     self.concepts = {'noun_phrases': set(), 'verb_phrases': set(), 'descriptors': set()}
-    self.conceptHashTable = dict()
-    self.prototypes = dict()
+    self.conceptHashTable = self.supercontext.conceptHashTable
+    self.prototypes = self.supercontext.prototypes
+    self.potentialTaxonomy = self.supercontext.potentialTaxonomy
+    self.potentialComponentGraph = self.supercontext.potentialComponentGraph
+    self.potentialActionGraph = self.supercontext.potentialActionGraph
+    self.potentialStateGraph = self.supercontext.potentialStateGraph
     
   def add(self, concept):
     if concept not in self:
