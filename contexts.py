@@ -26,10 +26,12 @@ class Context:
     self.conceptHashTable = dict()
     self.prototypes = dict()
     self.potentialTaxonomy = dict()
-    self.potentialComponentGraph = networkx.DiGraph()
-    self.potentialActionGraph = networkx.DiGraph()
-    self.potentialStateGraph = networkx.DiGraph()
+    self.potentialComponentGraph = networkx.MultiDiGraph()
+    self.potentialActionGraph = networkx.MultiDiGraph()
+    self.potentialStateGraph = networkx.MultiDiGraph()
     self.shortTermMemory = deque(maxlen=50)
+    self.clauseToConceptSet = dict()
+    self.clauseToPotentialEdges = dict()
   
   def rename(self, newName):
     self.name = newName
@@ -91,94 +93,106 @@ class Context:
     if concept in self.concepts['verb_phrases']: self.concepts['verb_phrases'].remove(concept)
     if concept in self.concepts['descriptors']: self.concepts['descriptors'].remove(concept)
   
-  def setAction(self, actor, act, target=None):
+  def setAction(self, actor, act, target=None, initiatingClauseHash=None):
     #TODO: if actor has same one or more of the same acts and any have targets there shouldn't be any successorless acts
-    if not target:
-      self.actionGraph.add_edge(actor, act)
-      self.shortTermMemory.appendleft(actor)
+    if initiatingClauseHash:
+      print 'unimplemented...'
     else:
-      if target.name == '!':
-        potentialMatchingActs = self.actionGraph.successors(actor)
-        for potentialMatchingAct in potentialMatchingActs:
-          if act.name in potentialMatchingAct.synonyms() or potentialMatchingAct.isA(act.name):
-            self.remove(potentialMatchingAct)
-        self.shortTermMemory.appendleft(actor)
-        self.remove(act)
-        self.remove(target)
-        return
-      elif re.match('^!', target.name):
-        affirmativeTarget = target.name[1:]
-        potentialMatchingActs = self.actionGraph.successors(actor)
-        temp = set()
-        for potentialMatchingAct in potentialMatchingActs:
-          if act.name in potentialMatchingAct.synonyms() or potentialMatchingAct.isA(act.name):
-            temp.add(potentialMatchingAct)
-        potentialMatchingActs = temp
-        for potentialMatchingAct in potentialMatchingActs:
-          potentiallyMatchingTargets = self.actionGraph.successors(potentialMatchingAct)
-          for potentiallyMatchingTarget in potentiallyMatchingTargets:
-            if affirmativeTarget in potentiallyMatchingTarget.synonyms() or potentiallyMatchingTarget.isA(affirmativeTarget):
-              self.remove(potentialMatchingAct)
-        self.shortTermMemory.appendleft(actor)
-        self.remove(act)
-        self.remove(target)
-        return
-      else:
-        if self.actionGraph.successors(actor) and self.actionGraph.predecessors(target):
-          sharedActs = set(self.actionGraph.successors(actor)).intersection(set(self.actionGraph.predecessors(target)))
-          for sharedAct in sharedActs:
-            if act.parents().intersection(sharedAct.parents()): 
-              self.remove(act)
-              return False
-        self.actionGraph.add_edge(act, target)
+      if not target:
         self.actionGraph.add_edge(actor, act)
         self.shortTermMemory.appendleft(actor)
+      else:
+        if target.name == '!':
+          potentialMatchingActs = self.actionGraph.successors(actor)
+          for potentialMatchingAct in potentialMatchingActs:
+            if act.name in potentialMatchingAct.synonyms() or potentialMatchingAct.isA(act.name):
+              self.unsetAction(actor, potentialMatchingAct, target, initiatingClauseHash)
+          self.shortTermMemory.appendleft(actor)
+          self.remove(act)
+          self.remove(target)
+          return
+        elif re.match('^!', target.name):
+          affirmativeTarget = target.name[1:]
+          potentialMatchingActs = self.actionGraph.successors(actor)
+          temp = set()
+          for potentialMatchingAct in potentialMatchingActs:
+            if act.name in potentialMatchingAct.synonyms() or potentialMatchingAct.isA(act.name):
+              temp.add(potentialMatchingAct)
+          potentialMatchingActs = temp
+          for potentialMatchingAct in potentialMatchingActs:
+            potentiallyMatchingTargets = self.actionGraph.successors(potentialMatchingAct)
+            for potentiallyMatchingTarget in potentiallyMatchingTargets:
+              if affirmativeTarget in potentiallyMatchingTarget.synonyms() or potentiallyMatchingTarget.isA(affirmativeTarget):
+                self.unsetAction(actor, potentialMatchingAct, target, initiatingClauseHash)
+          self.shortTermMemory.appendleft(actor)
+          self.remove(act)
+          self.remove(target)
+          return
+        else:
+          if self.actionGraph.successors(actor) and self.actionGraph.predecessors(target):
+            sharedActs = set(self.actionGraph.successors(actor)).intersection(set(self.actionGraph.predecessors(target)))
+            for sharedAct in sharedActs:
+              if act.parents().intersection(sharedAct.parents()): 
+                self.unsetAction(actor, act, target, initiatingClauseHash)
+                return False
+          self.actionGraph.add_edge(act, target)
+          self.actionGraph.add_edge(actor, act)
+          self.shortTermMemory.appendleft(actor)
+          self.shortTermMemory.appendleft(target)
+          
+  def unsetAction(self, actor, act, target=None, initiatingClauseHash=None):
+    if initiatingClauseHash:
+      print 'unimplemented...'
+    else:
+      if target and target.name != '!':
+        self.actionGraph.remove_edge(act, target)
         self.shortTermMemory.appendleft(target)
-        
-  def unsetAction(self, actor, act, target=None):
-    if target:
-      self.actionGraph.remove_edge(act, target)
-      self.shortTermMemory.appendleft(target)
-    if len(self.actionGraph.out_edges(act)) == 0:
-        self.actionGraph.remove_edge(actor, act)
-        self.concepts['verb_phrases'].remove(act)
-        self.stateGraph.remove_node(act)
-        self.actionGraph.remove_node(act)
-    self.shortTermMemory.appendleft(actor)
+      if len(self.actionGraph.out_edges(act)) == 0:
+          self.remove(act)
+      self.shortTermMemory.appendleft(actor)
   
-  def setComponent(self, parent, label, child=None):
-    if child:
-      self.componentGraph.add_edge(parent, child, label=label)
+  def setComponent(self, parent, label, child=None, initiatingClauseHash=None):
+    if initiatingClauseHash:
+      print 'unimplemented...'
     else:
-      child = self.newNounPhrase(label)
-      self.componentGraph.add_edge(parent, child, label=label)
-    self.shortTermMemory.appendleft(parent)
-    self.shortTermMemory.appendleft(child)
+      if child:
+        self.componentGraph.add_edge(parent, child, label=label)
+      else:
+        child = self.newNounPhrase(label)
+        self.componentGraph.add_edge(parent, child, label=label)
+      self.shortTermMemory.appendleft(parent)
+      self.shortTermMemory.appendleft(child)
       
-  def unsetComponent(self, parent, child):
-    self.componentGraph.remove_edge(parent, child)
-    self.shortTermMemory.appendleft(parent)
-    self.shortTermMemory.appendleft(child)
-  
-  def setState(self, subject, descriptor):
-    if re.match('^!', descriptor.name):
-      affirmativeDescriptor = descriptor.name[1:]
-      if affirmativeDescriptor != '':
-        potentialMatches = self.stateGraph.successors(subject)
-        for potentialMatch in potentialMatches:
-          if affirmativeDescriptor in potentialMatch.synonyms() or potentialMatch.isA(affirmativeDescriptor):
-            self.unsetState(subject, potentialMatch)
-      self.remove(descriptor)
+  def unsetComponent(self, parent, child, initiatingClauseHash=None):
+    if initiatingClauseHash:
+      print 'unimplemented...'
     else:
-      self.stateGraph.add_edge(subject, descriptor)
-    self.shortTermMemory.appendleft(subject)
+      self.componentGraph.remove_edge(parent, child)
+      self.shortTermMemory.appendleft(parent)
+      self.shortTermMemory.appendleft(child)
+  
+  def setState(self, subject, descriptor, initiatingClauseHash=None):
+    if initiatingClauseHash:
+      print 'unimplemented...'
+    else:
+      if re.match('^!', descriptor.name):
+        affirmativeDescriptor = descriptor.name[1:]
+        if affirmativeDescriptor != '':
+          potentialMatches = self.stateGraph.successors(subject)
+          for potentialMatch in potentialMatches:
+            if affirmativeDescriptor in potentialMatch.synonyms() or potentialMatch.isA(affirmativeDescriptor):
+              self.unsetState(subject, potentialMatch, initiatingClauseHash)
+        self.remove(descriptor)
+      else:
+        self.stateGraph.add_edge(subject, descriptor)
+      self.shortTermMemory.appendleft(subject)
 
-  def unsetState(self, subject, state):
-    self.stateGraph.remove_edge(subject, state)
-    self.concepts['descriptors'].remove(state)
-    self.stateGraph.remove_node(state)
-    self.remove(state)
-    self.shortTermMemory.appendleft(subject)
+  def unsetState(self, subject, state, initiatingClauseHash=None):
+    if initiatingClauseHash:
+      print 'unimplemented...'
+    else:
+      self.remove(state)
+      self.shortTermMemory.appendleft(subject)
     
   def mergeConcepts(self, concept1, concept2):
     names = (concept1.name, concept2.name)

@@ -15,9 +15,7 @@ class Concept:
     else: 
       self.name = None
     if type: 
-      self.classify(utilities.sanitize(self.name), utilities.sanitize(type))
-    else:
-      self.type = None
+      self.classify(utilities.sanitize(type))
     if bootstrapVocabulary:
       self.bootstrapVocabulary = True
       self.wordnetClassifier = WordNetClassifier()
@@ -100,18 +98,22 @@ class Concept:
       if re.match('^!', term2):
         return False
     if not term2:
+      if not self.isVerb:
+        if not utilities.sanitize(term1).istitle():
+          self.classify(term1, utilities.sanitize(term1).split()[-1])
       child = self.name
       parent = term1
     else:
       child = term1
       parent = term2
-    child = utilities.sanitize(child)
-    parent = utilities.sanitize(parent)
+    if child == parent: return
+    child = utilities.camelCase(child)
+    parent = utilities.camelCase(parent)
     if not self.isA(child, parent) and not parent.istitle():
       self.taxonomy.case_sensitive = True
       self.taxonomy.append(child, type=parent)
       self.taxonomy.case_sensitive = False
-      
+    
   def isA(self, term1, term2=None):
     if not term2:
       if not self.name:

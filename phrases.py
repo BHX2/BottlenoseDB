@@ -17,7 +17,7 @@ class NounPhrase(Concept):
     if re.match('.*\*$', name.strip()):
       name = name[:-1]
     if not utilities.sanitize(name).istitle():
-      type = str(singularize(utilities.sanitize(name).split()[-1]))
+      type = utilities.sanitize(name).split()[-1]
     else:
       type = None
     Concept.__init__(self, name, type)

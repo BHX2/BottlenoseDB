@@ -7,10 +7,10 @@ grammar = Grammar("""
   input                 = belief / statement
   query                 = "?" (state / action / direct_object / component / concept)
   belief                = law / rule
-  law                   = clause (">>>" clause)+
+  law                   = clause ">>>" clause
   arithmetic_operation  = (component / concept) arithmetic_operator quantity
   arithmetic_operator   = "+" / "-"
-  rule                  = clause (">>" clause)+
+  rule                  = clause ">>" clause
   clause                = (comparison_clause / compound_clause / simple_clause) " "*
   comparison_clause     = (component / concept) !">>" (comparison_operator) " "* (quantity / component / concept) 
   comparison_operator   = "==" / "!=" / ">=" / "<=" / ">" / "<"
@@ -51,14 +51,11 @@ class Translator(NodeVisitor):
   def visit_query(self, node, (_1, query)):
     return {'query': query}
   
-  def visit_law(self, node, (first_clause, other_clauses)):
-    response = {'law': {'clauses':[first_clause]}}
-    if len(other_clauses) == 1:
-      response['law']['clauses'].append(other_clauses)
-    else:
-      for other_clause in other_clauses:
-        response['law']['clauses'].append(other_clause)
-    return response
+  def visit_belief(self, node, (rule_or_law)):
+    return {'belief': rule_or_law[0]}
+  
+  def visit_law(self, node, (first_clause, _, second_clause)):
+    return {'law': {'independent_clause': first_clause, 'dependent_clause': second_clause}}
 
   def visit_arithmetic_operation(self, node, (concept_or_component, operator, quantity)):
     return {'arithmetic_operation': {'variable': concept_or_component, 'operator': operator, 'quantity': quantity}}
@@ -66,14 +63,8 @@ class Translator(NodeVisitor):
   def visit_arithmetic_operator(self, node, _):
     return node.text
     
-  def visit_rule(self, node, (first_clause, other_clauses)):
-    response = {'rule': {'clauses':[first_clause]}}
-    if len(other_clauses) == 1:
-      response['rule']['clauses'].append(other_clauses)
-    else:
-      for other_clause in other_clauses:
-        response['rule']['clauses'].append(other_clause)
-    return response
+  def visit_rule(self, node, (first_clause, _, second_clause)):
+    return {'rule': {'independent_clause': first_clause, 'dependent_clause': second_clause}}
     
   def visit_clause(self, node, (clause, _2)):
     return clause

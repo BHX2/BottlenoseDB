@@ -14,6 +14,9 @@ def Subcontext(Context):
     self.potentialComponentGraph = self.supercontext.potentialComponentGraph
     self.potentialActionGraph = self.supercontext.potentialActionGraph
     self.potentialStateGraph = self.supercontext.potentialStateGraph
+    self.shortTermMemory = self.supercontext.shortTermMemory
+    self.clauseToConceptSet = self.supercontext.clauseToConceptSet
+    self.clauseToPotentialEdges = self.supercontext.clauseToPotentialEdges
     
   def add(self, concept):
     if concept not in self:
