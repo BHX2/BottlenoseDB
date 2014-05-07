@@ -12,7 +12,6 @@ class Clause:
     Clause.hashtable[self.hashcode] = self
     if independent:
       self.calculateRelatedPhrases(JSON, self)
-      print self.relatedPhraseToClause
  
   @staticmethod
   def calculateHash(obj):

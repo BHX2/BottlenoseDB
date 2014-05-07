@@ -10,13 +10,14 @@ class Interpreter:
   def setContext(self, context):
     self.context = context
   
-  def retrieveComponent(self, stemJSON, branchPhrase, returnLastStems=False, assertBranches=True):
+  def retrieveComponent(self, stemJSON, branchPhrase, returnRoots=False, returnLastStems=False, assertBranches=True, initiatingClauseHash=None):
     if 'stem' in stemJSON:
-      stems = self.retrieveComponent(stemJSON['stem'], stemJSON['branch'], False, assertBranches)
+      stems = self.retrieveComponent(stemJSON['stem'], stemJSON['branch'], False, False, assertBranches, initiatingClauseHash)
       if not isinstance(stems, set): 
         temp = set()
         temp.add(stems)
         stems = temp
+      roots = stems
       edges = self.context.componentGraph.out_edges(stems, data=True)
       branches = set()
       for edge in edges:
@@ -33,9 +34,15 @@ class Interpreter:
         (branch,) = branches
         branches = branch
       if returnLastStems:
-        return (branches, stems)
+        if returnRoots:
+          return (roots, branches, stems)
+        else:
+          return (branches, stems)
       else:
-        return branches
+        if returnRoots:
+          return (roots, branches)
+        else:
+          return branches
     else:
       if 'concept' not in stemJSON: raise Exception('retrieveComponent: Unknown tree structure')
       if self.context.isUniversal:
@@ -56,7 +63,7 @@ class Interpreter:
           else:
             stems = self.context.queryNounPhrases(stemJSON['concept'])
             if len(stems) == 0:
-              stem = self.context.newNounPhrase(stemJSON['concept'])
+              stem = self.context.newNounPhrase(stemJSON['concept'], initiatingClauseHash)
             elif len(stems) == 1:
               (stem,) = stems
             else:
@@ -84,7 +91,7 @@ class Interpreter:
       branches = temp
       if len(branches) == 0:
         if assertBranches:
-          branch = self.context.newNounPhrase('unspecified ' + utilities.sanitize(branchPhrase))
+          branch = self.context.newNounPhrase('unspecified ' + utilities.sanitize(branchPhrase), initiatingClauseHash)
           branch.classify(branchPhrase)
           self.context.setComponent(stem, branchPhrase, branch)
         else:
@@ -105,13 +112,43 @@ class Interpreter:
   def queryConcept(self, JSON):
     return self.context.queryNounPhrases(JSON['concept'])
   
-  def queryComponent(self, JSON):
-    response = self.retrieveComponent(JSON['component']['stem'], JSON['component']['branch'], assertBranches=False)
-    if not response:
-      return []
+  def queryComponent(self, JSON, returnRoots=False):
+    if not returnRoots:
+      response = self.retrieveComponent(JSON['component']['stem'], JSON['component']['branch'], returnRoots=False, assertBranches=False)
+      if not response:
+        return set()
+      else:
+        return response
     else:
-      return response
+      (roots, branches) = response = self.retrieveComponent(JSON['component']['stem'], JSON['component']['branch'], returnRoots=True, assertBranches=False)
+      if not branches:
+        branches = set()
+      return (roots, branches)
   
+  def queryComponentAssignment(self, JSON, returnRoots=False):
+    if not returnRoots:
+      (branches, stems) = self.retrieveComponent(JSON['component_assignment']['target']['component']['stem'], JSON['component_assignment']['target']['component']['branch'], returnRoots=False, returnLastStems=True, assertBranches=False)
+    else:
+      (roots, branches, stems) = self.retrieveComponent(JSON['component_assignment']['target']['component']['stem'], JSON['component_assignment']['target']['component']['branch'], returnRoots=True, returnLastStems=True, assertBranches=False)
+    if not branches or not stems: return set()
+    branchPhrase = componentAssignmentJSON['component_assignment']['target']['component']['branch']
+    potentialMatchingEdges = self.context.componentGraph.out_edges(stems)
+    matchingBranches = set()
+    if isinstance(branches, set):
+      for branch in branches:
+        matchingBranches.add(branch)
+      else:
+        matchingBranches = {branches}
+    temp = set()
+    for edge in potentialMatchingEdges:
+      if edge[1] in matchingBranches and edge[2]['label'] == branchPhrase:
+        temp.add(edge[1])
+    branches = temp
+    if returnRoots:
+      return (roots, branches)
+    else:
+      return branches
+    
   def queryState(self, JSON):
     if 'quality' in JSON['state']['description']:
       if re.match('^!', JSON['state']['description']['quality']):
@@ -222,11 +259,11 @@ class Interpreter:
     elif returnActor:
       return actors
     
-  def assertConcept(self, conceptJSON):
+  def assertConcept(self, conceptJSON, initiatingClauseHash=None):
       if self.context.isUniversal:
         return self.context.queryPrototype(conceptJSON['concept'], phraseType='NounPhrase')
       else:
-        return self.context.newNounPhrase(conceptJSON['concept'])
+        return self.context.newNounPhrase(conceptJSON['concept'], initiatingClauseHash)
   
   def assertState(self, stateJSON, initiatingClauseHash=None):
     if 'concept' in stateJSON['state']['subject']:
@@ -240,9 +277,9 @@ class Interpreter:
       raise Exception('assertState: Unknown state structure')
     if not subject:
       if 'concept' in stateJSON['state']['subject']:
-        subject = self.assertConcept(stateJSON['state']['subject'])
+        subject = self.assertConcept(stateJSON['state']['subject'], initiatingClauseHash)
       elif 'component' in stateJSON['state']['subject']:
-        subject = self.assertComponent(stateJSON['state']['subject'])
+        subject = self.assertComponent(stateJSON['state']['subject'], initiatingClauseHash)
       else:
         raise Exception('assertState: Unknown state structure')
     if isinstance(subject, set):
@@ -262,11 +299,11 @@ class Interpreter:
     return self.context.setState(subject, descriptor, initiatingClauseHash)
   
   def assertComponent(self, componentJSON, initiatingClauseHash=None):
-    (branches, stems) = self.retrieveComponent(componentJSON['component']['stem'], componentJSON['component']['branch'], returnLastStems=True, assertBranches=True)
+    (branches, stems) = self.retrieveComponent(componentJSON['component']['stem'], componentJSON['component']['branch'], returnRoots=False, returnLastStems=True, assertBranches=True, initiatingClauseHash=initiatingClauseHash)
     if not branches:
       temp = set()
       for stem in stems:
-        branch = self.context.newNounPhrase('unspecified ' + componentJSON['component']['branch'])
+        branch = self.context.newNounPhrase('unspecified ' + componentJSON['component']['branch'], initiatingClauseHash)
         branch.classify(componentJSON['component']['branch'])
         self.context.setComponent(stem, componentJSON['component']['branch'], branch, initiatingClauseHash)
         temp.add(branch)
@@ -294,10 +331,10 @@ class Interpreter:
     temp = list()
     for potentialEdge in potentialEdges:
       if potentialEdge[1] in matchingBranches and potentialEdge[2]['label'] == branchPhrase:
-        self.context.unsetComponent(potentialEdge[0], potentialEdge[1], initiatingClauseHash)
+        self.context.unsetComponent(potentialEdge[0], branchPhrase, potentialEdge[1], initiatingClauseHash)
         
   def assertComponentAssignment(self, componentAssignmentJSON, initiatingClauseHash=None):
-    (branches, stems) = self.retrieveComponent(componentAssignmentJSON['component_assignment']['target']['component']['stem'], componentAssignmentJSON['component_assignment']['target']['component']['branch'], returnLastStems=True, assertBranches=True)
+    (branches, stems) = self.retrieveComponent(componentAssignmentJSON['component_assignment']['target']['component']['stem'], componentAssignmentJSON['component_assignment']['target']['component']['branch'], returnRoots=False, returnLastStems=True, assertBranches=True, initiatingClauseHash=initiatingClauseHash)
     branchPhrase = componentAssignmentJSON['component_assignment']['target']['component']['branch']
     def checkIfNegativeAssignment(concept):
       if re.match('^!', concept['concept']):
@@ -317,7 +354,7 @@ class Interpreter:
     self.assertComponentAddition(componentAdditionJSON, initiatingClauseHash)
     
   def assertComponentAddition(self, componentAdditionJSON, initiatingClauseHash=None):
-    (branches, stems) = self.retrieveComponent(componentAdditionJSON['component_addition']['target']['component']['stem'], componentAdditionJSON['component_addition']['target']['component']['branch'], returnLastStems=True, assertBranches=True)
+    (branches, stems) = self.retrieveComponent(componentAdditionJSON['component_addition']['target']['component']['stem'], componentAdditionJSON['component_addition']['target']['component']['branch'], returnRoots=False, returnLastStems=True, assertBranches=True, initiatingClauseHash=initiatingClauseHash)
     def checkIfNegativeAssignment(concept):
       if re.match('^!', concept['concept']):
         affirmativeConcept = concept['concept'][1:]
@@ -363,12 +400,12 @@ class Interpreter:
       if self.context.isUniversal:
         assignment = self.context.queryPrototype(uninstantiatedAssignment, phraseType='NounPhrase')
       else:
-        assignment = self.context.newNounPhrase(uninstantiatedAssignment)
+        assignment = self.context.newNounPhrase(uninstantiatedAssignment, initiatingClauseHash)
       assignment.classify(branchPhrase)
       assignments.append(assignment)
     for assignment in assignments:
       if len(unspecifiedBranches) > 0:
-        self.context.mergeConcepts(assignment, unspecifiedBranches.pop())
+        self.context.mergeConcepts(assignment, unspecifiedBranches.pop(), initiatingClauseHash)
       else:
         for stem in stems:
           self.context.setComponent(stem, branchPhrase, assignment, initiatingClauseHash)
@@ -451,7 +488,7 @@ class Interpreter:
         else:
           actor = potentialActors
       else:
-        actor = self.assertComponent(actionJSON['action']['actor'])
+        actor = self.assertComponent(actionJSON['action']['actor'], initiatingClauseHash)
         if isinstance(actor, set):
           if len(actor) == 1:
             (actor,) = actor
@@ -473,7 +510,7 @@ class Interpreter:
         else:
           actor = potentialActors
       else:
-        actor = self.assertConcept(actionJSON['action']['actor'])
+        actor = self.assertConcept(actionJSON['action']['actor'], initiatingClauseHash)
         if isinstance(actor, set):
           if len(actor) == 1:
             (actor,) = actor
@@ -491,7 +528,7 @@ class Interpreter:
           else:
             moreTargets = self.queryConcept(conceptJSON)
           if not moreTargets:
-            moreTargets = self.assertConcept(conceptJSON)
+            moreTargets = self.assertConcept(conceptJSON, initiatingClauseHash)
           if isinstance(moreTargets, set):
             targets.extend(moreTargets)
           else:
@@ -499,7 +536,7 @@ class Interpreter:
       elif 'component' in actionJSON['action']['target']:
         moreTargets = self.queryComponent(actionJSON['action']['target'])
         if not moreTargets:
-          moreTargets = self.assertComponent(actionJSON['action']['target'])
+          moreTargets = self.assertComponent(actionJSON['action']['target'], initiatingClauseHash)
         if isinstance(moreTargets, set):
           targets.extend(moreTargets)
         else:
@@ -510,7 +547,7 @@ class Interpreter:
         else:
           moreTargets = self.queryConcept(actionJSON['action']['target'])
         if not moreTargets:
-          moreTargets = self.assertConcept(actionJSON['action']['target'])
+          moreTargets = self.assertConcept(actionJSON['action']['target'], initiatingClauseHash)
         if isinstance(moreTargets, set):
           if len(moreTargets) == 1: 
             targets.extend(moreTargets)
@@ -549,7 +586,7 @@ class Interpreter:
               self.context.remove(match)
               #raise Exception('assertConcept: Too many matching concepts')
       else:
-        self.assertConcept(statementJSON['statement'])
+        self.assertConcept(statementJSON['statement'], initiatingClauseHash)
     elif 'component' in statementJSON['statement']:
       self.assertComponent(statementJSON['statement'], initiatingClauseHash)
     elif 'component_assignment' in statementJSON['statement']:
@@ -580,8 +617,58 @@ class Interpreter:
         results = self.queryAction(queryJSON['query'], returnActor=False, returnTarget=True )
       else:
         results = self.queryAction(queryJSON['query'], returnActor=True, returnTarget=False)
+    elif 'component_assignment' in queryJSON['query']:
+      results = self.queryComponentAssignment(queryJSON['query'])
     return results
-    
+
+  def test(self, JSON):
+    clauseJSON = JSON['statement']
+    results = set()
+    if 'comparison' in clauseJSON:
+      raise Exception('test: Comparison not yet implemented')
+    elif 'AND' in clauseJSON:
+      for subclause in clauseJSON.values():
+        moreResults = self.test(subclause)
+        if isinstance(moreResults, set):
+          results |= moreResults
+        elif results == False:
+          return False
+    elif 'OR' in clauseJSON:
+      anyTrue = False
+      for subclause in clauseJSON.values():
+        moreResults = self.test(subclause)
+        if isinstance(moreResults, set):
+          results |= moreResults
+          anyTrue = True
+        elif results == True:
+          anyTrue = True
+      if not anyTrue: return False
+    elif 'NOT' in clauseJSON:
+      if not self.test(clauseJSON.values[0]): return True
+    elif 'state' in clauseJSON:
+      results |= self.queryState(clauseJSON)
+    elif 'action' in clauseJSON:
+      results |= self.queryState(clauseJSON, returnActor=True, returnTarget=True)
+    elif 'component_assignment' in clauseJSON or 'component_addition' in clauseJSON:
+      (roots, branches) = self.queryComponentAssignment(clauseJSON, returnRoots=True)
+      results |= roots
+      results |= branches
+    elif 'component' in clauseJSON:
+      (roots, branches) = self.queryComponent(clauseJSON, returnRoots=True)
+      results |= roots
+      results |= branches
+    elif 'concept' in clauseJSON:
+      results |= self.queryConcept(clauseJSON)
+    elif 'query' in clauseJSON:
+      results |= self.query(clauseJSON)
+    else:
+      print clauseJSON
+      raise Exception('test: Unknown clause structure')
+    if not results:
+      return False
+    else:
+      return results
+      
   def processRule(self, ruleJSON):
     independentClause = Clause(ruleJSON['rule']['independent_clause'], independent=True)
     dependentClause = Clause(ruleJSON['rule']['dependent_clause'], independent=False)

@@ -6,6 +6,7 @@ import networkx
 from concepts import Concept
 from phrases import NounPhrase, VerbPhrase, Descriptor
 from interpreter import Interpreter
+from clauses import Clause
 import utilities
 
 class Context:
@@ -36,7 +37,7 @@ class Context:
   def rename(self, newName):
     self.name = newName
 
-  def incorporateConcept(self, concept, prototype=False):
+  def incorporateConcept(self, concept, prototype=False, dontRemember=False):
     hash = os.urandom(5).encode('hex')
     self.conceptHashTable[hash] = concept
     if prototype:
@@ -46,7 +47,8 @@ class Context:
       self.actionGraph.add_node(concept)
       self.stateGraph.add_node(concept)
       self.concepts['noun_phrases'].add(concept)
-      self.shortTermMemory.appendleft(concept)
+      if not dontRemember:
+        self.registerChange(concept)
     elif isinstance(concept, VerbPhrase):
       self.actionGraph.add_node(concept)
       self.stateGraph.add_node(concept)
@@ -55,9 +57,12 @@ class Context:
       self.stateGraph.add_node(concept)
       self.concepts['descriptors'].add(concept)
       
-  def newNounPhrase(self, nounPhrase):
+  def newNounPhrase(self, nounPhrase, initiatingClauseHash=None):
     concept = NounPhrase(nounPhrase)
-    self.incorporateConcept(concept)
+    if initiatingClauseHash:
+      self.incorporateConcept(concept, dontRemember=True)
+    else:
+      self.incorporateConcept(concept)
     return concept
   
   def newVerbPhrase(self, verbPhrase):
@@ -93,21 +98,116 @@ class Context:
     if concept in self.concepts['verb_phrases']: self.concepts['verb_phrases'].remove(concept)
     if concept in self.concepts['descriptors']: self.concepts['descriptors'].remove(concept)
   
+  def addPotentialEdge(self, graphName, node1, node2, weight, clauseHash, label=None):
+    if graphName == 'potentialActionGraph':
+      self.potentialActionGraph.add_edge(node1, node2, key=clauseHash, weight=weight)
+    elif graphName == 'potentialStateGraph':
+      self.potentialStateGraph.add_edge(node1, node2, key=clauseHash, weight=weight)
+    elif graphName == 'potentialComponentGraph':
+      self.potentialComponentGraph.add_edge(node1, node2, key=clauseHash, weight=weight, label=label)
+    else:
+      raise Exception('addPotentialEdge: Unknown graph name')
+    if not clauseHash in self.clauseToPotentialEdges:
+      self.clauseToPotentialEdges[clauseHash] = list()
+    self.clauseToPotentialEdges[clauseHash].append((graphName, node1, node2, clauseHash))
+  
+  def registerChange(self, concept):
+    self.shortTermMemory.appendleft(concept)
+    lineage = concept.ancestors().copy()
+    lineage |= set(concept.synonyms())
+    interpreter = Interpreter(self)
+    for phrase in lineage:
+      if phrase in Clause.relatedPhraseToClause:
+        matchingClauses = Clause.relatedPhraseToClause[phrase]
+        for clause in matchingClauses:
+          results = interpreter.test(clause.JSON)
+          if not clause.hashcode in self.clauseToConceptSet:
+            self.clauseToConceptSet[clause.hashcode] = set()
+          oldSet = self.clauseToConceptSet[clause.hashcode]
+          newSet = results
+          print '@@@'
+          print 'old=' + str(oldSet)
+          print 'new=' + str(newSet)
+          if oldSet == newSet:
+            return
+          conceptsOfDeprecatedPotentiations = oldSet - newSet
+          conceptsOfNewPotentiations = newSet - oldSet
+          graphs = {
+            'potentialActionGraph': self.potentialActionGraph,
+            'potentialComponentGraph': self.potentialComponentGraph,
+            'potentialStateGraph': self.potentialStateGraph
+          }
+          def edgeRecordIsDeprecated(edgeRecord):
+            if edgeRecord[1] in conceptsOfDeprecatedPotentiations or edgeRecord[2] in conceptsOfDeprecatedPotentiations:
+              graphs[edgeRecord[0]].remove_edge(edgeRecord[1], edgeRecord[2], key=clause.hashcode)
+              return True
+            else:
+              return False 
+          if clause.hashcode in self.clauseToPotentialEdges:
+            relatedPotentialEdges = self.clauseToPotentialEdges[clause.hashcode]
+            if not newSet:
+              for edgeRecord in relatedPotentialEdges:
+                graphs[edgeRecord[0]].remove_edge(edgeRecord[1], edgeRecord[2], key=clause.hashcode)
+              self.clauseToPotentialEdges[clause.hashcode] = list()
+            else:
+              if conceptsOfDeprecatedPotentiations:
+                self.clauseToPotentialEdges[clause.hashcode] = [x for x in relatedPotentialEdges if not edgeRecordIsDeprecated(x)]
+          if conceptsOfNewPotentiations:
+            subcontext = Subcontext(self, conceptsOfNewPotentiations)
+            ruleEdges = Clause.ruleGraph.out_edges(clause)
+            for ruleEdge in ruleEdges:
+              dependentClause = ruleEdge[1]
+              interpreter.assertStatement(dependentClause.JSON, clause.hashcode)
+          print self.clauseToPotentialEdges
+          if results: self.clauseToConceptSet[clause.hashcode] = results
+    
   def setAction(self, actor, act, target=None, initiatingClauseHash=None):
     #TODO: if actor has same one or more of the same acts and any have targets there shouldn't be any successorless acts
     if initiatingClauseHash:
-      print 'unimplemented...'
+      if not target:
+        self.addPotentialEdge('potentialActionGraph', actor, act, 1, initiatingClauseHash)
+      else:
+        if target.name == '!':
+          potentialMatchingActs = self.actionGraph.successors(actor)
+          potentialMatchingActs.extend(self.potentialActionGraph.successors(actor))
+          for potentialMatchingAct in potentialMatchingActs:
+            if act.name in potentialMatchingAct.synonyms() or potentialMatchingAct.isA(act.name):
+              self.unsetAction(actor, potentialMatchingAct, target, initiatingClauseHash)
+          self.remove(act)
+          self.remove(target)
+          return    
+        elif re.match('^!', target.name):
+          affirmativeTarget = target.name[1:]
+          potentialMatchingActs = self.actionGraph.successors(actor)
+          potentialMatchingActs.extend(self.potentialActionGraph.successors(actor))
+          temp = set()
+          for potentialMatchingAct in potentialMatchingActs:
+            if act.name in potentialMatchingAct.synonyms() or potentialMatchingAct.isA(act.name):
+              temp.add(potentialMatchingAct)
+          potentialMatchingActs = temp
+          for potentialMatchingAct in potentialMatchingActs:
+            potentiallyMatchingTargets = self.actionGraph.successors(potentialMatchingAct)
+            potentiallyMatchingTargets.extend(self.potentialActionGraph.successors(potentialMatchingAct))
+            for potentiallyMatchingTarget in potentiallyMatchingTargets:
+              if affirmativeTarget in potentiallyMatchingTarget.synonyms() or potentiallyMatchingTarget.isA(affirmativeTarget):
+                self.unsetAction(actor, potentialMatchingAct, target, initiatingClauseHash)
+          self.remove(act)
+          self.remove(target)
+          return          
+        else:
+          self.addPotentialEdge('potentialActionGraph', act, target, 1, initiatingClauseHash)
+          self.addPotentialEdge('potentialActionGraph', actor, act, 1, initiatingClauseHash)
     else:
       if not target:
         self.actionGraph.add_edge(actor, act)
-        self.shortTermMemory.appendleft(actor)
+        self.registerChange(actor)
       else:
         if target.name == '!':
           potentialMatchingActs = self.actionGraph.successors(actor)
           for potentialMatchingAct in potentialMatchingActs:
             if act.name in potentialMatchingAct.synonyms() or potentialMatchingAct.isA(act.name):
               self.unsetAction(actor, potentialMatchingAct, target, initiatingClauseHash)
-          self.shortTermMemory.appendleft(actor)
+          self.registerChange(actor)
           self.remove(act)
           self.remove(target)
           return
@@ -124,7 +224,7 @@ class Context:
             for potentiallyMatchingTarget in potentiallyMatchingTargets:
               if affirmativeTarget in potentiallyMatchingTarget.synonyms() or potentiallyMatchingTarget.isA(affirmativeTarget):
                 self.unsetAction(actor, potentialMatchingAct, target, initiatingClauseHash)
-          self.shortTermMemory.appendleft(actor)
+          self.registerChange(actor)
           self.remove(act)
           self.remove(target)
           return
@@ -137,43 +237,59 @@ class Context:
                 return False
           self.actionGraph.add_edge(act, target)
           self.actionGraph.add_edge(actor, act)
-          self.shortTermMemory.appendleft(actor)
-          self.shortTermMemory.appendleft(target)
+          self.registerChange(actor)
+          self.registerChange(target)
           
   def unsetAction(self, actor, act, target=None, initiatingClauseHash=None):
     if initiatingClauseHash:
-      print 'unimplemented...'
+      if target and target.name != '!':
+        self.addPotentialEdge('potentialActionGraph', actor, act, -1, initiatingClauseHash)
+        self.addPotentialEdge('potentialActionGraph', act, target, -1, initiatingClauseHash)
     else:
       if target and target.name != '!':
         self.actionGraph.remove_edge(act, target)
-        self.shortTermMemory.appendleft(target)
+        self.registerChange(target)
       if len(self.actionGraph.out_edges(act)) == 0:
           self.remove(act)
-      self.shortTermMemory.appendleft(actor)
+      self.registerChange(actor)
   
   def setComponent(self, parent, label, child=None, initiatingClauseHash=None):
     if initiatingClauseHash:
-      print 'unimplemented...'
+      if child:
+        self.addPotentialEdge('potentialComponentGraph', parent, child, 1, initiatingClauseHash, label=label)
+      else:
+        child = self.newNounPhrase(label, initiatingClauseHash)
+        self.addPotentialEdge('potentialComponentGraph', parent, child, 1, initiatingClauseHash, label=label)
     else:
       if child:
         self.componentGraph.add_edge(parent, child, label=label)
       else:
-        child = self.newNounPhrase(label)
+        child = self.newNounPhrase(label, initiatingClauseHash)
         self.componentGraph.add_edge(parent, child, label=label)
-      self.shortTermMemory.appendleft(parent)
-      self.shortTermMemory.appendleft(child)
+      self.registerChange(parent)
+      self.registerChange(child)
       
-  def unsetComponent(self, parent, child, initiatingClauseHash=None):
+  def unsetComponent(self, parent, label, child, initiatingClauseHash=None):
     if initiatingClauseHash:
-      print 'unimplemented...'
+      self.addPotentialEdge('potentialComponentGraph', parent, child, -1, initiatingClauseHash, label=label)
     else:
       self.componentGraph.remove_edge(parent, child)
-      self.shortTermMemory.appendleft(parent)
-      self.shortTermMemory.appendleft(child)
+      self.registerChange(parent)
+      self.registerChange(child)
   
   def setState(self, subject, descriptor, initiatingClauseHash=None):
     if initiatingClauseHash:
-      print 'unimplemented...'
+      if re.match('^!', descriptor.name):
+        affirmativeDescriptor = descriptor.name[1:]
+        if affirmativeDescriptor != '':
+          potentialMatches = self.stateGraph.successors(subject)
+          potentialMatches.extend(self.potentialStateGraph.successors(subject))
+          for potentialMatch in potentialMatches:
+            if affirmativeDescriptor in potentialMatch.synonyms() or potentialMatch.isA(affirmativeDescriptor):
+              self.unsetState(subject, potentialMatch, initiatingClauseHash)
+        self.remove(descriptor)
+      else:
+        self.addPotentialEdge('potentialStateGraph', subject, descriptor, 1, initiatingClauseHash)
     else:
       if re.match('^!', descriptor.name):
         affirmativeDescriptor = descriptor.name[1:]
@@ -185,19 +301,19 @@ class Context:
         self.remove(descriptor)
       else:
         self.stateGraph.add_edge(subject, descriptor)
-      self.shortTermMemory.appendleft(subject)
+      self.registerChange(subject)
 
   def unsetState(self, subject, state, initiatingClauseHash=None):
     if initiatingClauseHash:
-      print 'unimplemented...'
+      self.addPotentialEdge('potentialStateGraph', subject, state, -1, initiatingClauseHash)
     else:
       self.remove(state)
-      self.shortTermMemory.appendleft(subject)
+      self.registerChange(subject)
     
-  def mergeConcepts(self, concept1, concept2):
+  def mergeConcepts(self, concept1, concept2, initiatingClauseHash=None):
     names = (concept1.name, concept2.name)
     if isinstance(concept1, NounPhrase) and isinstance(concept2, NounPhrase):
-      mergedConcept = self.newNounPhrase(names[1]) if re.match('^unspecified', names[0]) else self.newNounPhrase(names[0])
+      mergedConcept = self.newNounPhrase(names[1], initiatingClauseHash) if re.match('^unspecified', names[0]) else self.newNounPhrase(names[0], initiatingClauseHash)
     elif isinstance(concept1, VerbPhrase) and isinstance(concept2, VerbPhrase):
       mergedConcept = self.newVerbPhrase(names[1]) if re.match('^unspecified', names[0]) else self.newVerbPhrase(names[0])
     elif isinstance(concept1, Descriptor) and isinstance(concept2, Descriptor):
@@ -229,7 +345,8 @@ class Context:
             graph.add_edge(mergedConcept, edge[1], edge[2])
     self.remove(concept1)
     self.remove(concept2)
-    self.shortTermMemory.appendleft(mergedConcept)
+    if not initiatingClauseHash:
+      self.registerChange(mergedConcept)
     return mergedConcept
 
   def queryPrototype(self, name, phraseType):
@@ -333,5 +450,32 @@ class Context:
     else:
       return False
   
-      
+class Subcontext(Context):
+  def __init__(self, supercontext, concepts=None):
+    self.isUniversal = False
+    self.supercontext = supercontext
+    self.componentGraph = self.supercontext.componentGraph
+    self.actionGraph = self.supercontext.actionGraph
+    self.stateGraph = self.supercontext.stateGraph
+    self.concepts = {'noun_phrases': set(), 'verb_phrases': set(), 'descriptors': set()}
+    self.conceptHashTable = self.supercontext.conceptHashTable
+    self.prototypes = self.supercontext.prototypes
+    self.potentialTaxonomy = self.supercontext.potentialTaxonomy
+    self.potentialComponentGraph = self.supercontext.potentialComponentGraph
+    self.potentialActionGraph = self.supercontext.potentialActionGraph
+    self.potentialStateGraph = self.supercontext.potentialStateGraph
+    self.shortTermMemory = self.supercontext.shortTermMemory
+    self.clauseToConceptSet = self.supercontext.clauseToConceptSet
+    self.clauseToPotentialEdges = self.supercontext.clauseToPotentialEdges
+    if concepts:
+      for concept in concepts:
+        self.add(concept)
     
+  def add(self, concept):
+    if concept not in self:
+      if isinstance(concept, NounPhrase):
+        self.concepts['noun_phrases'].add(concept)
+      elif isinstance(concept, VerbPhrase):
+        self.concepts['verb_phrases'].add(concept)
+      elif isinstance(concept, Descriptor):
+        self.concepts['descriptors'].add(concept)

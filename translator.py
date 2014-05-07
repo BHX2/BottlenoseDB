@@ -5,7 +5,7 @@ from parsimonious.grammar import NodeVisitor
 
 grammar = Grammar("""
   input                 = belief / statement
-  query                 = "?" (state / action / direct_object / component / concept)
+  query                 = "?" (state / action / direct_object / component_assignment / component / concept)
   belief                = law / rule
   law                   = clause ">>>" clause
   arithmetic_operation  = (component / concept) arithmetic_operator quantity
