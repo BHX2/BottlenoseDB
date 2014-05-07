@@ -117,11 +117,10 @@ cat.weight <= 5lbs >> cat#skinny
 ---
 ###Roadmap
 
-1. Design system for storing and dynamically testing **Clauses** with contextual accuracy
-2. Design system for tracking and inspecting potentiations/evidence
-3. Implement arithmetic expressions (along with comparison operators and possibly equations)
-4. Implement persistence via pickling as well as export/import to plain text files
-5. Implement tabbed autocompletion using *(py)readline* & *rlcompleter*
-6. Polish CLI interface: add intro, help, colors, tables, benchmarks, etc
-7. Implement logging, data backup, and undo functionality within
-8. Experiment with rule-based artificial cognition
+1. Design method of inspecting evidence for potential relationships
+2. Implement arithmetic expressions (along with comparison operators and possibly equations)
+3. Implement persistence via pickling as well as export/import to plain text files
+4. Implement tabbed autocompletion using *(py)readline* & *rlcompleter*
+5. Polish CLI interface: add intro, help, colors, tables, benchmarks, etc
+6. Implement logging, data backup, and undo functionality within
+7. Experiment with rule-based artificial cognition
