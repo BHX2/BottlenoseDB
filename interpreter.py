@@ -10,9 +10,9 @@ class Interpreter:
   def setContext(self, context):
     self.context = context
   
-  def retrieveComponent(self, stemJSON, branchPhrase, returnRoots=False, returnLastStems=False, assertBranches=True, initiatingClauseHash=None):
+  def retrieveComponent(self, stemJSON, branchPhrase, returnRoots=False, returnLastStems=False, assertBranches=True, initiatingClauseHash=None, depth=0):
     if 'stem' in stemJSON:
-      stems = self.retrieveComponent(stemJSON['stem'], stemJSON['branch'], False, False, assertBranches, initiatingClauseHash)
+      stems = self.retrieveComponent(stemJSON['stem'], stemJSON['branch'], False, False, assertBranches, initiatingClauseHash, depth=depth+1)
       if not isinstance(stems, set): 
         temp = set()
         temp.add(stems)
@@ -71,9 +71,15 @@ class Interpreter:
               #raise Exception('retrieveComponent: Too many matching stems')
         else:
           if returnLastStems:
-            return (None, None)
+            if returnRoots:
+              return (None, None, None)
+            else:
+              return (None, None)
           else:
-            return None
+            if returnRoots:
+              return (None, None)
+            else:
+              return None
       elif len(candidateStems) > 1:
         stem = self.context.findLastReferenced(candidateStems)
         #raise Exception('retrieveComponent: Too many matching stems')
@@ -90,24 +96,32 @@ class Interpreter:
           temp.add(branch)
       branches = temp
       if len(branches) == 0:
-        if assertBranches:
-          branch = self.context.newNounPhrase('unspecified' + utilities.camelCase(branchPhrase), initiatingClauseHash)
+        if assertBranches and depth > 0:
+          branch = self.context.newNounPhrase(branchPhrase, initiatingClauseHash)
           branch.classify(branchPhrase)
           self.context.setComponent(stem, branchPhrase, branch)
         else:
           if returnLastStems:
-            stems = list()
-            stems.append(stem)
-            return (None, stems)
+            stems = {stem}
+            if returnRoots:
+              return (stems, None, stems)
+            else:
+              return (None, stems)
           else:
             return None
         branches.add(branch)
       if returnLastStems:
-        stems = list()
-        stems.append(stem)
-        return (branches, stems)
+        stems = {stem}
+        if returnRoots:
+          return (stems, branches, stems)
+        else:
+          return (branches, stems)
       else:
-        return branches
+        if returnRoots:
+          roots = {stem}
+          return (roots, branches)
+        else:
+          return branches
  
   def queryConcept(self, JSON):
     return self.context.queryNounPhrases(JSON['concept'])
@@ -130,15 +144,18 @@ class Interpreter:
       (branches, stems) = self.retrieveComponent(JSON['component_assignment']['target']['component']['stem'], JSON['component_assignment']['target']['component']['branch'], returnRoots=False, returnLastStems=True, assertBranches=False)
     else:
       (roots, branches, stems) = self.retrieveComponent(JSON['component_assignment']['target']['component']['stem'], JSON['component_assignment']['target']['component']['branch'], returnRoots=True, returnLastStems=True, assertBranches=False)
-    if not branches or not stems: return set()
-    branchPhrase = componentAssignmentJSON['component_assignment']['target']['component']['branch']
-    potentialMatchingEdges = self.context.componentGraph.out_edges(stems)
+    if not branches or not stems: 
+      if returnRoots:
+        return (set(), set())
+      else:
+        return set()
+    branchPhrase = JSON['component_assignment']['target']['component']['branch']
+    potentialMatchingEdges = self.context.componentGraph.out_edges(stems, data=True)
     matchingBranches = set()
     if isinstance(branches, set):
-      for branch in branches:
-        matchingBranches.add(branch)
-      else:
-        matchingBranches = {branches}
+      matchingBranches |= branches
+    else:
+      matchingBranches = {branches}
     temp = set()
     for edge in potentialMatchingEdges:
       if edge[1] in matchingBranches and edge[2]['label'] == branchPhrase:
@@ -190,7 +207,7 @@ class Interpreter:
         for target in actionJSON['action']['target']:
           if re.match('^!', target['concept']):
             raise Exception('Negatives can not be used as filtering criteria.')
-    if not returnActor and not returnTarget: return {}
+    if not returnActor and not returnTarget: return set()
     if not actionJSON['action']['actor']:
       potentialActors = set()
       potentialActs = self.context.queryVerbPhrases(actionJSON['action']['act']['verb'])
@@ -205,7 +222,7 @@ class Interpreter:
       else:
         raise Exception('queryAction: Unknown action structure')
       if not potentialActors:
-        return {}
+        return set()
       temp = set()
       temp2 = set()
       for potentialActor in potentialActors:
@@ -221,7 +238,7 @@ class Interpreter:
         if returnActor:
           return potentialActors
         else:
-          return {}
+          return set()
     temp3 = set()
     temp4 = set()
     for potentialAct in potentialActs:
@@ -300,12 +317,13 @@ class Interpreter:
   
   def assertComponent(self, componentJSON, initiatingClauseHash=None):
     (branches, stems) = self.retrieveComponent(componentJSON['component']['stem'], componentJSON['component']['branch'], returnRoots=False, returnLastStems=True, assertBranches=True, initiatingClauseHash=initiatingClauseHash)
+    branchPhrase = componentJSON['component']['branch']
     if not branches:
       temp = set()
       for stem in stems:
-        branch = self.context.newNounPhrase('unspecified ' + componentJSON['component']['branch'], initiatingClauseHash)
-        branch.classify(componentJSON['component']['branch'])
-        self.context.setComponent(stem, componentJSON['component']['branch'], branch, initiatingClauseHash)
+        branch = self.context.newNounPhrase(branchPhrase, initiatingClauseHash)
+        branch.classify(branchPhrase)
+        self.context.setComponent(stem, branchPhrase, branch, initiatingClauseHash)
         temp.add(branch)
       branches = temp
     return branches
@@ -347,9 +365,11 @@ class Interpreter:
     if branches and not initiatingClauseHash:
       if isinstance(branches, set):
         for branch in branches:
-          self.removeComponentAssignment(stems, branchPhrase, branch, initiatingClauseHash)
+          if branch.name != branchPhrase:
+            self.removeComponentAssignment(stems, branchPhrase, branch, initiatingClauseHash)
       else:
-        self.removeComponentAssignment(stems, branchPhrase, branches, initiatingClauseHash)
+        if branches.name != branchPhrase:
+          self.removeComponentAssignment(stems, branchPhrase, branches, initiatingClauseHash)
     componentAdditionJSON = {'component_addition': {'target': componentAssignmentJSON['component_assignment']['target'], 'assignment': componentAssignmentJSON['component_assignment']['assignment']}}
     self.assertComponentAddition(componentAdditionJSON, initiatingClauseHash)
     
@@ -368,12 +388,13 @@ class Interpreter:
     else:
       if checkIfNegativeAssignment(componentAdditionJSON['component_addition']['assignment']): return
     unspecifiedBranches = []
+    branchPhrase = utilities.camelCase(componentAdditionJSON['component_addition']['target']['component']['branch'])
     if branches:
       if isinstance(branches, set):
         for branch in branches:
-          if re.match('^unspecified', branch.name): unspecifiedBranches.append(branch)
+          if branch.name == branchPhrase: unspecifiedBranches.append(branch)
       else:
-        if re.match('^unspecified', branches.name): unspecifiedBranches.append(branches)
+        if branch.name == branchPhrase: unspecifiedBranches.append(branches)
     assignments = list()
     uninstantiatedAssignments = list()
     if isinstance(componentAdditionJSON['component_addition']['assignment'], list):
@@ -395,7 +416,6 @@ class Interpreter:
         assignments.extend(x)
       else:
         uninstantiatedAssignments.append(componentAdditionJSON['component_addition']['assignment']['concept'])
-    branchPhrase = componentAdditionJSON['component_addition']['target']['component']['branch']
     for uninstantiatedAssignment in uninstantiatedAssignments:
       if self.context.isUniversal:
         assignment = self.context.queryPrototype(uninstantiatedAssignment, phraseType='NounPhrase')
@@ -405,7 +425,9 @@ class Interpreter:
       assignments.append(assignment)
     for assignment in assignments:
       if len(unspecifiedBranches) > 0:
-        self.context.mergeConcepts(assignment, unspecifiedBranches.pop(), initiatingClauseHash)
+        unspecifiedBranch = unspecifiedBranches.pop()
+        unspecifiedBranch.name = 'unspecified' + unspecifiedBranch.name[0].upper() + unspecifiedBranch.name[1:]
+        self.context.mergeConcepts(assignment, unspecifiedBranch, initiatingClauseHash)
       else:
         for stem in stems:
           self.context.setComponent(stem, branchPhrase, assignment, initiatingClauseHash)

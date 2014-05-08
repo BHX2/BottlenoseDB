@@ -97,10 +97,22 @@ class Context:
       if concept in self.stateGraph:
         descriptions = self.stateGraph.successors(concept)
         for description in descriptions:
+          if not self.stateGraph.predecessors(description):
+            self.remove(description)
+      if concept in self.potentialActionGraph:
+        acts = self.potentialActionGraph.successors(concept)
+        for act in acts:
+          self.remove(act)
+      if concept in self.potentialStateGraph:
+        descriptions = self.potentialStateGraph.successors(concept)
+        for description in descriptions:
           self.remove(description)
     if concept in self.actionGraph: self.actionGraph.remove_node(concept)
     if concept in self.stateGraph: self.stateGraph.remove_node(concept)
     if concept in self.componentGraph: self.componentGraph.remove_node(concept)
+    if concept in self.potentialActionGraph: self.potentialActionGraph.remove_node(concept)
+    if concept in self.potentialStateGraph: self.potentialStateGraph.remove_node(concept)
+    if concept in self.potentialComponentGraph: self.potentialComponentGraph.remove_node(concept)
     if concept in self.concepts['noun_phrases']: self.concepts['noun_phrases'].remove(concept)
     if concept in self.concepts['verb_phrases']: self.concepts['verb_phrases'].remove(concept)
     if concept in self.concepts['descriptors']: self.concepts['descriptors'].remove(concept)
@@ -167,13 +179,13 @@ class Context:
           subcontext = Subcontext(self, conceptsOfNewPotentiations)
           ruleEdges = Clause.ruleGraph.out_edges(clause)
           lawEdges = Clause.lawGraph.out_edges(clause)
-          interpreter = Interpreter(subcontext)
           for ruleEdge in ruleEdges:
             dependentClause = ruleEdge[1]
             if dependentClause in recentlyExecutedDependentClauses:
               continue
             else:
               recentlyExecutedDependentClauses.add(dependentClause)
+              interpreter = Interpreter(subcontext)
               interpreter.assertStatement(dependentClause.JSON, clause)
           for lawEdge in lawEdges:
             dependentClause = lawEdge[1]
@@ -361,7 +373,7 @@ class Context:
       mergedConcept.classify(parent)
     for parent in concept2.parents():
       mergedConcept.classify(parent)
-    graphs = [self.actionGraph, self.componentGraph, self.stateGraph]
+    graphs = [self.actionGraph, self.componentGraph, self.stateGraph, self.potentialActionGraph, self.potentialComponentGraph, self.potentialStateGraph]
     concepts = [concept1, concept2]
     for concept in concepts:
       for graph in graphs:
