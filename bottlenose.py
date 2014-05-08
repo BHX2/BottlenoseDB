@@ -19,6 +19,7 @@ class Bottlenose:
     self._interpreter = Interpreter(self._context)
     
   def tell(self, input):
+    self._context.ponderRecentMentions()
     JSON = self._translator.visit(grammar.parse(input))
     results = self._interpreter.interpret(JSON)
     if isinstance(results, set) or isinstance(results, list):

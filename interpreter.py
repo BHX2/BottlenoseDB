@@ -622,48 +622,49 @@ class Interpreter:
     return results
 
   def test(self, JSON):
-    clauseJSON = JSON['statement']
     results = set()
-    if 'comparison' in clauseJSON:
-      raise Exception('test: Comparison not yet implemented')
-    elif 'AND' in clauseJSON:
-      for subclause in clauseJSON.values():
-        moreResults = self.test(subclause)
-        if isinstance(moreResults, set):
-          results |= moreResults
-        elif results == False:
-          return False
-    elif 'OR' in clauseJSON:
-      anyTrue = False
-      for subclause in clauseJSON.values():
-        moreResults = self.test(subclause)
-        if isinstance(moreResults, set):
-          results |= moreResults
-          anyTrue = True
-        elif results == True:
-          anyTrue = True
-      if not anyTrue: return False
-    elif 'NOT' in clauseJSON:
-      if not self.test(clauseJSON.values[0]): return True
-    elif 'state' in clauseJSON:
-      results |= self.queryState(clauseJSON)
-    elif 'action' in clauseJSON:
-      results |= self.queryState(clauseJSON, returnActor=True, returnTarget=True)
-    elif 'component_assignment' in clauseJSON or 'component_addition' in clauseJSON:
-      (roots, branches) = self.queryComponentAssignment(clauseJSON, returnRoots=True)
-      results |= roots
-      results |= branches
-    elif 'component' in clauseJSON:
-      (roots, branches) = self.queryComponent(clauseJSON, returnRoots=True)
-      results |= roots
-      results |= branches
-    elif 'concept' in clauseJSON:
-      results |= self.queryConcept(clauseJSON)
-    elif 'query' in clauseJSON:
-      results |= self.query(clauseJSON)
+    if not 'statement' in JSON:
+      if 'AND' in JSON:
+        for subclause in JSON['AND']:
+          moreResults = self.test(subclause)
+          if isinstance(moreResults, set):
+            results |= moreResults
+          elif moreResults == False:
+            return False
+      elif 'OR' in JSON:
+        anyTrue = False
+        for subclause in JSON['OR']:
+          moreResults = self.test(subclause)
+          if isinstance(moreResults, set):
+            results |= moreResults
+            anyTrue = True
+          elif moreResults == True:
+            anyTrue = True
+        if not anyTrue: return False
+      elif 'NOT' in JSON:
+        if not self.test(JSON['NOT'][0]): return True
     else:
-      print clauseJSON
-      raise Exception('test: Unknown clause structure')
+      clauseJSON = JSON['statement']
+      if 'comparison' in clauseJSON:
+        raise Exception('test: Comparison not yet implemented')
+      elif 'state' in clauseJSON:
+        results |= self.queryState(clauseJSON)
+      elif 'action' in clauseJSON:
+        results |= self.queryState(clauseJSON, returnActor=True, returnTarget=True)
+      elif 'component_assignment' in clauseJSON or 'component_addition' in clauseJSON:
+        (roots, branches) = self.queryComponentAssignment(clauseJSON, returnRoots=True)
+        results |= roots
+        results |= branches
+      elif 'component' in clauseJSON:
+        (roots, branches) = self.queryComponent(clauseJSON, returnRoots=True)
+        results |= roots
+        results |= branches
+      elif 'concept' in clauseJSON:
+        results |= self.queryConcept(clauseJSON)
+      elif 'query' in clauseJSON:
+        results |= self.query(clauseJSON)
+      else:
+        raise Exception('test: Unknown clause structure')
     if not results:
       return False
     else:
@@ -673,6 +674,11 @@ class Interpreter:
     independentClause = Clause(ruleJSON['rule']['independent_clause'], independent=True)
     dependentClause = Clause(ruleJSON['rule']['dependent_clause'], independent=False)
     independentClause.potentiates(dependentClause)
+    
+  def processLaw(self, lawJSON):
+    independentClause = Clause(lawJSON['law']['independent_clause'], independent=True)
+    dependentClause = Clause(lawJSON['law']['dependent_clause'], independent=False)
+    independentClause.mandates(dependentClause)
   
   def interpret(self, JSON):
     if JSON.keys() == ['statement'] and \
@@ -686,6 +692,8 @@ class Interpreter:
     elif 'belief' in JSON:
       if 'rule' in JSON['belief']:
         self.processRule(JSON['belief'])
+      elif 'law' in JSON['belief']:
+        self.processLaw(JSON['belief'])
       return None
       
     

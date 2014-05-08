@@ -33,6 +33,7 @@ class Context:
     self.shortTermMemory = deque(maxlen=50)
     self.clauseToConceptSet = dict()
     self.clauseToPotentialEdges = dict()
+    self.recentlyMentionedPhrases = set()
   
   def rename(self, newName):
     self.name = newName
@@ -47,15 +48,21 @@ class Context:
       self.actionGraph.add_node(concept)
       self.stateGraph.add_node(concept)
       self.concepts['noun_phrases'].add(concept)
+      if isinstance(self, Subcontext):
+        self.supercontext.concepts['noun_phrases'].add(concept)
       if not dontRemember:
         self.registerChange(concept)
     elif isinstance(concept, VerbPhrase):
       self.actionGraph.add_node(concept)
       self.stateGraph.add_node(concept)
       self.concepts['verb_phrases'].add(concept)
+      if isinstance(self, Subcontext):
+        self.supercontext.concepts['verb_phrases'].add(concept)
     elif isinstance(concept, Descriptor):
       self.stateGraph.add_node(concept)
       self.concepts['descriptors'].add(concept)
+      if isinstance(self, Subcontext):
+        self.supercontext.concepts['descriptors'].add(concept)
       
   def newNounPhrase(self, nounPhrase, initiatingClauseHash=None):
     concept = NounPhrase(nounPhrase)
@@ -110,33 +117,44 @@ class Context:
     if not clauseHash in self.clauseToPotentialEdges:
       self.clauseToPotentialEdges[clauseHash] = list()
     self.clauseToPotentialEdges[clauseHash].append((graphName, node1, node2, clauseHash))
-  
-  def registerChange(self, concept):
-    self.shortTermMemory.appendleft(concept)
-    lineage = concept.ancestors().copy()
-    lineage |= set(concept.synonyms())
+
+  def ponderRecentMentions(self):
+    recentlyExecutedDependentClauses = set()
+    recentlyTestedIndependentClauses = set()
     interpreter = Interpreter(self)
-    for phrase in lineage:
+    recentMentions = self.recentlyMentionedPhrases.copy()
+    self.recentlyMentionedPhrases = set()
+    for phrase in recentMentions:
       if phrase in Clause.relatedPhraseToClause:
         matchingClauses = Clause.relatedPhraseToClause[phrase]
         for clause in matchingClauses:
+          if clause in recentlyTestedIndependentClauses:
+            continue
+          else:
+            recentlyTestedIndependentClauses.add(clause)
           results = interpreter.test(clause.JSON)
-          if not clause.hashcode in self.clauseToConceptSet:
-            self.clauseToConceptSet[clause.hashcode] = set()
-          oldSet = self.clauseToConceptSet[clause.hashcode]
-          newSet = results
-          print '@@@'
-          print 'old=' + str(oldSet)
-          print 'new=' + str(newSet)
-          if oldSet == newSet:
-            return
-          conceptsOfDeprecatedPotentiations = oldSet - newSet
-          conceptsOfNewPotentiations = newSet - oldSet
           graphs = {
             'potentialActionGraph': self.potentialActionGraph,
             'potentialComponentGraph': self.potentialComponentGraph,
             'potentialStateGraph': self.potentialStateGraph
           }
+          if not clause.hashcode in self.clauseToPotentialEdges:
+            self.clauseToPotentialEdges[clause.hashcode] = list()
+          relatedPotentialEdges = self.clauseToPotentialEdges[clause.hashcode]
+          if not results:
+            for edgeRecord in relatedPotentialEdges:
+              graphs[edgeRecord[0]].remove_edge(edgeRecord[1], edgeRecord[2], key=clause.hashcode)
+            self.clauseToPotentialEdges[clause.hashcode] = list()
+            return
+          if not clause.hashcode in self.clauseToConceptSet:
+            self.clauseToConceptSet[clause.hashcode] = set()
+          oldSet = self.clauseToConceptSet[clause.hashcode]
+          newSet = results
+          self.clauseToConceptSet[clause.hashcode] = newSet
+          if oldSet == newSet:
+            return
+          conceptsOfDeprecatedPotentiations = oldSet - newSet
+          conceptsOfNewPotentiations = newSet - oldSet
           def edgeRecordIsDeprecated(edgeRecord):
             if edgeRecord[1] in conceptsOfDeprecatedPotentiations or edgeRecord[2] in conceptsOfDeprecatedPotentiations:
               graphs[edgeRecord[0]].remove_edge(edgeRecord[1], edgeRecord[2], key=clause.hashcode)
@@ -144,22 +162,32 @@ class Context:
             else:
               return False 
           if clause.hashcode in self.clauseToPotentialEdges:
-            relatedPotentialEdges = self.clauseToPotentialEdges[clause.hashcode]
-            if not newSet:
-              for edgeRecord in relatedPotentialEdges:
-                graphs[edgeRecord[0]].remove_edge(edgeRecord[1], edgeRecord[2], key=clause.hashcode)
-              self.clauseToPotentialEdges[clause.hashcode] = list()
-            else:
-              if conceptsOfDeprecatedPotentiations:
-                self.clauseToPotentialEdges[clause.hashcode] = [x for x in relatedPotentialEdges if not edgeRecordIsDeprecated(x)]
+            if conceptsOfDeprecatedPotentiations:
+              self.clauseToPotentialEdges[clause.hashcode] = [x for x in relatedPotentialEdges if not edgeRecordIsDeprecated(x)]
           if conceptsOfNewPotentiations:
             subcontext = Subcontext(self, conceptsOfNewPotentiations)
             ruleEdges = Clause.ruleGraph.out_edges(clause)
+            lawEdges = Clause.lawGraph.out_edges(clause)
+            interpreter = Interpreter(subcontext)
             for ruleEdge in ruleEdges:
               dependentClause = ruleEdge[1]
-              interpreter.assertStatement(dependentClause.JSON, clause.hashcode)
-          print self.clauseToPotentialEdges
-          if results: self.clauseToConceptSet[clause.hashcode] = results
+              if dependentClause in recentlyExecutedDependentClauses:
+                continue
+              else:
+                recentlyExecutedDependentClauses.add(dependentClause)
+                interpreter.assertStatement(dependentClause.JSON, clause)
+            for lawEdge in lawEdges:
+              dependentClause = lawEdge[1]
+              if dependentClause in recentlyExecutedDependentClauses:
+                continue
+              else:
+                recentlyExecutedDependentClauses.add(dependentClause)
+                interpreter.assertStatement(dependentClause.JSON)
+                
+  def registerChange(self, concept):
+    self.shortTermMemory.appendleft(concept)
+    lineage = concept.ancestors().copy()
+    self.recentlyMentionedPhrases |= set(concept.synonyms())
     
   def setAction(self, actor, act, target=None, initiatingClauseHash=None):
     #TODO: if actor has same one or more of the same acts and any have targets there shouldn't be any successorless acts
@@ -375,9 +403,9 @@ class Context:
     response = set()
     if re.match('.*\*$', type.strip()):
       type = type[:-1]
-      concept = NounPhrase(type)
-      self.incorporateConcept(concept)
+      concept = self.newNounPhrase(type)
       response.add(concept)
+      print self.concepts['noun_phrases']
       return response
     type = utilities.camelCase(type)
     exactMatch = self.queryExact(type, phraseType='NounPhrase')
@@ -467,6 +495,7 @@ class Subcontext(Context):
     self.shortTermMemory = self.supercontext.shortTermMemory
     self.clauseToConceptSet = self.supercontext.clauseToConceptSet
     self.clauseToPotentialEdges = self.supercontext.clauseToPotentialEdges
+    self.recentlyMentionedPhrases = self.supercontext.recentlyMentionedPhrases
     if concepts:
       for concept in concepts:
         self.add(concept)
