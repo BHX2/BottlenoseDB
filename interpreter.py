@@ -448,6 +448,8 @@ class Interpreter:
       children.extend(map(extractConcept, taxonomyAssignmentJSON['taxonomy_assignment']['child']))
     else:
       children.append(taxonomyAssignmentJSON['taxonomy_assignment']['child']['concept'])
+    self.context.recentlyMentionedPhrases |= set(parents)
+    self.context.recentlyMentionedPhrases |= set(children)
     c = Concept()
     for parent in parents:
       for child in children:
@@ -472,6 +474,7 @@ class Interpreter:
       for prototype in prototypes:
         if not primaryPrototype is prototype:
           self.context.mergeConcepts(self.context.queryPrototype(prototype, phraseType='NounPhrase'), primaryPrototype)
+    self.context.recentlyMentionedPhrases |= set(synonyms)
     Concept().equate(*synonyms)
     
   def assertAction(self, actionJSON, initiatingClauseHash=None):
@@ -650,7 +653,7 @@ class Interpreter:
       elif 'state' in clauseJSON:
         results |= self.queryState(clauseJSON)
       elif 'action' in clauseJSON:
-        results |= self.queryState(clauseJSON, returnActor=True, returnTarget=True)
+        results |= self.queryAction(clauseJSON, returnActor=True, returnTarget=True)
       elif 'component_assignment' in clauseJSON or 'component_addition' in clauseJSON:
         (roots, branches) = self.queryComponentAssignment(clauseJSON, returnRoots=True)
         results |= roots
