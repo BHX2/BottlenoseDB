@@ -405,9 +405,8 @@ class Context:
       type = type[:-1]
       concept = self.newNounPhrase(type)
       response.add(concept)
-      print self.concepts['noun_phrases']
       return response
-    type = utilities.camelCase(type)
+    type = utilities.sanitize(type)
     exactMatch = self.queryExact(type, phraseType='NounPhrase')
     if exactMatch: response.add(exactMatch)
     for concept in self.concepts['noun_phrases']:
@@ -417,7 +416,7 @@ class Context:
         
   def queryVerbPhrases(self, type):
     response = set()
-    type = utilities.camelCase(type)
+    type = utilities.sanitize(type)
     exactMatch = self.queryExact(type, phraseType='VerbPhrase')
     if exactMatch: response.add(exactMatch)
     for concept in self.concepts['verb_phrases']:
@@ -427,7 +426,7 @@ class Context:
   
   def queryDescriptors(self, type):
     response = set()
-    type = utilities.camelCase(type)
+    type = utilities.sanitize(type)
     exactMatch = self.queryExact(type, phraseType='Descriptor')
     if exactMatch: response.add(exactMatch)
     for concept in self.concepts['descriptor']:

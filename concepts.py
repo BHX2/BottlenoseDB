@@ -107,8 +107,8 @@ class Concept:
       child = term1
       parent = term2
     if child == parent: return
-    child = utilities.camelCase(child)
-    parent = utilities.camelCase(parent)
+    child = utilities.sanitize(child)
+    parent = utilities.sanitize(parent)
     if not self.isA(child, parent) and not parent.istitle():
       self.taxonomy.case_sensitive = True
       self.taxonomy.append(child, type=parent)
@@ -127,6 +127,7 @@ class Concept:
     for child in childTerms:
       child = utilities.sanitize(child)
       parent = utilities.sanitize(parent)
+      if child == parent: return True
       if child.istitle() or parent.istitle():
         self.taxonomy.classifiers = []
         self.taxonomy.case_sensitive = True
@@ -144,7 +145,7 @@ class Concept:
             temp |= set(map(str, self.taxonomy.parents(utilities.sanitize(term), recursive=True)))
         existingParents |= temp
     for term in self.synonyms(parent):
-      if term in existingParents:
+      if utilities.sanitize(term) in existingParents:
         return True
     return False
 

@@ -91,7 +91,7 @@ class Interpreter:
       branches = temp
       if len(branches) == 0:
         if assertBranches:
-          branch = self.context.newNounPhrase('unspecified ' + utilities.sanitize(branchPhrase), initiatingClauseHash)
+          branch = self.context.newNounPhrase('unspecified' + utilities.camelCase(branchPhrase), initiatingClauseHash)
           branch.classify(branchPhrase)
           self.context.setComponent(stem, branchPhrase, branch)
         else:
