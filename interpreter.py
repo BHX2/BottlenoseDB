@@ -135,30 +135,31 @@ class Interpreter:
   
   def queryComponentAssignment(self, JSON, returnRoots=False):
     if not returnRoots:
-      (branches, stems) = self.retrieveComponent(JSON['component_assignment']['target']['component']['stem'], JSON['component_assignment']['target']['component']['branch'], returnRoots=False, returnLastStems=True, assertBranches=False)
+      branches1 = self.retrieveComponent(JSON['component_assignment']['target']['component']['stem'], JSON['component_assignment']['target']['component']['branch'], returnRoots=False, assertBranches=False)
+      branches2 = self.retrieveComponent(JSON['component_assignment']['target']['component']['stem'], JSON['component_assignment']['assignment']['concept'], returnRoots=False, assertBranches=False)
+      if not branches1 or not branches2:
+        if returnRoots:
+          return (set(), set())
+        else:
+          return set()
+      return branches1 & branches2
     else:
-      (roots, branches, stems) = self.retrieveComponent(JSON['component_assignment']['target']['component']['stem'], JSON['component_assignment']['target']['component']['branch'], returnRoots=True, returnLastStems=True, assertBranches=False)
-    if not branches or not stems: 
+      (roots1, branches1) = self.retrieveComponent(JSON['component_assignment']['target']['component']['stem'], JSON['component_assignment']['target']['component']['branch'], returnRoots=True, assertBranches=False)
+      (roots2, branches2) = self.retrieveComponent(JSON['component_assignment']['target']['component']['stem'], JSON['component_assignment']['assignment']['concept'], returnRoots=True, assertBranches=False)
+      if not branches1 or not branches2:
+        if returnRoots:
+          return (set(), set())
+        else:
+          return set()
       if returnRoots:
-        return (set(), set())
+        if not roots1 or not roots2:
+          roots = set()
+        else:
+          roots = roots1 & roots2
+        branches = branches1 & branches2
+        return (roots, branches)
       else:
-        return set()
-    branchPhrase = JSON['component_assignment']['target']['component']['branch']
-    potentialMatchingEdges = self.context.componentGraph.out_edges(stems, data=True)
-    matchingBranches = set()
-    if isinstance(branches, set):
-      matchingBranches |= branches
-    else:
-      matchingBranches = {branches}
-    temp = set()
-    for edge in potentialMatchingEdges:
-      if edge[1] in matchingBranches and edge[2]['label'] == branchPhrase:
-        temp.add(edge[1])
-    branches = temp
-    if returnRoots:
-      return (roots, branches)
-    else:
-      return branches
+        return branches1 & branches2
     
   def queryState(self, JSON):
     if 'quality' in JSON['state']['description']:
@@ -582,6 +583,10 @@ class Interpreter:
   def assertStatement(self, statementJSON, initiatingClauseHash=None):
     #TODO: implement arithmetic operation assertion
     statementJSON = self.solveQueries(statementJSON)
+    if 'NOT' in statementJSON or 'OR' in statementJSON or 'XOR' in statementJSON:
+      for clause in statementJSON.values()[0]:
+        self.assertStatement(clause)
+      return
     if 'concept' in statementJSON['statement'] and not initiatingClauseHash:
       if re.match('^!', statementJSON['statement']['concept']):
         affirmativeConcept = statementJSON['statement']['concept'][1:]
@@ -642,7 +647,7 @@ class Interpreter:
         else:
           results = self.queryAction(clauseJSON, returnActor=True, returnTarget=False)
     elif 'component_assignment' in clauseJSON:
-      if clauseJSON['component_assignment']['target']['branch'] == subjectJSON or clauseJSON['component_assignment']['assignment'] == subjectJSON:
+      if clauseJSON['component_assignment']['target']['component']['branch'] == subjectJSON or clauseJSON['component_assignment']['assignment'] == subjectJSON:
         results = self.queryComponentAssignment(clauseJSON)
       else:
         (roots, branches) = self.queryComponentAssignment(clauseJSON, returnRoots=True)
@@ -680,7 +685,7 @@ class Interpreter:
         results |= self.queryState(clauseJSON)
       elif 'action' in clauseJSON:
         results |= self.queryAction(clauseJSON, returnActor=True, returnTarget=True)
-      elif 'component_assignment' in clauseJSON or 'component_addition' in clauseJSON:
+      elif 'component_assignment' in clauseJSON:
         (roots, branches) = self.queryComponentAssignment(clauseJSON, returnRoots=True)
         results |= roots
         results |= branches

@@ -1,6 +1,7 @@
 import re
 import datetime
 import os
+import copy
 from collections import deque
 import networkx
 from concepts import Concept
@@ -24,7 +25,7 @@ class Context:
     self.potentialComponentGraph = networkx.MultiDiGraph()
     self.potentialActionGraph = networkx.MultiDiGraph()
     self.potentialStateGraph = networkx.MultiDiGraph()
-    self.shortTermMemory = deque(maxlen=50)
+    self.shortTermMemory = deque(maxlen=100)
     self.clauseToConceptSet = dict()
     self.clauseToPotentialEdges = dict()
     self.recentlyMentionedPhrases = set()
@@ -159,7 +160,7 @@ class Context:
           return
         conceptsOfDeprecatedPotentiations = oldSet - newSet
         conceptsOfNewPotentiations = newSet - oldSet
-        brainFreeze = self.shortTermMemory.copy()
+        brainFreeze = copy.copy(self.shortTermMemory)
         self.shortTermMemory.extendleft(conceptsOfNewPotentiations)
         def edgeRecordIsDeprecated(edgeRecord):
           if edgeRecord[1] in conceptsOfDeprecatedPotentiations or edgeRecord[2] in conceptsOfDeprecatedPotentiations:
@@ -469,7 +470,6 @@ class Subcontext(Context):
     self.stateGraph = self.supercontext.stateGraph
     self.concepts = {'noun_phrases': set(), 'verb_phrases': set(), 'descriptors': set()}
     self.conceptHashTable = self.supercontext.conceptHashTable
-    self.potentialTaxonomy = self.supercontext.potentialTaxonomy
     self.potentialComponentGraph = self.supercontext.potentialComponentGraph
     self.potentialActionGraph = self.supercontext.potentialActionGraph
     self.potentialStateGraph = self.supercontext.potentialStateGraph

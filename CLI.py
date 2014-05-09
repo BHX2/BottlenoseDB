@@ -39,7 +39,10 @@ def inspectConcept(object):
     if object.parents:
       puts(colored.cyan(object.name) + ' is a ' + ', '.join(object.parents))
     if object.states:
-      puts(colored.cyan(object.name) + ' is ' + ', '.join(object.states))
+      states = list()
+      for stateTuple in object.states:
+        states.append(stateTuple[0])
+      puts(colored.cyan(object.name) + ' is ' + ', '.join(states))
     for componentTuple in object.components:
       puts(colored.cyan(object.name) + ' (has ' + componentTuple[0] + ') --> ' + componentTuple[1])
     for componentOfTuple in object.componentOf:

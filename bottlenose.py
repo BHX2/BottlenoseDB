@@ -58,22 +58,40 @@ class BottlenoseObject:
     self.states = list()
     descriptors = context.stateGraph.successors(concept)
     for descriptor in descriptors:
-      self.states.append(descriptor.name)
+      self.states.append((descriptor.name, 100))
+    potentialDescriptorEdges = context.potentialStateGraph.out_edges(concept, data=True) if concept in context.potentialStateGraph else []
+    for potentialDescriptorEdge in potentialDescriptorEdges:
+      self.states.append((potentialDescriptorEdge[1].name, int(potentialDescriptorEdge[2]['weight'])))
+    def combineStates(states, stateIterator):
+      if not states:
+        combinedWeight = stateIterator[1]
+      else:
+        combinedWeight = 1
+        for state in states:
+          if state[0] == stateIterator[0]:
+            if state[1] < 100:
+              combinedWeight = combinedWeight + stateIterator[1]
+            else:
+              combinedWeight = 100
+            break
+      states.append((stateIterator[0], combinedWeight))
+      return states
+    self.states = reduce(combineStates, self.states, [])
     self.components = list()
     for componentEdge in context.componentGraph.out_edges(concept, data=True):
-      self.components.append((componentEdge[2]['label'], componentEdge[1].name, 1))
+      self.components.append((componentEdge[2]['label'], componentEdge[1].name, 100))
     self.componentOf = list()
     for componentEdge in context.componentGraph.in_edges(concept, data=True):
-      self.componentOf.append((componentEdge[2]['label'], componentEdge[0].name, 1))
+      self.componentOf.append((componentEdge[2]['label'], componentEdge[0].name, 100))
     self.actions = list()
     acts = set(context.actionGraph.neighbors(concept))
     for actor_act in context.actionGraph.out_edges(concept):
       for act_target in context.actionGraph.out_edges(actor_act[1]):
-        self.actions.append((act_target[0].name, act_target[1].name, 1))
+        self.actions.append((act_target[0].name, act_target[1].name, 100))
         acts.remove(act_target[0])
     for act in acts:
       self.actions.append((act.name, None, 1))
     self.actedOnBy = list()
     for act_target in context.actionGraph.in_edges(concept):
       for actor_act in context.actionGraph.in_edges(act_target[0]):
-        self.actedOnBy.append((act_target[0].name, actor_act[0].name, 1))
+        self.actedOnBy.append((act_target[0].name, actor_act[0].name, 100))
