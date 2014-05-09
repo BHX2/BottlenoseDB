@@ -641,7 +641,7 @@ class Interpreter:
       if not queryJSON['query']['action']['actor']:
         results = self.queryAction(queryJSON['query'], returnActor=False, returnTarget=True )
       else:
-        results = self.queryAction(queryJSON['query'], returnActor=True, returnTarget=False)
+        results = self.queryAction(queryJSON['query'], returnActor=True, returnTarget=True)
     elif 'component_assignment' in queryJSON['query']:
       results = self.queryComponentAssignment(queryJSON['query'])
     return results

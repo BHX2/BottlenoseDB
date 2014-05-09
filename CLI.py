@@ -33,35 +33,27 @@ def switchContext(bottlenose):
   return
 
 def inspectConcept(object):
-  puts()
-  if object.hashcode:
-    if object.isPrototype:
-      with indent(2):
+  with indent(2):
+    if object.hashcode:
+      if object.isPrototype:
         puts(colored.cyan(object.name + ' (prototype)'))
-    else:
-      with indent(2):
-        puts(colored.green(object.name) + ' (' + object.hashcode + ')')
-  if object.synonyms:
-    with indent(4):
-      puts(colored.green(object.name) + ' is also known as: ' + ', '.join(object.synonyms))
-  if object.parents:
-    with indent(4):
-      puts(colored.green(object.name) + ' is a ' + ', '.join(object.parents))
-  if object.states:
-    with indent(4):
-      puts(colored.green(object.name) + ' is ' + ', '.join(object.states))
-  for componentTuple in object.components:
-    with indent(4):
-      puts(colored.green(object.name) + ' (has ' + componentTuple[0] + ') --> ' + componentTuple[1])
-  for componentOfTuple in object.componentOf:
-    with indent(4):
-      puts(componentOfTuple[1] + ' (has ' + componentOfTuple[0] + ') --> ' + colored.green(object.name))
-  for actionTuple in object.actions:
-    with indent(4):
-      puts(colored.green(object.name) + ' (' + actionTuple[0] + ') --> ' + str(actionTuple[1]))
-  for actedOnByTuple in object.actedOnBy:
-    with indent(4):
-      puts(actedOnByTuple[1] + ' (' + actedOnByTuple[0] + ') --> ' + colored.green(object.name))
+      else:
+        puts(colored.cyan(object.name) + ' (' + object.hashcode + ')')
+  with indent(4):
+    if object.synonyms:
+      puts(colored.cyan(object.name) + ' is also known as: ' + ', '.join(object.synonyms))
+    if object.parents:
+      puts(colored.cyan(object.name) + ' is a ' + ', '.join(object.parents))
+    if object.states:
+      puts(colored.cyan(object.name) + ' is ' + ', '.join(object.states))
+    for componentTuple in object.components:
+      puts(colored.cyan(object.name) + ' (has ' + componentTuple[0] + ') --> ' + componentTuple[1])
+    for componentOfTuple in object.componentOf:
+      puts(componentOfTuple[1] + ' (has ' + componentOfTuple[0] + ') --> ' + colored.cyan(object.name))
+    for actionTuple in object.actions:
+      puts(colored.cyan(object.name) + ' (' + actionTuple[0] + ') --> ' + str(actionTuple[1]))
+    for actedOnByTuple in object.actedOnBy:
+      puts(actedOnByTuple[1] + ' (' + actedOnByTuple[0] + ') --> ' + colored.cyan(object.name))
           
 def main():
   bottlenose = Bottlenose()
@@ -84,9 +76,10 @@ def main():
         if isinstance(response, list):
           if not response:
             with indent(2):
-              puts(colored.red('No matching concepts found.'))
+              puts(colored.red('No matching concepts found.\n'))
           else:
             for object in response:
+              puts()
               inspectConcept(object)
             puts()
       except Exception as error:
@@ -95,7 +88,7 @@ def main():
             puts(colored.red(str(error.args[0])))
         else:
           with indent(2):
-            puts(colored.red('Unknown command or incoherent scripting.'))
+            puts(colored.red('Unknown command or incoherent scripting.\n'))
         traceback.print_exc()
 if __name__ == '__main__':
   main()

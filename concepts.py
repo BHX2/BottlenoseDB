@@ -123,6 +123,7 @@ class Concept:
     else:
       childTerms = self.synonyms(term1)
       parent = term2
+    if parent == 'thing': return True
     existingParents = set()
     for child in childTerms:
       child = utilities.sanitize(child)

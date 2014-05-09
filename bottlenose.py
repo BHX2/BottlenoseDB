@@ -23,13 +23,13 @@ class Bottlenose:
     JSON = self._translator.visit(grammar.parse(input))
     results = self._interpreter.interpret(JSON)
     self._context.ponderRecentMentions()
-    if not results:
-      return None
-    elif isinstance(results, set) or isinstance(results, list):
+    if isinstance(results, set) or isinstance(results, list):
       objects = list()
       for result in results:
         objects.append(BottlenoseObject(result, self._context))
       return objects
+    elif not results:
+      return None
     else:
       return [BottlenoseObject(results, self._context)]
   

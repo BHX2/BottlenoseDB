@@ -71,6 +71,7 @@ Bottlenose also allows for concepts (specifically those expressed via noun phras
 
   mouse (429ed0c483)
     cat (eats) --> mouse
+    
 ```
 
 In the above example one may have noticed the hexadecimal strings beside concept names (ex: `03da1ffedb`). These are hashcodes for the individual instances and can be used in place of noun phrase concepts in expressions. They are useful in command-line in certain circumstances where multiple conceptual instances with the same name exist; however, they should never be used within **Clauses** becaues of their ephemeral nature.
