@@ -48,28 +48,28 @@ Bottlenose also allows for concepts (specifically those expressed via noun phras
 ```
 ?cat
 
-  cat (03da1ffedb)
-    cat is a mammal, cat
+  cat (36228a0b29)
     cat is also known as: feline, kitty
+    cat is a mammal
     cat is furry
-    cat (has favoriteFood) --> oatmeal
-    cat (has whisker) --> unspecifiedWhisker
-    cat (has favoriteFood) --> tuna
-    cat (has fur) --> unspecifiedFur
     cat (has favoriteFood) --> catnip
+    cat (has favoriteFood) --> oatmeal
+    cat (has favoriteFood) --> tuna
+    cat (has fur) --> fur
     cat (has owner) --> John
+    cat (has whiskers) --> whiskers
+    cat (playsWith) --> yarn
     cat (eats) --> mouse
-    cat (plays with) --> yarn
 
 ?cat.owner
 
-  John (9d39a2110d)
+  John (1f15948589)
+    John is a owner
     cat (has owner) --> John
 
 ?eats(mouse)
 
-  mouse (b1d350ffaa)
-    mouse is a mouse
+  mouse (429ed0c483)
     cat (eats) --> mouse
 ```
 

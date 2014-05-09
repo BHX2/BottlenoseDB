@@ -32,62 +32,36 @@ def switchContext(bottlenose):
     bottlenose.setContext(int(re.match(".*([0-9]+)", input).group(1))-1)
   return
 
-def inspectConcept(concept, context=None):
-  parents = concept.parents()
+def inspectConcept(object):
   puts()
-  if not context:
-    with indent(2):
-      puts(colored.green(concept.name))
-  else:
-    conceptHash = None
-    for hash in context.conceptHashTable:
-      if context.conceptHashTable[hash] is concept:
-        conceptHash = hash
-        break
-    if conceptHash:
-      if conceptHash in context.prototypes.values():
-        with indent(2):
-          puts(colored.cyan(concept.name + ' (prototype)'))
-      else:
-        with indent(2):
-          puts(colored.yellow(concept.name) + ' (' + conceptHash + ')')
-  if parents:
+  if object.hashcode:
+    if object.isPrototype:
+      with indent(2):
+        puts(colored.cyan(object.name + ' (prototype)'))
+    else:
+      with indent(2):
+        puts(colored.green(object.name) + ' (' + object.hashcode + ')')
+  if object.synonyms:
     with indent(4):
-      puts(colored.green(concept.name) + ' is a ' + ', '.join(parents))
-  synonyms = concept.synonyms().copy()
-  if synonyms:
-      if utilities.camelCase(concept.name) in synonyms: synonyms.remove(utilities.camelCase(concept.name))
-      if len(synonyms):
-        with indent(4):
-          puts(colored.green(concept.name) + ' is also known as: ' + ', '.join(synonyms))
-  if not context: return
-  descriptors = context.stateGraph.successors(concept)
-  temp = list()
-  for descriptor in descriptors:
-    temp.append(descriptor.name)
-  descriptors = temp
-  if descriptors:
+      puts(colored.green(object.name) + ' is also known as: ' + ', '.join(object.synonyms))
+  if object.parents:
     with indent(4):
-      puts(colored.yellow(concept.name) + ' is ' + ', '.join(descriptors))
-  for edge in context.componentGraph.out_edges(concept, data=True):
+      puts(colored.green(object.name) + ' is a ' + ', '.join(object.parents))
+  if object.states:
     with indent(4):
-      puts(colored.yellow(edge[0].name) + ' (has ' + edge[2]['label'] + ') --> ' + edge[1].name)
-  for edge in context.componentGraph.in_edges(concept, data=True):
+      puts(colored.green(object.name) + ' is ' + ', '.join(object.states))
+  for componentTuple in object.components:
     with indent(4):
-      puts(edge[0].name + ' (has ' + edge[2]['label'] + ') --> ' + colored.yellow(edge[1].name))
-  acts = set(context.actionGraph.neighbors(concept))
-  for actor_act in context.actionGraph.out_edges(concept):
-    for act_target in context.actionGraph.out_edges(actor_act[1]):
-      with indent(4):
-        puts(colored.yellow(actor_act[0].name) + ' (' + utilities.unCamelCase(act_target[0].name) + ') --> ' + act_target[1].name)
-        acts.remove(act_target[0])
-  for act in acts:
+      puts(colored.green(object.name) + ' (has ' + componentTuple[0] + ') --> ' + componentTuple[1])
+  for componentOfTuple in object.componentOf:
     with indent(4):
-      puts(colored.yellow(concept.name) + ' (' + utilities.unCamelCase(act.name) + ') --> None')
-  for act_target in context.actionGraph.in_edges(concept):
-    for actor_act in context.actionGraph.in_edges(act_target[0]):
-      with indent(4):
-        puts(actor_act[0].name + ' (' + utilities.unCamelCase(act_target[0].name) + ') --> ' + colored.yellow(act_target[1].name))
+      puts(componentOfTuple[1] + ' (has ' + componentOfTuple[0] + ') --> ' + colored.green(object.name))
+  for actionTuple in object.actions:
+    with indent(4):
+      puts(colored.green(object.name) + ' (' + actionTuple[0] + ') --> ' + str(actionTuple[1]))
+  for actedOnByTuple in object.actedOnBy:
+    with indent(4):
+      puts(actedOnByTuple[1] + ' (' + actedOnByTuple[0] + ') --> ' + colored.green(object.name))
           
 def main():
   bottlenose = Bottlenose()
@@ -106,14 +80,14 @@ def main():
       continue
     else:
       try:
-        (response, context) = bottlenose.tell(input)
+        response = bottlenose.tell(input)
         if isinstance(response, list):
           if not response:
             with indent(2):
               puts(colored.red('No matching concepts found.'))
           else:
-            for result in response:
-              inspectConcept(result, context)
+            for object in response:
+              inspectConcept(object)
             puts()
       except Exception as error:
         if error.args:
