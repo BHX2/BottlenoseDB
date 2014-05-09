@@ -24,10 +24,7 @@ def switchContext(bottlenose):
         puts(str(i) + '. ' + context.name)
     i = i + 1
   puts('\nType a context number:')
-  if bottlenose.context().isUniversal:
-    input = raw_input(colored.cyan('> '))
-  else:
-    input = raw_input('> ')
+  input = raw_input('> ')
   if re.match(".*([0-9]+)", input):
     bottlenose.setContext(int(re.match(".*([0-9]+)", input).group(1))-1)
   return
@@ -35,10 +32,7 @@ def switchContext(bottlenose):
 def inspectConcept(object):
   with indent(2):
     if object.hashcode:
-      if object.isPrototype:
-        puts(colored.cyan(object.name + ' (prototype)'))
-      else:
-        puts(colored.cyan(object.name) + ' (' + object.hashcode + ')')
+      puts(colored.cyan(object.name) + ' (' + object.hashcode + ')')
   with indent(4):
     if object.synonyms:
       puts(colored.cyan(object.name) + ' is also known as: ' + ', '.join(object.synonyms))
@@ -58,16 +52,11 @@ def inspectConcept(object):
 def main():
   bottlenose = Bottlenose()
   while True:
-    if bottlenose.context().isUniversal:
-      input = raw_input(colored.cyan('> '))
-    else:
-      input = raw_input('> ')
+    input = raw_input('> ')
     if input == ':exit' or input == ':x': 
       sys.exit()
     elif input == ':context' or input == ':c':
       switchContext(bottlenose)
-    elif input == ':universal' or input == ':u':
-      bottlenose.setContext(0)
     elif input.strip() == '':
       continue
     else:

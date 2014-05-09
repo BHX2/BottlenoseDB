@@ -10,23 +10,17 @@ from clauses import Clause
 import utilities
 
 class Context:
-  def __init__(self, name=None, universal=False):
+  def __init__(self, name=None):
     if name:
       self.name = name
     else:
-      if universal:
-        self.name = "Universal Context"
-      else:
-        now = datetime.datetime.now()
-        self.name = 'Context from ' + str(now.month) + '/' + str(now.day) + '/' + str(now.year) + ' at ' + str(now.hour) + ':' + str(now.minute)
-    self.isUniversal = universal
+      now = datetime.datetime.now()
+      self.name = 'Context from ' + str(now.month) + '/' + str(now.day) + '/' + str(now.year) + ' at ' + str(now.hour) + ':' + str(now.minute)
     self.componentGraph = networkx.DiGraph()
     self.actionGraph = networkx.DiGraph()
     self.stateGraph = networkx.DiGraph()
     self.concepts = {'noun_phrases': set(), 'verb_phrases': set(), 'descriptors': set()}
     self.conceptHashTable = dict()
-    self.prototypes = dict()
-    self.potentialTaxonomy = dict()
     self.potentialComponentGraph = networkx.MultiDiGraph()
     self.potentialActionGraph = networkx.MultiDiGraph()
     self.potentialStateGraph = networkx.MultiDiGraph()
@@ -38,11 +32,9 @@ class Context:
   def rename(self, newName):
     self.name = newName
 
-  def incorporateConcept(self, concept, prototype=False, dontRemember=False):
+  def incorporateConcept(self, concept, dontRemember=False):
     hash = os.urandom(5).encode('hex')
     self.conceptHashTable[hash] = concept
-    if prototype:
-      self.prototypes[concept.name] = hash
     if isinstance(concept, NounPhrase):
       self.componentGraph.add_node(concept)
       self.actionGraph.add_node(concept)
@@ -166,6 +158,8 @@ class Context:
           return
         conceptsOfDeprecatedPotentiations = oldSet - newSet
         conceptsOfNewPotentiations = newSet - oldSet
+        brainFreeze = self.shortTermMemory.copy()
+        self.shortTermMemory.extendleft(conceptsOfNewPotentiations)
         def edgeRecordIsDeprecated(edgeRecord):
           if edgeRecord[1] in conceptsOfDeprecatedPotentiations or edgeRecord[2] in conceptsOfDeprecatedPotentiations:
             graphs[edgeRecord[0]].remove_edge(edgeRecord[1], edgeRecord[2], key=clause.hashcode)
@@ -194,6 +188,7 @@ class Context:
             else:
               recentlyExecutedDependentClauses.add(dependentClause)
               interpreter.assertStatement(dependentClause.JSON)
+        self.shortTermMemory = brainFreeze
                 
   def registerChange(self, concept):
     self.shortTermMemory.appendleft(concept)
@@ -361,12 +356,6 @@ class Context:
       mergedConcept = self.newDescriptor(names[1]) if re.match('^unspecified', names[0]) else self.newDescriptor(names[0])
     else:
       raise Exception('mergeConcepts: Unmatching phrase types')
-    if self.isUniversal:
-      for hash in self.conceptHashTable:
-        if mergedConcept is self.conceptHashTable[hash]:
-          if concept1.name in self.prototypes: self.prototypes[concept1.name] = hash 
-          if concept2.name in self.prototypes: self.prototypes[concept2.name] = hash 
-          break
     if not re.match('^unspecified', names[0]) and not re.match('^unspecified', names[1]):
       concept1.equate(concept2.name)
     for parent in concept1.parents():
@@ -388,26 +377,7 @@ class Context:
     self.remove(concept2)
     if not initiatingClauseHash:
       self.registerChange(mergedConcept)
-    return mergedConcept
-
-  def queryPrototype(self, name, phraseType):
-    synonyms = Concept().synonyms(name)
-    for synonym in synonyms:
-      if synonym in self.prototypes:
-        hash = self.prototypes[synonym]
-        if hash in self.conceptHashTable:
-          concept = self.conceptHashTable[hash]
-          if concept: return concept
-    if phraseType == 'NounPhrase':
-      concept = NounPhrase(name)
-    elif phraseType == 'VerbPhrase':
-      concept = VerbPhrase(name)
-    elif phraseType == 'Descriptor':
-      concept = Descriptor(name)
-    else:
-      raise Exception('queryPrototype: Unknown phrase type')
-    self.incorporateConcept(concept, prototype=True)
-    return concept    
+    return mergedConcept 
  
   def queryNounPhrases(self, type):
     if 'query' in type:
@@ -492,14 +462,12 @@ class Context:
   
 class Subcontext(Context):
   def __init__(self, supercontext, concepts=None):
-    self.isUniversal = False
     self.supercontext = supercontext
     self.componentGraph = self.supercontext.componentGraph
     self.actionGraph = self.supercontext.actionGraph
     self.stateGraph = self.supercontext.stateGraph
     self.concepts = {'noun_phrases': set(), 'verb_phrases': set(), 'descriptors': set()}
     self.conceptHashTable = self.supercontext.conceptHashTable
-    self.prototypes = self.supercontext.prototypes
     self.potentialTaxonomy = self.supercontext.potentialTaxonomy
     self.potentialComponentGraph = self.supercontext.potentialComponentGraph
     self.potentialActionGraph = self.supercontext.potentialActionGraph

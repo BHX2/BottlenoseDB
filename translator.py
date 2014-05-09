@@ -171,8 +171,10 @@ class Translator(NodeVisitor):
   def visit_synonym_assignment(self, node, (concept, _, concept_or_list)):
     synonyms = [concept['concept']]
     if isinstance(concept_or_list, list): 
-      for element in concept_or_list: synonyms.append(element['concept'])
-    else:
+      for element in concept_or_list: 
+        if not isinstance(element['concept'], dict):
+          synonyms.append(element['concept'])
+    elif not isinstance(concept_or_list['concept'], dict):
       synonyms.append(concept_or_list['concept'])
     return {'synonym_assignment': {'concepts': synonyms}, 'subject': concept}
   
@@ -190,9 +192,6 @@ class Translator(NodeVisitor):
     
   def visit_action(self, node, (actor, _1, verb, _2, target, _3, _4)):
     return {'action': {'actor': actor, 'act': verb, 'target': target}}
-    
-  def visit_verb_entity(self, node, (verb, _)):
-    return {'verb': verb}
   
   def visit_concept_or_component(self, node, (concept_or_component)):
     return concept_or_component[0]
@@ -203,8 +202,8 @@ class Translator(NodeVisitor):
   def visit_component_assignment(self, node, (target, _, assignment )):
     return {'component_assignment': {'target': target, 'assignment': assignment}}
     
-  def visit_component_addition(self, node, (target, _, assignment)):
-    return {'component_addition': {'target': target, 'assignment': assignment}}
+  def visit_component_addition(self, node, (target, _, addition)):
+    return {'component_addition': {'target': target, 'addition': addition}}
 
   def visit_component_subtraction(self, node, (target, _, unassignment)):
     return {'component_subtraction': {'target': target, 'unassignment': unassignment}}    

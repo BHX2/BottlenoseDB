@@ -13,9 +13,8 @@ import utilities
 class Bottlenose:
   def __init__(self, bootstrapVocabulary=False):
     Concept(bootstrapVocabulary)
-    self._universalContext = Context(universal=True)
-    self._contexts = [self._universalContext, Context()]
-    self._context = self._contexts[1]
+    self._contexts = [Context()]
+    self._context = self._contexts[0]
     self._translator = Translator()
     self._interpreter = Interpreter(self._context)
     
@@ -51,7 +50,6 @@ class BottlenoseObject:
     for hash in context.conceptHashTable:
       if context.conceptHashTable[hash] is concept:
         self.hashcode = hash
-    self.isPrototype = True if self.hashcode in context.prototypes.values() else False
     self.synonyms = concept.synonyms().copy()
     self.parents = concept.parents()
     self.ancestors = concept.ancestors()
