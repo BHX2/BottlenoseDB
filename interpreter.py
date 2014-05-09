@@ -265,7 +265,8 @@ class Interpreter:
       return actors
     
   def assertConcept(self, conceptJSON, initiatingClauseHash=None):
-    return self.context.newNounPhrase(conceptJSON['concept'], initiatingClauseHash)
+    results = self.queryConcept(conceptJSON)
+    return results if results else self.context.newNounPhrase(conceptJSON['concept'], initiatingClauseHash)
   
   def assertState(self, stateJSON, initiatingClauseHash=None):
     if 'concept' in stateJSON['state']['subject']:
@@ -537,7 +538,7 @@ class Interpreter:
       self.context.setAction(actor, act, None, initiatingClauseHash)
     if targets:
       for target in targets:
-        act = self.context.newVerbPhrase(actionJSON['action']['act']['verb'])
+        act = self.context.newVerbPhrase(actionJSON['action']['act']['verb'])     
         self.context.setAction(actor, act, target, initiatingClauseHash)
 
   def solveQueries(self, JSON):
@@ -616,19 +617,37 @@ class Interpreter:
   
   def query(self, queryJSON):
     results = list()
-    if 'concept' in queryJSON['query']:
-      results = self.queryConcept(queryJSON['query'])
-    elif 'component' in queryJSON['query']:
-      results = self.queryComponent(queryJSON['query'])
-    elif 'state' in queryJSON['query']:
-      results = self.queryState(queryJSON['query'])
-    elif 'action' in queryJSON['query']:
-      if not queryJSON['query']['action']['actor']:
-        results = self.queryAction(queryJSON['query'], returnActor=False, returnTarget=True )
+    subjectJSON = queryJSON['query']['subject']
+    clauseJSON = queryJSON['query']['clause']
+    if not 'concept' in subjectJSON:
+      raise Exception('query: Subject must be a simple concept')
+    if not clauseJSON:
+      return self.queryConcept(subjectJSON)
+    if 'concept' in clauseJSON:
+      results = self.queryConcept(clauseJSON)
+    elif 'component' in clauseJSON:
+      if clauseJSON['component']['branch'] == subjectJSON:
+        results = self.queryComponent(clauseJSON)
       else:
-        results = self.queryAction(queryJSON['query'], returnActor=True, returnTarget=False)
-    elif 'component_assignment' in queryJSON['query']:
-      results = self.queryComponentAssignment(queryJSON['query'])
+        (roots, branches) = self.queryComponent(clauseJSON, returnRoots=True)
+        results = roots
+    elif 'state' in clauseJSON:
+      results = self.queryState(clauseJSON)
+    elif 'action' in clauseJSON:
+      if not clauseJSON['action']['actor']:
+        results = self.queryAction(clauseJSON, returnActor=False, returnTarget=True )
+      else:
+        if clauseJSON['action']['target'] == subjectJSON:
+          results = self.queryAction(clauseJSON, returnActor=False, returnTarget=True)
+        else:
+          results = self.queryAction(clauseJSON, returnActor=True, returnTarget=False)
+    elif 'component_assignment' in clauseJSON:
+      if clauseJSON['component_assignment']['target']['branch'] == subjectJSON or clauseJSON['component_assignment']['assignment'] == subjectJSON:
+        results = self.queryComponentAssignment(clauseJSON)
+      else:
+        (roots, branches) = self.queryComponentAssignment(clauseJSON, returnRoots=True)
+        results = roots
+    results = [x for x in results if x.isA(subjectJSON['concept'])]
     return results
 
   def test(self, JSON):

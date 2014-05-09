@@ -4,8 +4,12 @@ from parsimonious.grammar import Grammar
 from parsimonious.grammar import NodeVisitor
 
 grammar = Grammar("""
-  input                 = belief / statement
-  query                 = "?" (state / action / direct_object / component_assignment / component / concept)
+  input                 = belief / taxonomy_assignment / synonym_assignment / statement
+  taxonomy_assignment   = concept_or_component (type_includes / is_a) concept_or_list
+  type_includes         = "/="
+  is_a                  = "=/"
+  synonym_assignment    = concept "~" concept_or_list
+  query                 = "?" concept ("(" (state / action / direct_object / component_assignment / component / concept) ")")?
   belief                = law / rule
   law                   = clause ">>>" clause
   arithmetic_operation  = (component / concept) arithmetic_operator quantity
@@ -19,11 +23,7 @@ grammar = Grammar("""
   logic_operator        = "&" / "|" / "," 
   simple_clause         = " "* "!"? statement probability? " "*
   probability           = "[" number "]"
-  statement             = arithmetic_operation / taxonomy_assignment / synonym_assignment / state / action / component_addition / component_subtraction / component_assignment / component / concept
-  taxonomy_assignment   = concept_or_component (type_includes / is_a) concept_or_list
-  type_includes         = "/="
-  is_a                  = "=/"
-  synonym_assignment    = concept "~" concept_or_list
+  statement             = arithmetic_operation / state / action / component_addition / component_subtraction / component_assignment / component / concept
   state                 = (component / concept) "#" (quantity / quality)
   quality               = ~"\s*!?[A-Z]*\s*"i
   quantity              = number units?
@@ -48,8 +48,11 @@ class Translator(NodeVisitor):
   def visit_input(self, node, input):
     return input[0]
   
-  def visit_query(self, node, (_1, query)):
-    return {'query': query}
+  def visit_query(self, node, (_1, subject, clause_expression)):
+    if not clause_expression:
+      return {'query':{'subject': subject, 'clause':None}}
+    else:
+      return {'query':{'subject': subject, 'clause':clause_expression}}
   
   def visit_belief(self, node, (rule_or_law)):
     return {'belief': rule_or_law[0]}
@@ -164,9 +167,9 @@ class Translator(NodeVisitor):
   
   def visit_taxonomy_assignment(self, node, (concept_or_component, operator, concept_or_list)):
     if "is_a" in operator.keys():
-      return {'taxonomy_assignment':{'parent': concept_or_list, 'child': concept_or_component, 'type':'is_a'}}
+      return {'statement': {'taxonomy_assignment':{'parent': concept_or_list, 'child': concept_or_component, 'type':'is_a'}}}
     elif "type_includes" in operator.keys():
-      return {'taxonomy_assignment':{'parent': concept_or_component, 'child': concept_or_list, 'type':'type_includes'}}
+      return {'statement': {'taxonomy_assignment':{'parent': concept_or_component, 'child': concept_or_list, 'type':'type_includes'}}}
   
   def visit_synonym_assignment(self, node, (concept, _, concept_or_list)):
     synonyms = [concept['concept']]
@@ -176,7 +179,7 @@ class Translator(NodeVisitor):
           synonyms.append(element['concept'])
     elif not isinstance(concept_or_list['concept'], dict):
       synonyms.append(concept_or_list['concept'])
-    return {'synonym_assignment': {'concepts': synonyms}, 'subject': concept}
+    return {'statement': {'synonym_assignment': {'concepts': synonyms}, 'subject': concept}}
   
   def visit_state(self, node, (subject, _, description)):
     return {'state': {'subject': subject, 'description': description}}

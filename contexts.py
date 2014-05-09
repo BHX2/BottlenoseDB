@@ -85,7 +85,8 @@ class Context:
       if concept in self.actionGraph:
         acts = self.actionGraph.successors(concept)
         for act in acts:
-          self.remove(act)
+          if not self.actionGraph.predecessors(act):
+            self.remove(act)
       if concept in self.stateGraph:
         descriptions = self.stateGraph.successors(concept)
         for description in descriptions:
@@ -258,7 +259,7 @@ class Context:
             potentiallyMatchingTargets = self.actionGraph.successors(potentialMatchingAct)
             for potentiallyMatchingTarget in potentiallyMatchingTargets:
               if affirmativeTarget in potentiallyMatchingTarget.synonyms() or potentiallyMatchingTarget.isA(affirmativeTarget):
-                self.unsetAction(actor, potentialMatchingAct, target, initiatingClauseHash)
+                self.unsetAction(actor, potentialMatchingAct, potentiallyMatchingTarget, initiatingClauseHash)
           self.registerChange(actor)
           self.remove(act)
           self.remove(target)
