@@ -150,12 +150,13 @@ class Context:
           for edgeRecord in relatedPotentialEdges:
             graphs[edgeRecord[0]].remove_edge(edgeRecord[1], edgeRecord[2], key=clause.hashcode)
           self.clauseToPotentialEdges[clause.hashcode] = list()
+          self.clauseToConceptSet[clause.hashcode] = set()
           return
         if not clause.hashcode in self.clauseToConceptSet:
           self.clauseToConceptSet[clause.hashcode] = set()
         oldSet = self.clauseToConceptSet[clause.hashcode]
         newSet = results
-        self.clauseToConceptSet[clause.hashcode] = newSet
+        self.clauseToConceptSet[clause.hashcode] = newSet.copy()
         if oldSet == newSet:
           return
         conceptsOfDeprecatedPotentiations = oldSet - newSet
@@ -168,7 +169,7 @@ class Context:
             return True
           else:
             return False 
-        if clause.hashcode in self.clauseToPotentialEdges:
+        if clause.hashcode in self.clauseToPotentialEdges:       
           if conceptsOfDeprecatedPotentiations:
             self.clauseToPotentialEdges[clause.hashcode] = [x for x in relatedPotentialEdges if not edgeRecordIsDeprecated(x)]
         if conceptsOfNewPotentiations:
@@ -181,8 +182,9 @@ class Context:
               continue
             else:
               recentlyExecutedDependentClauses.add(dependentClause)
-              interpreter = Interpreter(subcontext)
-              interpreter.assertStatement(dependentClause.JSON, clause)
+              interpreter.setContext(subcontext)
+              interpreter.assertStatement(dependentClause.JSON, clause.hashcode)
+              interpreter.setContext(self)
           for lawEdge in lawEdges:
             dependentClause = lawEdge[1]
             if dependentClause in recentlyExecutedDependentClauses:
@@ -190,7 +192,7 @@ class Context:
             else:
               recentlyExecutedDependentClauses.add(dependentClause)
               interpreter.assertStatement(dependentClause.JSON)
-        self.shortTermMemory = brainFreeze
+        self.shortTermMemory = brainFreeze  
                 
   def registerChange(self, concept):
     self.shortTermMemory.appendleft(concept)

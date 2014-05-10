@@ -40,6 +40,7 @@ def inspectConcept(object):
       puts(colored.cyan(object.name) + ' is a ' + ', '.join(object.parents))
     if object.states:
       states = list()
+      print object.states
       for stateTuple in object.states:
         states.append(stateTuple[0])
       puts(colored.cyan(object.name) + ' is ' + ', '.join(states))

@@ -62,21 +62,21 @@ class BottlenoseObject:
     potentialDescriptorEdges = context.potentialStateGraph.out_edges(concept, data=True) if concept in context.potentialStateGraph else []
     for potentialDescriptorEdge in potentialDescriptorEdges:
       self.states.append((potentialDescriptorEdge[1].name, int(potentialDescriptorEdge[2]['weight'])))
-    def combineStates(states, stateIterator):
-      if not states:
-        combinedWeight = stateIterator[1]
-      else:
-        combinedWeight = 1
-        for state in states:
-          if state[0] == stateIterator[0]:
-            if state[1] < 100:
-              combinedWeight = combinedWeight + stateIterator[1]
-            else:
-              combinedWeight = 100
-            break
-      states.append((stateIterator[0], combinedWeight))
+    def combineStates(stateTuples):
+      evidence = dict()
+      for stateTuple in stateTuples:
+        if not stateTuple[0] in evidence:
+          evidence[stateTuple[0]] = int(stateTuple[1])
+        else:
+          if evidence[stateTuple[0]] < 100:
+            evidence[stateTuple[0]] = evidence[stateTuple[0]] + int(stateTuple[1])
+          else:
+            evidence[stateTuple[0]] = 100
+      states = list()  
+      for state in evidence:
+          states.append((state, evidence[state]))
       return states
-    self.states = reduce(combineStates, self.states, [])
+    self.states = combineStates(self.states)
     self.components = list()
     for componentEdge in context.componentGraph.out_edges(concept, data=True):
       self.components.append((componentEdge[2]['label'], componentEdge[1].name, 100))

@@ -102,7 +102,10 @@ class Interpreter:
             else:
               return (None, stems)
           else:
-            return None
+            if returnRoots:
+              return (None, None)
+            else:
+              return None
         branches.add(branch)
       if returnLastStems:
         stems = {stem}
@@ -687,12 +690,16 @@ class Interpreter:
         results |= self.queryAction(clauseJSON, returnActor=True, returnTarget=True)
       elif 'component_assignment' in clauseJSON:
         (roots, branches) = self.queryComponentAssignment(clauseJSON, returnRoots=True)
-        results |= roots
-        results |= branches
+        if roots: 
+          results |= roots
+        if branches:
+          results |= branches
       elif 'component' in clauseJSON:
         (roots, branches) = self.queryComponent(clauseJSON, returnRoots=True)
-        results |= roots
-        results |= branches
+        if roots: 
+          results |= roots
+        if branches:
+          results |= branches
       elif 'concept' in clauseJSON:
         results |= self.queryConcept(clauseJSON)
       elif 'query' in clauseJSON:
