@@ -74,12 +74,33 @@ class BottlenoseObject:
             evidence[stateTuple[0]] = 100
       states = list()  
       for state in evidence:
-          states.append((state, evidence[state]))
+        states.append((state, evidence[state]))
       return states
     self.states = combineStates(self.states)
     self.components = list()
     for componentEdge in context.componentGraph.out_edges(concept, data=True):
       self.components.append((componentEdge[2]['label'], componentEdge[1].name, 100))
+    potentialComponentEdges = context.potentialComponentGraph.out_edges(concept, data=True) if concept in context.potentialComponentGraph else []
+    for potentialComponentEdge in potentialComponentEdges:
+      self.components.append((potentialComponentEdge[2]['label'], potentialComponentEdge[1].name, potentialComponentEdge[2]['weight']))  
+    def combineComponents(componentTuples):
+      evidence = dict()
+      for componentTuple in componentTuples:
+        if not componentTuple[0] in evidence:
+          evidence[componentTuple[0]] = dict()
+        if not componentTuple[1] in evidence[componentTuple[0]]:
+          evidence[componentTuple[0]][componentTuple[1]] = int(componentTuple[2])
+        else:
+          if evidence[componentTuple[0]][componentTuple[1]] < 100:
+            evidence[componentTuple[0]][componentTuple[1]] = evidence[componentTuple[0]][componentTuple[1]] + int(componentTuple[2])
+          else:
+            evidence[componentTuple[0]][componentTuple[1]] = 100
+      components = list()  
+      for branchPhrase in evidence:
+        for component in evidence[branchPhrase]:
+          components.append((branchPhrase, component, evidence[branchPhrase][component]))
+      return components
+    self.components = combineComponents(self.components)
     self.componentOf = list()
     for componentEdge in context.componentGraph.in_edges(concept, data=True):
       self.componentOf.append((componentEdge[2]['label'], componentEdge[0].name, 100))

@@ -45,7 +45,7 @@ def inspectConcept(object):
         states.append(stateTuple[0])
       puts(colored.cyan(object.name) + ' is ' + ', '.join(states))
     for componentTuple in object.components:
-      puts(colored.cyan(object.name) + ' (has ' + componentTuple[0] + ') --> ' + componentTuple[1])
+      puts(colored.cyan(object.name) + ' (has ' + componentTuple[0] + ') --> ' + componentTuple[1] + " [" + str(componentTuple[2]) + "]")
     for componentOfTuple in object.componentOf:
       puts(componentOfTuple[1] + ' (has ' + componentOfTuple[0] + ') --> ' + colored.cyan(object.name))
     for actionTuple in object.actions:
