@@ -180,10 +180,10 @@ class Context:
             self.clauseToPotentialEdges[clause.hashcode] = [x for x in relatedPotentialEdges if not edgeRecordIsDeprecated(x)]
         if conceptsOfNewPotentiations:
           subcontext = Subcontext(self, conceptsOfNewPotentiations)
+          evidenceEdges = Clause.evidenceGraph.out_edges(clause.hashcode)
           ruleEdges = Clause.ruleGraph.out_edges(clause.hashcode)
-          lawEdges = Clause.lawGraph.out_edges(clause.hashcode)
-          for ruleEdge in ruleEdges:
-            dependentClause = Clause.hashtable[ruleEdge[1]]
+          for evidenceEdge in evidenceEdges:
+            dependentClause = Clause.hashtable[evidenceEdge[1]]
             if dependentClause in recentlyExecutedDependentClauses:
               continue
             else:
@@ -191,8 +191,8 @@ class Context:
               interpreter.setContext(subcontext)
               interpreter.assertStatement(dependentClause.JSON, clause.hashcode)
               interpreter.setContext(self)
-          for lawEdge in lawEdges:
-            dependentClause = Clause.hashtable[lawEdge[1]]
+          for ruleEdge in ruleEdges:
+            dependentClause = Clause.hashtable[ruleEdge[1]]
             if dependentClause in recentlyExecutedDependentClauses:
               continue
             else:

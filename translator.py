@@ -10,11 +10,13 @@ grammar = Grammar("""
   is_a                  = "=/"
   synonym_assignment    = concept "~" concept_or_list
   query                 = "?" concept ("(" (state / action / direct_object / component_assignment / component / concept) ")")?
-  belief                = law / rule
-  law                   = clause ">>>" clause
+  belief                = evidence / rule
+  rule                   = clause ">>" clause
   arithmetic_operation  = (component / concept) arithmetic_operator quantity
   arithmetic_operator   = "+" / "-"
-  rule                  = clause ">>" clause
+  evidence              = supporting_evidence / opposing_evidence
+  supporting_evidence   = clause ">>+" clause
+  opposing_evidence     = clause ">>-" clause
   clause                = (comparison_clause / compound_clause / simple_clause) " "*
   comparison_clause     = (component / concept) !">>" (comparison_operator) " "* (quantity / component / concept) 
   comparison_operator   = "==" / "!=" / ">=" / "<=" / ">" / "<"
@@ -54,21 +56,27 @@ class Translator(NodeVisitor):
     else:
       return {'query':{'subject': subject, 'clause':clause_expression}}
   
-  def visit_belief(self, node, (rule_or_law)):
-    return {'belief': rule_or_law[0]}
+  def visit_belief(self, node, (evidence_or_rule)):
+    return {'belief': evidence_or_rule[0]}
   
-  def visit_law(self, node, (first_clause, _, second_clause)):
-    return {'law': {'independent_clause': first_clause, 'dependent_clause': second_clause}}
+  def visit_rule(self, node, (first_clause, _, second_clause)):
+    return {'rule': {'independent_clause': first_clause, 'dependent_clause': second_clause}}
 
   def visit_arithmetic_operation(self, node, (concept_or_component, operator, quantity)):
     return {'arithmetic_operation': {'variable': concept_or_component, 'operator': operator, 'quantity': quantity}}
     
   def visit_arithmetic_operator(self, node, _):
     return node.text
-    
-  def visit_rule(self, node, (first_clause, _, second_clause)):
-    return {'rule': {'independent_clause': first_clause, 'dependent_clause': second_clause}}
-    
+  
+  def visit_evidence(self, node, (evidence)):
+    return evidence[0]
+  
+  def visit_supporting_evidence(self, node, (first_clause, _, second_clause)):
+    return {'evidence': {'independent_clause': first_clause, 'dependent_clause': second_clause, 'type': 'supporting'}}
+  
+  def visit_opposing_evidence(self, node, (first_clause, _, second_clause)):
+    return {'evidence': {'independent_clause': first_clause, 'dependent_clause': second_clause, 'type': 'opposing'}}
+  
   def visit_clause(self, node, (clause, _2)):
     return clause
       

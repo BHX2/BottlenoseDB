@@ -709,15 +709,48 @@ class Interpreter:
       return False
     else:
       return results
-      
+
+  def negateStatement(self, JSON):
+    if isinstance(JSON, list):
+      temp = list()
+      for x in JSON:
+        addition = self.negateStatement(x)
+        if isinstance(addition, list):
+          temp.extend(addition)
+        else:
+          temp.append(addition)
+      return temp
+    if not isinstance(JSON, dict): 
+      return JSON
+    if 'concept' in JSON:
+      if re.match('^!', JSON['concept']):
+        JSON['concept'] = JSON['concept'][1:]
+      else:
+        JSON['concept'] = '!' + JSON['concept']
+      return JSON
+    elif 'target' in JSON and JSON['target'] == None:
+      JSON['target'] = {'concept': '!'}
+      return JSON
+    else:
+      stopKeys = {'component', 'subject', 'actor', 'query', 'arithmetic_operation', 'comparison', 'taxonomy_assignment', 'synonym_assignment'}
+      for key in JSON.keys():
+        if not key in stopKeys:
+          JSON[key] = self.negateStatement(JSON[key])
+      return JSON
+  
+  def processEvidence(self, evidenceJSON):
+    independentClause = Clause(evidenceJSON['evidence']['independent_clause'], independent=True)
+    if evidenceJSON['evidence']['type'] == 'supporting':
+      dependentClause = Clause(evidenceJSON['evidence']['dependent_clause'], independent=False)
+    elif evidenceJSON['evidence']['type'] == 'opposing':
+      dependentClause = Clause(self.negateStatement(evidenceJSON['evidence']['dependent_clause']), independent=False)
+    else:
+      raise Exception('processEvidence: Unknown evidence structure')
+    independentClause.potentiates(dependentClause)
+    
   def processRule(self, ruleJSON):
     independentClause = Clause(ruleJSON['rule']['independent_clause'], independent=True)
     dependentClause = Clause(ruleJSON['rule']['dependent_clause'], independent=False)
-    independentClause.potentiates(dependentClause)
-    
-  def processLaw(self, lawJSON):
-    independentClause = Clause(lawJSON['law']['independent_clause'], independent=True)
-    dependentClause = Clause(lawJSON['law']['dependent_clause'], independent=False)
     independentClause.mandates(dependentClause)
   
   def interpret(self, JSON):
@@ -730,10 +763,10 @@ class Interpreter:
       self.assertStatement(JSON)
       return None
     elif 'belief' in JSON:
-      if 'rule' in JSON['belief']:
+      if 'evidence' in JSON['belief']:
+        self.processEvidence(JSON['belief'])
+      elif 'rule' in JSON['belief']:
         self.processRule(JSON['belief'])
-      elif 'law' in JSON['belief']:
-        self.processLaw(JSON['belief'])
       return None
       
     

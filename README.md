@@ -35,7 +35,7 @@ cat.likes(!dog)
 ```
 
 ###States
-Use `#` followed by an adjective to indicate the state of the entity or a component entity. If the right-sided phrase is a noun phrase it should be instead assigned as a **Component** (shown above). For plural items a number can be placed after `#` and used as if the number were an adjective. `!` can denote the absence of a state. States (adverbs) can also be applied after actions.
+Use `#` followed by an adjective to indicate the state of the entity or a component entity. If the right-sided phrase is a noun phrase it should be instead assigned as a **Component** (shown above). For plural items a number can be placed after `#` and used as if the number were an adjective. `!` prefix can be used to remove a previously asserted **State**.
 ```
 cat#furry
 cat.fur#orange
@@ -83,19 +83,23 @@ mouse*.eats(cheese)
 ```
 
 ###Rules & Clauses
-The real power of Bottlenose is derived from leveraging the "semantic glue" described above in forming dynamic artificial cognitive beliefs. Each **Belief** is made up of **Clauses**, which are testable statements referencing existence of a **Concept** or assertions of **Relationship**, **Action**, or **State**. The weakest type of **Belief** is a **Rule**. A Bottlenose **Rule** is not a rule in a  strict sense; it does not have to be correct all the time and there need not be any true causation, or temporal seperation. Instead, its purpose is to describe a reflexive cognitive association or potential co-occurence. Each **Rule** follows the syntax of two **Clauses** seperated by `>>`. `A >> B` denotes *if A then B is more likely*. Unlike **Laws** described below, the dependent clause (B in this example) is not asserted. Instead the possibility is introduced which accumulates as an evidence score that is accessible via querying.
+The real power of Bottlenose is derived from leveraging the "semantic glue" described above in forming dynamic artificial cognitive beliefs. Each **Belief** is made up of **Clauses**, which are testable statements referencing existence of a **Concept** or assertions of **Relationship**, **Action**, or **State**. Each **Rule** follows the syntax of two **Clauses** seperated by `>>`. `A >> B` denotes *if A then B*. The second (or dependent) **Clause** is executed immediately after the first is found to be true. Bottlenose automatically finds and tests relevant **Rules** that have been described and attempts co-reference resolution. One use of **Rules** is to hardcode more "semantic glue" than is otherwise available. Using the cat example above we can connect the **Action** of 'owning a cat' to the **Relationship** of 'cat having an owner'. Below, we equate the **Action** `.owns(X)` to the **Relationship** `.owner =X`.
+```
+cat.owner=person >>> person.owns(cat)
+```
 
 ###Logic
-A **Compound Clause** can be formed using `&` (*AND*) or `|` (*OR*) to join multiple simple **Clauses**. To supply a negative, `!` (*NOT*) can prefix a component **Clause**. `&` indicates that in order to fulfill the entire **Clause**, expressions on both sides of the `&` must be true. `|` indicates that only one **Clause** needs to be true. **Compound Clauses** do not make use of co-reference resolution.
+A **Compound Clause** can be formed using `&` (*AND*) or `|` (*OR*) to join multiple simple **Clauses**. To supply a negative, `!` (*NOT*) can prefix a component **Clause**. `&` indicates that in order to fulfill the entire **Clause**, expressions on both sides of the `&` must be true. `|` indicates that only one **Clause** needs to be true. Multiple operators may be used which will be tested in order of binary operations. **Compound Clauses** do not make use of co-reference resolution and as such terms are kept at their nonspecific values.
 ```
 cat & laserPointer >> cat.chases(laserPointer)
 cat#relaxed | cat#stressed >> cat.purrs()
 ```
 
-###Laws
-The strongest **Belief** is a **Law**, which is a strict correlation indicated using `>>>`. In general `A >>> B` translates *if A is true then B is ALWAYS true.* One use of **Laws** is to hardcode more 'syntactic glue' than is otherwise available. Using the cat example above we can connect the **Action** of 'owning a cat' to the **Relationship** of 'cat having an owner'. Below, we equate the **Action** `.owns(X)` to the **Relationship** `.owner =X`. Of importance, **Laws** are immediately computed into the artificial cognitive model. 
+###Evidence
+The second type of **Belief** is called an **Evidence**. While **Rules** represents definitive facts that can be taken at face value, **Evidence** is used to describe shifts of confidence or opinion that is fuzzy and unstable. They are seperate from the solidified knowledge model and exist in a "potential space" that cannot trigger other **Rules**, etc. **Evidence** is useful for keeping numerical tally representing summed support and opposition of an assertion. This number can be inspected via queries. The adapter symbols denoting support and opposition are `>>+` and `>>-` respectively.
 ```
-cat.owner=person >>> person.owns(cat)
+cat.sunbathes() >>+ cat#happy
+cat#wet >>- cat#happy
 ```
 
 ###Arithmetic

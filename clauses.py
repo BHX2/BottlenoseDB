@@ -4,8 +4,8 @@ import networkx
 class Clause:
   relatedPhraseToClause = dict()
   hashtable = dict()
+  evidenceGraph = networkx.DiGraph()
   ruleGraph = networkx.DiGraph()
-  lawGraph = networkx.DiGraph()
   
   def __init__(self, JSON, independent=False):
     self.JSON = JSON
@@ -13,8 +13,8 @@ class Clause:
     Clause.hashtable[self.hashcode] = self
     if independent:
       self.calculateRelatedPhrases(JSON, self)
+      self.evidenceGraph.add_node(self.hashcode)
       self.ruleGraph.add_node(self.hashcode)
-      self.lawGraph.add_node(self.hashcode)
  
   @staticmethod
   def calculateHash(obj):
@@ -50,9 +50,9 @@ class Clause:
         Clause.calculateRelatedPhrases(element, originalClause)
         
   def potentiates(self, dependentClause):
-    self.ruleGraph.add_edge(self.hashcode, dependentClause.hashcode)
+    self.evidenceGraph.add_edge(self.hashcode, dependentClause.hashcode)
     
   def mandates(self, dependentClause):
-    self.lawGraph.add_edge(self.hashcode, dependentClause.hashcode)
+    self.ruleGraph.add_edge(self.hashcode, dependentClause.hashcode)
     
     
