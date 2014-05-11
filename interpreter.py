@@ -185,12 +185,9 @@ class Interpreter:
     if potentialSubjects:
       for potentialSubject in potentialSubjects:
         descriptors = self.context.stateGraph.successors(potentialSubject)
-        temp = list()
         for descriptor in descriptors:
-          temp.extend(descriptor.ancestors())
-        descriptors = temp
-        if targetDescriptor in descriptors:
-          response.add(potentialSubject)
+          if descriptor.isA(targetDescriptor):
+            response.add(potentialSubject)
     return response
   
   def queryAction(self, actionJSON, returnActor=True, returnTarget=False):
@@ -316,6 +313,10 @@ class Interpreter:
     return branches
   
   def removeComponentAssignment(self, stems, branchPhrase, branches, affirmativeConcept=None, initiatingClauseHash=None):
+    if not branches: branches = set()
+    for stem in stems:
+      if stem in self.context.potentialComponentGraph:
+        branches |= set(self.context.potentialComponentGraph.successors(stem))
     if not branches: return 
     matchingBranches = set()
     if not affirmativeConcept:
@@ -333,7 +334,9 @@ class Interpreter:
         if affirmativeConcept in branches.synonyms() or branches.isA(affirmativeConcept):   
           matchingBranches = {branches}
     potentialEdges = self.context.componentGraph.out_edges(stems, data=True)
-    temp = list()
+    for stem in stems:
+      if stem in self.context.potentialComponentGraph:
+        potentialEdges.extend(self.context.potentialComponentGraph.out_edges(stem, data=True))
     for potentialEdge in potentialEdges:
       if potentialEdge[1] in matchingBranches and potentialEdge[2]['label'] == branchPhrase:
         self.context.unsetComponent(potentialEdge[0], branchPhrase, potentialEdge[1], initiatingClauseHash)

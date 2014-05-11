@@ -157,14 +157,14 @@ class Context:
             graphs[edgeRecord[0]].remove_edge(edgeRecord[1], edgeRecord[2], key=clause.hashcode)
           self.clauseToPotentialEdges[clause.hashcode] = list()
           self.clauseToConceptSet[clause.hashcode] = set()
-          return
+          continue
         if not clause.hashcode in self.clauseToConceptSet:
           self.clauseToConceptSet[clause.hashcode] = set()
         oldSet = self.clauseToConceptSet[clause.hashcode]
         newSet = results
         self.clauseToConceptSet[clause.hashcode] = newSet.copy()
         if oldSet == newSet:
-          return
+          continue
         conceptsOfDeprecatedPotentiations = oldSet - newSet
         conceptsOfNewPotentiations = newSet - oldSet
         brainFreeze = copy.copy(self.shortTermMemory)
@@ -180,10 +180,10 @@ class Context:
             self.clauseToPotentialEdges[clause.hashcode] = [x for x in relatedPotentialEdges if not edgeRecordIsDeprecated(x)]
         if conceptsOfNewPotentiations:
           subcontext = Subcontext(self, conceptsOfNewPotentiations)
-          ruleEdges = Clause.ruleGraph.out_edges(clause)
-          lawEdges = Clause.lawGraph.out_edges(clause)
+          ruleEdges = Clause.ruleGraph.out_edges(clause.hashcode)
+          lawEdges = Clause.lawGraph.out_edges(clause.hashcode)
           for ruleEdge in ruleEdges:
-            dependentClause = ruleEdge[1]
+            dependentClause = Clause.hashtable[ruleEdge[1]]
             if dependentClause in recentlyExecutedDependentClauses:
               continue
             else:
@@ -192,7 +192,7 @@ class Context:
               interpreter.assertStatement(dependentClause.JSON, clause.hashcode)
               interpreter.setContext(self)
           for lawEdge in lawEdges:
-            dependentClause = lawEdge[1]
+            dependentClause = Clause.hashtable[lawEdge[1]]
             if dependentClause in recentlyExecutedDependentClauses:
               continue
             else:
@@ -217,10 +217,7 @@ class Context:
           potentialMatchingActs.extend(self.potentialActionGraph.successors(actor))
           for potentialMatchingAct in potentialMatchingActs:
             if act.name in potentialMatchingAct.synonyms() or potentialMatchingAct.isA(act.name):
-              targets = self.actionGraph.successors(potentialMatchingAct)
-              targets.extend(self.potentialActionGraph.successors(potentialMatchingAct))
-              for target in targets:
-                self.unsetAction(actor, potentialMatchingAct, target, initiatingClauseHash)
+              self.unsetAction(actor, potentialMatchingAct, None, initiatingClauseHash)
           self.remove(act)
           self.remove(target)
           return    
@@ -294,6 +291,15 @@ class Context:
       if target and target.name != '!':
         self.addPotentialEdge('potentialActionGraph', actor, act, -1, initiatingClauseHash)
         self.addPotentialEdge('potentialActionGraph', act, target, -1, initiatingClauseHash)
+      else:
+        targets = list()
+        self.addPotentialEdge('potentialActionGraph', actor, act, -1, initiatingClauseHash)
+        if act in self.actionGraph:
+          targets = self.actionGraph.successors(act)
+        if act in self.potentialActionGraph:
+          targets.extend(self.potentialActionGraph.successors(act))
+        for target in targets:
+          self.addPotentialEdge('potentialActionGraph', act, target, -1, initiatingClauseHash)
     else:
       if target and target.name != '!':
         self.actionGraph.remove_edge(act, target)

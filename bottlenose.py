@@ -114,11 +114,17 @@ class BottlenoseObject:
       for act_target in context.actionGraph.out_edges(actor_act[1]):
         self.actions.append((act_target[0].name, act_target[1].name, 100))
         acts.remove(act_target[0])
-    potentialActs = set(context.potentialActionGraph.neighbors(concept))
+    for act in acts:
+      self.actions.append((act.name, 'None', 100))
+    potentialActs = set(map(lambda x: x.name, context.potentialActionGraph.neighbors(concept)))
     for potential_actor_act in context.potentialActionGraph.out_edges(concept):
-      for potential_act_target in context.potentialActionGraph.out_edges(potential_actor_act[1]):
-        self.actions.append((potential_act_target[0].name, potential_act_target[1].name, 100))
-        potentialActs.remove(potential_act_target[0])
+      for potential_act_target in context.potentialActionGraph.out_edges(potential_actor_act[1], data=True):
+        self.actions.append((potential_act_target[0].name, potential_act_target[1].name, potential_act_target[2]['weight']))
+        if potential_act_target[0].name in potentialActs:
+          potentialActs.remove(potential_act_target[0].name)
+    for potentialAct in potentialActs:
+      weight = context.potentialActionGraph.in_edges(potentialAct, data=True)[0][2]['weight']
+      self.actions.append((potentialAct.name, 'None', weight))
     def combineActions(actionTuples):
       evidence = dict()
       for actionTuple in actionTuples:
@@ -136,14 +142,12 @@ class BottlenoseObject:
         for target in evidence[act]:
           actions.append((act, target, evidence[act][target]))
       return actions
-    for act in acts:
-      self.actions.append((act.name, 'None', 100))
     self.actions = combineActions(self.actions)
     self.actedOnBy = list()
     for act_target in context.actionGraph.in_edges(concept):
       for actor_act in context.actionGraph.in_edges(act_target[0]):
         self.actedOnBy.append((act_target[0].name, actor_act[0].name, 100))
     for potential_act_target in context.potentialActionGraph.in_edges(concept):
-      for potential_actor_act in context.potentialActionGraph.in_edges(potential_act_target[0]):
-        self.actedOnBy.append((potential_act_target[0].name, potential_actor_act[0].name, 100))
+      for potential_actor_act in context.potentialActionGraph.in_edges(potential_act_target[0], data=True):
+        self.actedOnBy.append((potential_act_target[0].name, potential_actor_act[0].name, potential_actor_act[2]['weight']))
     self.actedOnBy = combineActions(self.actedOnBy)

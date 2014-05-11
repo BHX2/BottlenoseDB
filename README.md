@@ -44,7 +44,7 @@ cat#!feral
 ```
 
 ###Queries
-Bottlenose also allows for concepts (specifically those expressed via noun phrases) to be queried. **Queries** start with a `?` (query operator) preceding a noun phrase (subject). This is followed by an optional **Clause** (see below for explanation) between parantheses which contains the said subject. In addition for inspection of concept instances, **Queries** can also be used anywhere a concept is used; however, an important consideration is that they do not follow co-reference resolution rules and thus do not function intuitively within *Beliefs* (also explained below).
+Bottlenose also allows for concepts (specifically those expressed via noun phrases) to be queried. **Queries** start with a `?` (query operator) preceding a noun phrase (subject). This is followed by an optional **Clause** (see below for explanation) between parantheses which contains the said subject. In addition for inspection of concept instances, **Queries** can also be used anywhere a concept is used; however, an important consideration is that they do not follow co-reference resolution rules and thus do not function intuitively within **Beliefs** (also explained below).
 ```
 ?cat
 
@@ -86,7 +86,7 @@ mouse*.eats(cheese)
 The real power of Bottlenose is derived from leveraging the "semantic glue" described above in forming dynamic artificial cognitive beliefs. Each **Belief** is made up of **Clauses**, which are testable statements referencing existence of a **Concept** or assertions of **Relationship**, **Action**, or **State**. The weakest type of **Belief** is a **Rule**. A Bottlenose **Rule** is not a rule in a  strict sense; it does not have to be correct all the time and there need not be any true causation, or temporal seperation. Instead, its purpose is to describe a reflexive cognitive association or potential co-occurence. Each **Rule** follows the syntax of two **Clauses** seperated by `>>`. `A >> B` denotes *if A then B is more likely*. Unlike **Laws** described below, the dependent clause (B in this example) is not asserted. Instead the possibility is introduced which accumulates as an evidence score that is accessible via querying.
 
 ###Logic
-A **Compound Clause** can be formed using `&` (*AND*) or `|` (*OR*) to join multiple simple **Clauses**. To supply a negative, `!` (*NOT*) can prefix a component **Clause**. `&` indicates that in order to fulfill the entire **Clause**, expressions on both sides of the `&` must be true. `|` indicates that only one **Clause** needs to be true. If the dependent **Clause** is multi-part comma-delimitation can be used.
+A **Compound Clause** can be formed using `&` (*AND*) or `|` (*OR*) to join multiple simple **Clauses**. To supply a negative, `!` (*NOT*) can prefix a component **Clause**. `&` indicates that in order to fulfill the entire **Clause**, expressions on both sides of the `&` must be true. `|` indicates that only one **Clause** needs to be true. **Compound Clauses** do not make use of co-reference resolution.
 ```
 cat & laserPointer >> cat.chases(laserPointer)
 cat#relaxed | cat#stressed >> cat.purrs()
@@ -115,5 +115,5 @@ cat.weight <= 5lbs >> cat#skinny
 2. Implement persistence via pickling as well as export/import to plain text files
 3. Implement tabbed autocompletion using *(py)readline* & *rlcompleter*
 4. Polish CLI interface: add intro, help, colors, tables, benchmarks, etc
-5. Implement logging, data backup, and undo functionality within
+5. Implement logging, data backup, and undo functionality
 6. Experiment with rule-based artificial cognition

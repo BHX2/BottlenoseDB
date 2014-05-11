@@ -13,8 +13,8 @@ class Clause:
     Clause.hashtable[self.hashcode] = self
     if independent:
       self.calculateRelatedPhrases(JSON, self)
-      self.ruleGraph.add_node(self)
-      self.lawGraph.add_node(self)
+      self.ruleGraph.add_node(self.hashcode)
+      self.lawGraph.add_node(self.hashcode)
  
   @staticmethod
   def calculateHash(obj):
@@ -40,8 +40,8 @@ class Clause:
     if isinstance(JSON, dict):
       if 'concept' in JSON:
         if not JSON['concept'] in Clause.relatedPhraseToClause:
-          Clause.relatedPhraseToClause[JSON['concept']] = list()
-        Clause.relatedPhraseToClause[JSON['concept']].append(originalClause)
+          Clause.relatedPhraseToClause[JSON['concept']] = set()
+        Clause.relatedPhraseToClause[JSON['concept']].add(originalClause)
       else:
         for key in JSON:
           Clause.calculateRelatedPhrases(JSON[key], originalClause)
@@ -50,9 +50,9 @@ class Clause:
         Clause.calculateRelatedPhrases(element, originalClause)
         
   def potentiates(self, dependentClause):
-    self.ruleGraph.add_edge(self, dependentClause)
+    self.ruleGraph.add_edge(self.hashcode, dependentClause.hashcode)
     
   def mandates(self, dependentClause):
-    self.lawGraph.add_edge(self, dependentClause)
+    self.lawGraph.add_edge(self.hashcode, dependentClause.hashcode)
     
     
