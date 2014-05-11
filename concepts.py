@@ -124,11 +124,11 @@ class Concept:
       childTerms = self.synonyms(term1)
       parent = term2
     if parent == 'thing': return True
+    if parent in childTerms: return True
     existingParents = set()
     for child in childTerms:
       child = utilities.sanitize(child)
       parent = utilities.sanitize(parent)
-      if child == parent: return True
       if child.istitle() or parent.istitle():
         self.taxonomy.classifiers = []
         self.taxonomy.case_sensitive = True

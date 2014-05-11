@@ -21,7 +21,7 @@ class Interpreter:
       edges = self.context.componentGraph.out_edges(stems, data=True)
       branches = set()
       for edge in edges:
-        if edge[2]['label'] == branchPhrase or branchPhrase in edge[1].synonyms() or edge[1].isA(branchPhrase):
+        if edge[2]['label'] == branchPhrase:
           branches.add(edge[1])
       temp = set()
       for branch in branches:
@@ -50,7 +50,7 @@ class Interpreter:
       for candidateStem in candidateStems:
         edges = self.context.componentGraph.out_edges(candidateStem, data=True)
         for edge in edges:
-          if edge[2]['label'] == branchPhrase or branchPhrase in edge[1].synonyms() or edge[1].isA(branchPhrase):
+          if edge[2]['label'] == branchPhrase:
             temp.add(edge[0])
       candidateStems = temp
       if len(candidateStems) == 0:
@@ -82,7 +82,7 @@ class Interpreter:
       edges = self.context.componentGraph.out_edges(stem, data=True)
       branches = set()
       for edge in edges:
-        if edge[2]['label'] == branchPhrase or branchPhrase in edge[1].synonyms() or edge[1].isA(branchPhrase):
+        if edge[2]['label'] == branchPhrase:
           branches.add(edge[1])
       temp = set()
       for branch in branches:
@@ -586,15 +586,16 @@ class Interpreter:
   def assertStatement(self, statementJSON, initiatingClauseHash=None):
     #TODO: implement arithmetic operation assertion
     statementJSON = self.solveQueries(statementJSON)
-    if 'NOT' in statementJSON or 'OR' in statementJSON or 'XOR' in statementJSON:
+    # NOT does not assert properly
+    if 'AND' in statementJSON or 'OR' in statementJSON:
       for clause in statementJSON.values()[0]:
-        self.assertStatement(clause)
+        self.assertStatement(clause, initiatingClauseHash)
       return
     if 'concept' in statementJSON['statement'] and not initiatingClauseHash:
       if re.match('^!', statementJSON['statement']['concept']):
         affirmativeConcept = statementJSON['statement']['concept'][1:]
         if not affirmativeConcept:
-          return self.context.newNounPhrase('!')
+          return
         matches = self.context.queryNounPhrases(affirmativeConcept)
         if matches:
           if len(matches) == 1:
@@ -655,6 +656,7 @@ class Interpreter:
       else:
         (roots, branches) = self.queryComponentAssignment(clauseJSON, returnRoots=True)
         results = roots
+    if not results: results = list()
     results = [x for x in results if x.isA(subjectJSON['concept'])]
     return results
 

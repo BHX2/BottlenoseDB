@@ -40,6 +40,9 @@ class Context:
       self.componentGraph.add_node(concept)
       self.actionGraph.add_node(concept)
       self.stateGraph.add_node(concept)
+      self.potentialComponentGraph.add_node(concept)
+      self.potentialActionGraph.add_node(concept)
+      self.potentialStateGraph.add_node(concept)
       self.concepts['noun_phrases'].add(concept)
       if isinstance(self, Subcontext):
         self.supercontext.concepts['noun_phrases'].add(concept)
@@ -48,11 +51,14 @@ class Context:
     elif isinstance(concept, VerbPhrase):
       self.actionGraph.add_node(concept)
       self.stateGraph.add_node(concept)
+      self.potentialActionGraph.add_node(concept)
+      self.potentialStateGraph.add_node(concept)
       self.concepts['verb_phrases'].add(concept)
       if isinstance(self, Subcontext):
         self.supercontext.concepts['verb_phrases'].add(concept)
     elif isinstance(concept, Descriptor):
       self.stateGraph.add_node(concept)
+      self.potentialStateGraph.add_node(concept)
       self.concepts['descriptors'].add(concept)
       if isinstance(self, Subcontext):
         self.supercontext.concepts['descriptors'].add(concept)
@@ -183,6 +189,7 @@ class Context:
             else:
               recentlyExecutedDependentClauses.add(dependentClause)
               interpreter.setContext(subcontext)
+              print dependentClause.JSON
               interpreter.assertStatement(dependentClause.JSON, clause.hashcode)
               interpreter.setContext(self)
           for lawEdge in lawEdges:
@@ -211,7 +218,10 @@ class Context:
           potentialMatchingActs.extend(self.potentialActionGraph.successors(actor))
           for potentialMatchingAct in potentialMatchingActs:
             if act.name in potentialMatchingAct.synonyms() or potentialMatchingAct.isA(act.name):
-              self.unsetAction(actor, potentialMatchingAct, target, initiatingClauseHash)
+              targets = self.actionGraph.successors(potentialMatchingAct)
+              targets.extend(self.potentialActionGraph.successors(potentialMatchingAct))
+              for target in targets:
+                self.unsetAction(actor, potentialMatchingAct, target, initiatingClauseHash)
           self.remove(act)
           self.remove(target)
           return    
@@ -229,7 +239,7 @@ class Context:
             potentiallyMatchingTargets.extend(self.potentialActionGraph.successors(potentialMatchingAct))
             for potentiallyMatchingTarget in potentiallyMatchingTargets:
               if affirmativeTarget in potentiallyMatchingTarget.synonyms() or potentiallyMatchingTarget.isA(affirmativeTarget):
-                self.unsetAction(actor, potentialMatchingAct, target, initiatingClauseHash)
+                self.unsetAction(actor, potentialMatchingAct, potentiallyMatchingTarget, initiatingClauseHash)
           self.remove(act)
           self.remove(target)
           return          
@@ -245,7 +255,7 @@ class Context:
           potentialMatchingActs = self.actionGraph.successors(actor)
           for potentialMatchingAct in potentialMatchingActs:
             if act.name in potentialMatchingAct.synonyms() or potentialMatchingAct.isA(act.name):
-              self.unsetAction(actor, potentialMatchingAct, target, initiatingClauseHash)
+              self.remove(potentialMatchingAct)
           self.registerChange(actor)
           self.remove(act)
           self.remove(target)
@@ -388,6 +398,10 @@ class Context:
       interpreter = Interpreter(self)
       return set(interpreter.query(type))
     response = set()
+    if re.match('^!', type):
+      concept = self.newNounPhrase(type)
+      response.add(concept)
+      return response
     if re.match('.*\*$', type.strip()):
       type = type[:-1]
       concept = self.newNounPhrase(type)

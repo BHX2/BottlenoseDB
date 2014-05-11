@@ -11,6 +11,15 @@ sys.dont_write_bytecode = True
 from bottlenose import Bottlenose
 import utilities
 
+def green(text):
+  return colored.green(text, bold=True)
+
+def teal(text):
+  return colored.cyan(text, bold=False)
+  
+def red(text):
+  return colored.red(text, bold=True)
+  
 def switchContext(bottlenose):
   currentContext = bottlenose.context()
   i = 1
@@ -18,7 +27,7 @@ def switchContext(bottlenose):
   for context in bottlenose.listContexts():
     if context is currentContext:
       with indent(2):
-        puts(colored.yellow(str(i) + '. ' + context.name))
+        puts(teal(str(i) + '. ' + context.name))
     else:
       with indent(2):
         puts(str(i) + '. ' + context.name)
@@ -32,26 +41,26 @@ def switchContext(bottlenose):
 def inspectConcept(object):
   with indent(2):
     if object.hashcode:
-      puts(colored.cyan(object.name) + ' (' + object.hashcode + ')')
+      puts(green(object.name) + ' (' + object.hashcode + ')')
   with indent(4):
     if object.synonyms:
-      puts(colored.cyan(object.name) + ' is also known as: ' + ', '.join(object.synonyms))
+      puts(green(object.name) + ' is also known as: ' + ', '.join(object.synonyms))
     if object.parents:
-      puts(colored.cyan(object.name) + ' is a ' + ', '.join(object.parents))
+      puts(green(object.name) + ' is a ' + ', '.join(object.parents))
     if object.states:
       states = list()
       print object.states
       for stateTuple in object.states:
         states.append(stateTuple[0])
-      puts(colored.cyan(object.name) + ' is ' + ', '.join(states))
+      puts(green(object.name) + ' is ' + ', '.join(states))
     for componentTuple in object.components:
-      puts(colored.cyan(object.name) + ' (has ' + componentTuple[0] + ') --> ' + componentTuple[1] + " [" + str(componentTuple[2]) + "]")
+      puts(green(object.name) + ' (has ' + componentTuple[0] + ') --> ' + componentTuple[1] + " [" + str(componentTuple[2]) + "]")
     for componentOfTuple in object.componentOf:
-      puts(componentOfTuple[1] + ' (has ' + componentOfTuple[0] + ') --> ' + colored.cyan(object.name))
+      puts(componentOfTuple[1] + ' (has ' + componentOfTuple[0] + ') --> ' + green(object.name))
     for actionTuple in object.actions:
-      puts(colored.cyan(object.name) + ' (' + actionTuple[0] + ') --> ' + str(actionTuple[1]))
+      puts(green(object.name) + ' (' + actionTuple[0] + ') --> ' + str(actionTuple[1]))
     for actedOnByTuple in object.actedOnBy:
-      puts(actedOnByTuple[1] + ' (' + actedOnByTuple[0] + ') --> ' + colored.cyan(object.name))
+      puts(actedOnByTuple[1] + ' (' + actedOnByTuple[0] + ') --> ' + green(object.name))
           
 def main():
   bottlenose = Bottlenose()
@@ -69,7 +78,7 @@ def main():
         if isinstance(response, list):
           if not response:
             with indent(2):
-              puts(colored.red('No matching concepts found.\n'))
+              puts(red('No matching concepts found.\n'))
           else:
             for object in response:
               puts()
@@ -78,10 +87,10 @@ def main():
       except Exception as error:
         if error.args:
           with indent(2):
-            puts(colored.red(str(error.args[0])))
+            puts(red(str(error.args[0])))
         else:
           with indent(2):
-            puts(colored.red('Unknown command or incoherent scripting.\n'))
+            puts(red('Unknown command or incoherent scripting.\n'))
         traceback.print_exc()
 if __name__ == '__main__':
   main()
