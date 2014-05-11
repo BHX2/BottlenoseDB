@@ -189,7 +189,6 @@ class Context:
             else:
               recentlyExecutedDependentClauses.add(dependentClause)
               interpreter.setContext(subcontext)
-              print dependentClause.JSON
               interpreter.assertStatement(dependentClause.JSON, clause.hashcode)
               interpreter.setContext(self)
           for lawEdge in lawEdges:

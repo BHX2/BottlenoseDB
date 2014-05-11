@@ -366,7 +366,7 @@ class Interpreter:
       if re.match('^!', concept['concept']):
         affirmativeConcept = concept['concept'][1:]
         branchPhrase = componentAdditionJSON['component_addition']['target']['component']['branch']
-        self.removeComponentAssignment(stems, branchPhrase, branches, affirmativeConcept)
+        self.removeComponentAssignment(stems, branchPhrase, branches, affirmativeConcept, initiatingClauseHash)
         return True
       else:
         return False
@@ -427,9 +427,6 @@ class Interpreter:
         newComponentAdditionJSON['component_addition']['addition'] = {'concept': '!' + unassignment}
     self.assertComponentAddition(newComponentAdditionJSON, initiatingClauseHash)
   
-  def potentiateComponentTaxonomy(self, componentJSON, parentJSON):
-    print 'potentiateComponentTaxonomy: Yet to be implemented method'
-  
   def assertTaxonomyAssignment(self, taxonomyAssignmentJSON):
     parents = list()
     children = list()
@@ -441,10 +438,7 @@ class Interpreter:
       parents.extend(map(extractConcept, taxonomyAssignmentJSON['taxonomy_assignment']['parent']))
     else:
       parents.append(taxonomyAssignmentJSON['taxonomy_assignment']['parent']['concept'])
-    if 'component' in taxonomyAssignmentJSON['taxonomy_assignment']['child']:
-      self.potentiateComponentTaxonomy(taxonomyAssignmentJSON['taxonomy_assignment']['child'], taxonomyAssignmentJSON['taxonomy_assignment']['parent'])
-      return
-    elif isinstance(taxonomyAssignmentJSON['taxonomy_assignment']['child'], list): 
+    if isinstance(taxonomyAssignmentJSON['taxonomy_assignment']['child'], list): 
       children.extend(map(extractConcept, taxonomyAssignmentJSON['taxonomy_assignment']['child']))
     else:
       children.append(taxonomyAssignmentJSON['taxonomy_assignment']['child']['concept'])
@@ -635,7 +629,7 @@ class Interpreter:
     if 'concept' in clauseJSON:
       results = self.queryConcept(clauseJSON)
     elif 'component' in clauseJSON:
-      if clauseJSON['component']['branch'] == subjectJSON:
+      if clauseJSON['component']['branch'] == subjectJSON['concept']:
         results = self.queryComponent(clauseJSON)
       else:
         (roots, branches) = self.queryComponent(clauseJSON, returnRoots=True)

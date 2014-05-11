@@ -3,7 +3,7 @@
 import sys
 import traceback
 import re
-from clint.textui import puts, colored, indent
+from clint.textui import puts, colored, indent, columns
 
 sys.dont_write_bytecode = True
 # Keeps directory clean by not compiling local files to bytecode
@@ -16,6 +16,9 @@ def green(text):
 
 def teal(text):
   return colored.cyan(text, bold=False)
+  
+def magenta(text):
+  return colored.magenta(text, bold=False)
   
 def red(text):
   return colored.red(text, bold=True)
@@ -47,20 +50,31 @@ def inspectConcept(object):
       puts(green(object.name) + ' is also known as: ' + ', '.join(object.synonyms))
     if object.parents:
       puts(green(object.name) + ' is a ' + ', '.join(object.parents))
-    if object.states:
-      states = list()
-      print object.states
-      for stateTuple in object.states:
-        states.append(stateTuple[0])
-      puts(green(object.name) + ' is ' + ', '.join(states))
+    for stateTuple in object.states:
+      if (stateTuple[1] == 100):
+        puts(green(object.name) + ' is ' + stateTuple[0])
+      else:
+        puts(green(object.name) + ' is ' + stateTuple[0] + magenta(" [" + str(stateTuple[1]) + "]"))
     for componentTuple in object.components:
-      puts(green(object.name) + ' (has ' + componentTuple[0] + ') --> ' + componentTuple[1] + " [" + str(componentTuple[2]) + "]")
+      if (componentTuple[2] == 100):
+        puts(green(object.name) + ' (has ' + componentTuple[0] + ') --> ' + componentTuple[1])
+      else:
+        puts(green(object.name) + ' (has ' + componentTuple[0] + ') --> ' + componentTuple[1] + magenta(" [" + str(componentTuple[2]) + "]"))
     for componentOfTuple in object.componentOf:
-      puts(componentOfTuple[1] + ' (has ' + componentOfTuple[0] + ') --> ' + green(object.name))
+      if (componentOfTuple[2] == 100):
+        puts(componentOfTuple[1] + ' (has ' + componentOfTuple[0] + ') --> ' + green(object.name))
+      else:
+        puts(componentOfTuple[1] + ' (has ' + componentOfTuple[0] + ') --> ' + green(object.name) + magenta(" [" + str(componentOfTuple[2]) + "]"))
     for actionTuple in object.actions:
-      puts(green(object.name) + ' (' + actionTuple[0] + ') --> ' + str(actionTuple[1]))
+      if (actionTuple[2] == 100):
+        puts(green(object.name) + ' (' + actionTuple[0] + ') --> ' + str(actionTuple[1]))
+      else:
+        puts(green(object.name) + ' (' + actionTuple[0] + ') --> ' + str(actionTuple[1]) + magenta(" [" + str(actionTuple[2]) + "]"))
     for actedOnByTuple in object.actedOnBy:
-      puts(actedOnByTuple[1] + ' (' + actedOnByTuple[0] + ') --> ' + green(object.name))
+      if (actedOnByTuple[2] == 100):
+        puts(actedOnByTuple[1] + ' (' + actedOnByTuple[0] + ') --> ' + green(object.name))
+      else:
+        puts(actedOnByTuple[1] + ' (' + actedOnByTuple[0] + ') --> ' + green(object.name) + magenta(" [" + str(actedOnByTuple[2]) + "]"))
           
 def main():
   bottlenose = Bottlenose()

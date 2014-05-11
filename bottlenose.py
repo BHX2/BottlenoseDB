@@ -104,15 +104,46 @@ class BottlenoseObject:
     self.componentOf = list()
     for componentEdge in context.componentGraph.in_edges(concept, data=True):
       self.componentOf.append((componentEdge[2]['label'], componentEdge[0].name, 100))
+    potentialComponentOfEdges = context.potentialComponentGraph.in_edges(concept, data=True) if concept in context.potentialComponentGraph else []
+    for potentialComponentOfEdge in potentialComponentOfEdges:
+      self.componentOf.append((potentialComponentOfEdge[2]['label'], potentialComponentOfEdge[0].name, potentialComponentOfEdge[2]['weight']))
+    self.componentOf = combineComponents(self.componentOf)
     self.actions = list()
     acts = set(context.actionGraph.neighbors(concept))
     for actor_act in context.actionGraph.out_edges(concept):
       for act_target in context.actionGraph.out_edges(actor_act[1]):
         self.actions.append((act_target[0].name, act_target[1].name, 100))
         acts.remove(act_target[0])
+    potentialActs = set(context.potentialActionGraph.neighbors(concept))
+    for potential_actor_act in context.potentialActionGraph.out_edges(concept):
+      for potential_act_target in context.potentialActionGraph.out_edges(potential_actor_act[1]):
+        self.actions.append((potential_act_target[0].name, potential_act_target[1].name, 100))
+        potentialActs.remove(potential_act_target[0])
+    def combineActions(actionTuples):
+      evidence = dict()
+      for actionTuple in actionTuples:
+        if not actionTuple[0] in evidence:
+          evidence[actionTuple[0]] = dict()
+        if not actionTuple[1] in evidence[actionTuple[0]]:
+          evidence[actionTuple[0]][actionTuple[1]] = int(actionTuple[2])
+        else:
+          if evidence[actionTuple[0]][actionTuple[1]] < 100:
+            evidence[actionTuple[0]][actionTuple[1]] = evidence[actionTuple[0]][actionTuple[1]] + int(actionTuple[2])
+          else:
+            evidence[actionTuple[0]][actionTuple[1]] = 100
+      actions = list()  
+      for act in evidence:
+        for target in evidence[act]:
+          actions.append((act, target, evidence[act][target]))
+      return actions
     for act in acts:
-      self.actions.append((act.name, None, 1))
+      self.actions.append((act.name, 'None', 100))
+    self.actions = combineActions(self.actions)
     self.actedOnBy = list()
     for act_target in context.actionGraph.in_edges(concept):
       for actor_act in context.actionGraph.in_edges(act_target[0]):
         self.actedOnBy.append((act_target[0].name, actor_act[0].name, 100))
+    for potential_act_target in context.potentialActionGraph.in_edges(concept):
+      for potential_actor_act in context.potentialActionGraph.in_edges(potential_act_target[0]):
+        self.actedOnBy.append((potential_act_target[0].name, potential_actor_act[0].name, 100))
+    self.actedOnBy = combineActions(self.actedOnBy)

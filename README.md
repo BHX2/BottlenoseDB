@@ -29,7 +29,7 @@ Use `.` followed by a verb phrase and parentheses to indicate an action. All ver
 ```
 cat.sleeps()
 cat.sleeps(!)
-cat.eats(mouse)
+cat.chases(mouse)
 cat.playsWith(yarn)
 cat.likes(!dog)
 ```
@@ -44,34 +44,34 @@ cat#!feral
 ```
 
 ###Queries
-Bottlenose also allows for concepts (specifically those expressed via noun phrases) to be queried. Queries are denoted with a preceding `?` (query operator). Queries can be used anywhere a concept is used; they can also be used on their own to inspect conceptual instances from the command-line interface (as shown in the below example). A basic query can be a noun phrase alone or a component (in which case the component rather than the parent concept is returned). Within a statement or **Clause** these basic queries function the same as their counterparts without `?`; thus, their primary utility is inspection from command-line. More complex queries allow one to filter by state using the appropriate **State** expression with preceding `?`. To filter to subjects associated with a particular verb (with or without direct-object as additional filtering criteria) simply use the query operator before a normal **Action** expression. If the subject and `.` are omitted (to leave only verb, parentheses, and direct object) then the query returns direct objects. Queries are particularly useful within **Clauses** (described below) to narrow down concepts before asserting statements. Of note, negatives (`!`) cannot be used within queries.
+Bottlenose also allows for concepts (specifically those expressed via noun phrases) to be queried. **Queries** start with a `?` (query operator) preceding a noun phrase (subject). This is followed by an optional **Clause** (see below for explanation) between parantheses which contains the said subject. In addition for inspection of concept instances, **Queries** can also be used anywhere a concept is used; however, an important consideration is that they do not follow co-reference resolution rules and thus do not function intuitively within *Beliefs* (also explained below).
 ```
 ?cat
 
-  cat (36228a0b29)
+  cat (9b13dc1201)
     cat is also known as: feline, kitty
     cat is a mammal
     cat is furry
-    cat (has favoriteFood) --> catnip
-    cat (has favoriteFood) --> oatmeal
-    cat (has favoriteFood) --> tuna
-    cat (has fur) --> fur
     cat (has owner) --> John
     cat (has whiskers) --> whiskers
+    cat (has fur) --> fur
+    cat (has favoriteFood) --> tuna
+    cat (has favoriteFood) --> catnip
+    cat (has favoriteFood) --> oatmeal
     cat (playsWith) --> yarn
-    cat (eats) --> mouse
+    cat (chases) --> mouse
 
-?cat.owner
+?owner(cat.owner)
 
-  John (1f15948589)
+  John (d41e6eb4e3)
     John is a owner
     cat (has owner) --> John
 
-?eats(mouse)
+?mouse(thing.chases(mouse))
 
-  mouse (429ed0c483)
-    cat (eats) --> mouse
-    
+  mouse (b84364aace)
+    cat (chases) --> mouse
+
 ```
 
 In the above example one may have noticed the hexadecimal strings beside concept names (ex: `03da1ffedb`). These are hashcodes for the individual instances and can be used in place of noun phrase concepts in expressions. They are useful in command-line in certain circumstances where multiple conceptual instances with the same name exist; however, they should never be used within **Clauses** becaues of their ephemeral nature.
@@ -83,21 +83,14 @@ mouse*.eats(cheese)
 ```
 
 ###Rules & Clauses
-The real power of Bottlenose is derived from leveraging the "semantic glue" described above in forming dynamic artificial cognitive beliefs. Each **Belief** is made up of **Clauses**, which are testable statements referencing existence of a **Concept** or assertions of **Relationship**, **Action**, or **State**. The weakest type of **Belief** is a **Rule**. A Bottlenose **Rule** is not a rule in a  strict sense; it does not have to be correct all the time and there need not be any true causation, or temporal seperation. Instead, its purpose is to describe a reflexive cognitive association or potential co-occurence. Each **Rule** follows the syntax of two **Clauses** seperated by `>>`. `A >> B` denotes *if A then B is more likely*. Unlike **Laws** described below, the dependent clause (B in this example) is not asserted. Instead the possibility is introduced and accessible via querying with a number indicating summation of evidence.
-```
-cat.speaks() >> cat=/LOLCat
-LOLCat.speaks(comment) >> comment#misspelled
-```
+The real power of Bottlenose is derived from leveraging the "semantic glue" described above in forming dynamic artificial cognitive beliefs. Each **Belief** is made up of **Clauses**, which are testable statements referencing existence of a **Concept** or assertions of **Relationship**, **Action**, or **State**. The weakest type of **Belief** is a **Rule**. A Bottlenose **Rule** is not a rule in a  strict sense; it does not have to be correct all the time and there need not be any true causation, or temporal seperation. Instead, its purpose is to describe a reflexive cognitive association or potential co-occurence. Each **Rule** follows the syntax of two **Clauses** seperated by `>>`. `A >> B` denotes *if A then B is more likely*. Unlike **Laws** described below, the dependent clause (B in this example) is not asserted. Instead the possibility is introduced which accumulates as an evidence score that is accessible via querying.
 
 ###Logic
 A **Compound Clause** can be formed using `&` (*AND*) or `|` (*OR*) to join multiple simple **Clauses**. To supply a negative, `!` (*NOT*) can prefix a component **Clause**. `&` indicates that in order to fulfill the entire **Clause**, expressions on both sides of the `&` must be true. `|` indicates that only one **Clause** needs to be true. If the dependent **Clause** is multi-part comma-delimitation can be used.
 ```
 cat & laserPointer >> cat.chases(laserPointer)
-LOLCat | grumpyCat | nyanCat | keyboardCat >> computerScreen.displays(cat)
-cat.location=home >> cat.sleeps(), cat.eats(), cat.plays(), cat.chills()
+cat#relaxed | cat#stressed >> cat.purrs()
 ```
-
-Of note, Bottlenose allows for robust contextual co-referencing exemplified in the middle example above. The entity (*cat*) referenced within a **Clause** is preferentially assumed to be a reference to a suitable entity (*LOLCat, grumpyCat, nyanCat, keyboardCat*) within the given **Rule** context (even if the reference is not identical).
 
 ###Laws
 The strongest **Belief** is a **Law**, which is a strict correlation indicated using `>>>`. In general `A >>> B` translates *if A is true then B is ALWAYS true.* One use of **Laws** is to hardcode more 'syntactic glue' than is otherwise available. Using the cat example above we can connect the **Action** of 'owning a cat' to the **Relationship** of 'cat having an owner'. Below, we equate the **Action** `.owns(X)` to the **Relationship** `.owner =X`. Of importance, **Laws** are immediately computed into the artificial cognitive model. 
@@ -118,10 +111,9 @@ cat.weight <= 5lbs >> cat#skinny
 ---
 ###Roadmap
 
-1. Design method of inspecting evidence for potential relationships
-2. Implement arithmetic expressions (along with comparison operators and possibly equations)
-3. Implement persistence via pickling as well as export/import to plain text files
-4. Implement tabbed autocompletion using *(py)readline* & *rlcompleter*
-5. Polish CLI interface: add intro, help, colors, tables, benchmarks, etc
-6. Implement logging, data backup, and undo functionality within
-7. Experiment with rule-based artificial cognition
+1. Implement arithmetic expressions (along with comparison operators and possibly equations)
+2. Implement persistence via pickling as well as export/import to plain text files
+3. Implement tabbed autocompletion using *(py)readline* & *rlcompleter*
+4. Polish CLI interface: add intro, help, colors, tables, benchmarks, etc
+5. Implement logging, data backup, and undo functionality within
+6. Experiment with rule-based artificial cognition
