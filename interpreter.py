@@ -217,7 +217,7 @@ class Interpreter:
       for potentialActor in potentialActors:
         acts = self.context.actionGraph.successors(potentialActor)
         for act in acts:
-          if actionJSON['action']['act']['verb'] in act.synonyms() or act.isA(actionJSON['action']['act']['verb']):
+          if act.isA(actionJSON['action']['act']['verb']):
             if potentialActor in self.context:
               temp.add(potentialActor)
               temp2.add(act)
@@ -236,12 +236,12 @@ class Interpreter:
         if potentialTarget not in self.context: continue
         if isinstance(actionJSON['action']['target'], list):
           for target in actionJSON['action']['target']:
-            if actionJSON['action']['target']['concept'] in potentialTarget.synonyms() or potentialTarget.isA(actionJSON['action']['target']['concept']):
+            if potentialTarget.isA(actionJSON['action']['target']['concept']):
               temp3.add(potentialTarget)
               temp4.add(potentialAct)
               break
         elif 'concept' in actionJSON['action']['target']:
-          if actionJSON['action']['target']['concept'] in potentialTarget.synonyms() or potentialTarget.isA(actionJSON['action']['target']['concept']):
+          if potentialTarget.isA(actionJSON['action']['target']['concept']):
             temp3.add(potentialTarget)
             temp4.add(potentialAct)
         elif 'component' in actionJSON['action']['target']:
@@ -328,10 +328,10 @@ class Interpreter:
     else:
       if isinstance(branches, set):
         for branch in branches:
-          if affirmativeConcept in branch.synonyms() or branch.isA(affirmativeConcept):         
+          if branch.isA(affirmativeConcept):         
             matchingBranches.add(branch)
       else:
-        if affirmativeConcept in branches.synonyms() or branches.isA(affirmativeConcept):   
+        if branches.isA(affirmativeConcept):   
           matchingBranches = {branches}
     potentialEdges = self.context.componentGraph.out_edges(stems, data=True)
     for stem in stems:

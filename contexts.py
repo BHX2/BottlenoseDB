@@ -216,7 +216,7 @@ class Context:
           potentialMatchingActs = self.actionGraph.successors(actor)
           potentialMatchingActs.extend(self.potentialActionGraph.successors(actor))
           for potentialMatchingAct in potentialMatchingActs:
-            if act.name in potentialMatchingAct.synonyms() or potentialMatchingAct.isA(act.name):
+            if potentialMatchingAct.isA(act.name):
               self.unsetAction(actor, potentialMatchingAct, None, initiatingClauseHash)
           self.remove(act)
           self.remove(target)
@@ -227,14 +227,14 @@ class Context:
           potentialMatchingActs.extend(self.potentialActionGraph.successors(actor))
           temp = set()
           for potentialMatchingAct in potentialMatchingActs:
-            if act.name in potentialMatchingAct.synonyms() or potentialMatchingAct.isA(act.name):
+            if potentialMatchingAct.isA(act.name):
               temp.add(potentialMatchingAct)
           potentialMatchingActs = temp
           for potentialMatchingAct in potentialMatchingActs:
             potentiallyMatchingTargets = self.actionGraph.successors(potentialMatchingAct)
             potentiallyMatchingTargets.extend(self.potentialActionGraph.successors(potentialMatchingAct))
             for potentiallyMatchingTarget in potentiallyMatchingTargets:
-              if affirmativeTarget in potentiallyMatchingTarget.synonyms() or potentiallyMatchingTarget.isA(affirmativeTarget):
+              if potentiallyMatchingTarget.isA(affirmativeTarget):
                 self.unsetAction(actor, potentialMatchingAct, potentiallyMatchingTarget, initiatingClauseHash)
           self.remove(act)
           self.remove(target)
@@ -250,7 +250,7 @@ class Context:
         if target.name == '!':
           potentialMatchingActs = self.actionGraph.successors(actor)
           for potentialMatchingAct in potentialMatchingActs:
-            if act.name in potentialMatchingAct.synonyms() or potentialMatchingAct.isA(act.name):
+            if potentialMatchingAct.isA(act.name):
               self.remove(potentialMatchingAct)
           self.registerChange(actor)
           self.remove(act)
@@ -261,13 +261,13 @@ class Context:
           potentialMatchingActs = self.actionGraph.successors(actor)
           temp = set()
           for potentialMatchingAct in potentialMatchingActs:
-            if act.name in potentialMatchingAct.synonyms() or potentialMatchingAct.isA(act.name):
+            if potentialMatchingAct.isA(act.name):
               temp.add(potentialMatchingAct)
           potentialMatchingActs = temp
           for potentialMatchingAct in potentialMatchingActs:
             potentiallyMatchingTargets = self.actionGraph.successors(potentialMatchingAct)
             for potentiallyMatchingTarget in potentiallyMatchingTargets:
-              if affirmativeTarget in potentiallyMatchingTarget.synonyms() or potentiallyMatchingTarget.isA(affirmativeTarget):
+              if potentiallyMatchingTarget.isA(affirmativeTarget):
                 self.unsetAction(actor, potentialMatchingAct, potentiallyMatchingTarget, initiatingClauseHash)
           self.registerChange(actor)
           self.remove(act)
@@ -340,7 +340,7 @@ class Context:
           potentialMatches = self.stateGraph.successors(subject)
           potentialMatches.extend(self.potentialStateGraph.successors(subject))
           for potentialMatch in potentialMatches:
-            if affirmativeDescriptor in potentialMatch.synonyms() or potentialMatch.isA(affirmativeDescriptor):
+            if potentialMatch.isA(affirmativeDescriptor):
               self.unsetState(subject, potentialMatch, initiatingClauseHash)
         self.remove(descriptor)
       else:
@@ -351,7 +351,7 @@ class Context:
         if affirmativeDescriptor != '':
           potentialMatches = self.stateGraph.successors(subject)
           for potentialMatch in potentialMatches:
-            if affirmativeDescriptor in potentialMatch.synonyms() or potentialMatch.isA(affirmativeDescriptor):
+            if potentialMatch.isA(affirmativeDescriptor):
               self.unsetState(subject, potentialMatch, initiatingClauseHash)
         self.remove(descriptor)
       else:
