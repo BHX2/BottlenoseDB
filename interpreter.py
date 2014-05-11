@@ -197,7 +197,7 @@ class Interpreter:
               response.add(potentialSubject)
     return response
   
-  def queryQuantitativeState(self, JSON):
+  def queryQuantitativeState(self, JSON, returnVariable=False):
     if 'concept' in JSON:
       potentialVariables = self.queryConcept(JSON)
     elif 'component' in JSON:
@@ -217,8 +217,11 @@ class Interpreter:
     elif len(quantities) == 1:
       average = quantities[0]
     else:
-      average = 0
-    return average
+      average = None
+    if returnVariable:
+      return (average, variable)
+    else:
+      return average
   
   def queryAction(self, actionJSON, returnActor=True, returnTarget=False):
     if actionJSON['action']['target']:
@@ -294,7 +297,53 @@ class Interpreter:
       return targets
     elif returnActor:
       return actors
-    
+  
+  def queryComparison(self, JSON):
+    (variable, item1) = self.queryQuantitativeState(JSON['comparison']['variable'], returnVariable=True)
+    item2 = None
+    if 'quantity' in JSON['comparison']['measure']:
+      measure = float(JSON['comparison']['measure']['quantity'])
+    else:
+      (measure, item2) = self.queryQuantitativeState(JSON['comparison']['measure'], returnVariable=True)
+    if variable == None or measure == None: 
+      return set()
+    response = {item1}
+    if item2: 
+      response.add(item2)
+    sign = JSON['comparison']['sign']
+    if sign == '==':
+      if variable == measure:
+        return response
+      else:
+        return set()
+    elif sign == '!=':
+      if variable != measure:
+        return response
+      else:
+        return set()
+    elif sign == '>':
+      if variable > measure:
+        return response
+      else:
+        return set()      
+    elif sign == '>=':
+      if variable >= measure:
+        return response
+      else:
+        return set()      
+    elif sign == '<':
+      if variable < measure:
+        return response
+      else:
+        return set()      
+    elif sign == '<=':
+      if variable <= measure:
+        return response
+      else:
+        return set()      
+    else:
+      raise Exception('queryComparison: Unknown comparison operator')
+  
   def assertConcept(self, conceptJSON, initiatingClauseHash=None):
     results = self.queryConcept(conceptJSON)
     return results if results else self.context.newNounPhrase(conceptJSON['concept'], initiatingClauseHash)
@@ -685,6 +734,8 @@ class Interpreter:
       else:
         (roots, branches) = self.queryComponentAssignment(clauseJSON, returnRoots=True)
         results = roots
+    elif 'comparison' in clauseJSON:
+      results = self.queryComparison(clauseJSON)
     if not results: results = list()
     results = [x for x in results if x.isA(subjectJSON['concept'])]
     return results
@@ -692,7 +743,9 @@ class Interpreter:
   def test(self, JSON):
     results = set()
     if not 'statement' in JSON:
-      if 'AND' in JSON:
+      if 'comparison' in JSON:
+        results |= self.queryComparison(JSON)
+      elif 'AND' in JSON:
         for subclause in JSON['AND']:
           moreResults = self.test(subclause)
           if isinstance(moreResults, set):
@@ -713,9 +766,7 @@ class Interpreter:
         if not self.test(JSON['NOT'][0]): return True
     else:
       clauseJSON = JSON['statement']
-      if 'comparison' in clauseJSON:
-        raise Exception('test: Comparison not yet implemented')
-      elif 'state' in clauseJSON:
+      if 'state' in clauseJSON:
         results |= self.queryState(clauseJSON)
       elif 'action' in clauseJSON:
         results |= self.queryAction(clauseJSON, returnActor=True, returnTarget=True)

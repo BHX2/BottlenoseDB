@@ -426,7 +426,10 @@ class Context:
     for concept in self.concepts['noun_phrases']:
       if concept.isA(type):
         response.add(concept)
-    return response
+    if not response and isinstance(self, Subcontext):
+      return self.supercontext.queryNounPhrases(type)
+    else:
+      return response
         
   def queryVerbPhrases(self, type):
     response = set()

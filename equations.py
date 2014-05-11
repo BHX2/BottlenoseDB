@@ -68,7 +68,9 @@ class Equation:
     for term in self.expression:
       if isinstance(term, dict):
         if 'concept' in term or 'component' in term:
-          stringForEval += str(interpreter.queryQuantitativeState(term))
+          value = interpreter.queryQuantitativeState(term)
+          if value == None: return
+          stringForEval += str(value)
       else:
         stringForEval += str(term)
     solution = eval(stringForEval)
