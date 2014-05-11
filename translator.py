@@ -4,16 +4,17 @@ from parsimonious.grammar import Grammar
 from parsimonious.grammar import NodeVisitor
 
 grammar = Grammar("""
-  input                 = belief / taxonomy_assignment / synonym_assignment / statement
+  input                 = equation / belief / taxonomy_assignment / synonym_assignment / statement
+  equation              = "eq[" concept_or_component "=" (parentheses / arithmetic_operator / number / concept_or_component)+ "]"
+  parentheses           = "(" / ")"
+  arithmetic_operator   = "+" / "-" / "/" / "*"
   taxonomy_assignment   = concept_or_component (type_includes / is_a) concept_or_list
   type_includes         = "/="
   is_a                  = "=/"
   synonym_assignment    = concept "~" concept_or_list
   query                 = "?" concept ("(" (state / action / component_assignment / component / concept) ")")?
   belief                = evidence / rule
-  rule                   = clause ">>" clause
-  arithmetic_operation  = (component / concept) arithmetic_operator quantity
-  arithmetic_operator   = "+" / "-" / "/" / "*"
+  rule                  = clause ">>" clause
   evidence              = supporting_evidence / opposing_evidence
   supporting_evidence   = clause ">>+" clause
   opposing_evidence     = clause ">>-" clause
@@ -27,7 +28,7 @@ grammar = Grammar("""
   statement             = state / action / component_addition / component_subtraction / component_assignment / component / concept
   state                 = (component / concept) "#" (quantity / quality)
   quality               = ~"\s*!?[A-Z]*\s*"i
-  quantity              = number
+  quantity              = ~"\s*[0-9]*\.?[0-9]+\s*"
   action                = (component / concept) "." verb "(" concepts_or_component? ")" " "*
   concept_or_component  = component / concept
   concepts_or_component = component / concept_or_list
@@ -46,6 +47,15 @@ grammar = Grammar("""
 class Translator(NodeVisitor):
   def visit_input(self, node, input):
     return input[0]
+    
+  def visit_equation(self, node, (_1, dependent_variable, _2, terms, _3)):
+    expression = list()
+    for x in terms:
+      if isinstance(x, list):
+        expression.extend(x)
+      else:
+        expression.append(x)
+    return {'equation': {'dependent_variable': dependent_variable, 'expression': expression}}
   
   def visit_query(self, node, (_1, subject, clause_expression)):
     if not clause_expression:
@@ -59,9 +69,9 @@ class Translator(NodeVisitor):
   def visit_rule(self, node, (first_clause, _, second_clause)):
     return {'rule': {'independent_clause': first_clause, 'dependent_clause': second_clause}}
 
-  def visit_arithmetic_operation(self, node, (concept_or_component, operator, quantity)):
-    return {'arithmetic_operation': {'variable': concept_or_component, 'operator': operator, 'quantity': quantity}}
-    
+  def visit_parentheses(self, node, _):
+    return node.text
+  
   def visit_arithmetic_operator(self, node, _):
     return node.text
   
@@ -184,9 +194,6 @@ class Translator(NodeVisitor):
   def visit_state(self, node, (subject, _, description)):
     return {'state': {'subject': subject, 'description': description}}
   
-  def visit_quantity(self, node, number):
-      return {'quantity': number}   
-    
   def visit_action(self, node, (actor, _1, verb, _2, target, _3, _4)):
     return {'action': {'actor': actor, 'act': verb, 'target': target}}
   

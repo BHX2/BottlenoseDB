@@ -7,9 +7,10 @@ class Clause:
   evidenceGraph = networkx.DiGraph()
   ruleGraph = networkx.DiGraph()
   
-  def __init__(self, JSON, independent=False):
+  def __init__(self, JSON, independent=False, isEquation=False):
     self.JSON = JSON
     self.hashcode = self.calculateHash(JSON)
+    self.isEquation = isEquation
     Clause.hashtable[self.hashcode] = self
     if independent:
       self.calculateRelatedPhrases(JSON, self)
@@ -38,7 +39,11 @@ class Clause:
   @staticmethod
   def calculateRelatedPhrases(JSON, originalClause):
     if isinstance(JSON, dict):
-      if 'concept' in JSON:
+      if 'component' in JSON:
+        if not JSON['component']['branch'] in Clause.relatedPhraseToClause:
+          Clause.relatedPhraseToClause[JSON['component']['branch']] = set()
+        Clause.relatedPhraseToClause[JSON['component']['branch']].add(originalClause)
+      elif 'concept' in JSON:
         if not JSON['concept'] in Clause.relatedPhraseToClause:
           Clause.relatedPhraseToClause[JSON['concept']] = set()
         Clause.relatedPhraseToClause[JSON['concept']].add(originalClause)

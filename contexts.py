@@ -163,10 +163,12 @@ class Context:
         oldSet = self.clauseToConceptSet[clause.hashcode]
         newSet = results
         self.clauseToConceptSet[clause.hashcode] = newSet.copy()
-        if oldSet == newSet:
+        if not clause.isEquation and oldSet == newSet:
           continue
         conceptsOfDeprecatedPotentiations = oldSet - newSet
         conceptsOfNewPotentiations = newSet - oldSet
+        if clause.isEquation:
+          conceptsOfNewPotentiations = newSet
         brainFreeze = copy.copy(self.shortTermMemory)
         self.shortTermMemory.extendleft(conceptsOfNewPotentiations)
         def edgeRecordIsDeprecated(edgeRecord):
@@ -354,6 +356,12 @@ class Context:
             if potentialMatch.isA(affirmativeDescriptor):
               self.unsetState(subject, potentialMatch, initiatingClauseHash)
         self.remove(descriptor)
+      elif descriptor.isQuantity:
+        descriptors = self.stateGraph.successors(subject)
+        quantitativeStates = [x for x in descriptors if x.isQuantity]
+        for quantitativeState in quantitativeStates:
+          self.remove(quantitativeState)
+        self.stateGraph.add_edge(subject, descriptor)
       else:
         self.stateGraph.add_edge(subject, descriptor)
       self.registerChange(subject)

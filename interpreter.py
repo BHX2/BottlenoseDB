@@ -1,6 +1,7 @@
 import re
 from concepts import Concept
 from clauses import Clause
+from equations import Equation
 import utilities
 
 class Interpreter:
@@ -176,17 +177,48 @@ class Interpreter:
       raise Exception('queryState: Unknown state structure')
     descriptionJSON = JSON['state']['description']
     if 'quantity' in descriptionJSON:
-      targetDescriptor = str(descriptionJSON['quantity'])
+      targetDescriptor = descriptionJSON['quantity']
+      response = set()
+      if potentialSubjects:
+        for potentialSubject in potentialSubjects:
+          descriptors = self.context.stateGraph.successors(potentialSubject)
+          for descriptor in descriptors:
+            if descriptor.isQuantity:
+              if descriptor.quantity == descriptionJSON['quantity']:
+                response.add(potentialSubject)
     else:
       targetDescriptor = descriptionJSON['quality']
-    response = set()
-    if potentialSubjects:
-      for potentialSubject in potentialSubjects:
-        descriptors = self.context.stateGraph.successors(potentialSubject)
-        for descriptor in descriptors:
-          if descriptor.isA(targetDescriptor):
-            response.add(potentialSubject)
+      response = set()
+      if potentialSubjects:
+        for potentialSubject in potentialSubjects:
+          descriptors = self.context.stateGraph.successors(potentialSubject)
+          for descriptor in descriptors:
+            if descriptor == targetDescriptor or descriptor.isA(targetDescriptor):
+              response.add(potentialSubject)
     return response
+  
+  def queryQuantitativeState(self, JSON):
+    if 'concept' in JSON:
+      potentialVariables = self.queryConcept(JSON)
+    elif 'component' in JSON:
+      potentialVariables = self.queryComponent(JSON)
+    else:
+      raise Exception('queryQuantity: Only concept and components can be variables')
+    if len(potentialVariables) == 1:
+      (variable,) = potentialVariables
+    else:
+      variable = self.context.findLastReferenced(potentialVariables)
+      #raise Exception('queryQuantitativeState: Too many potential variables')
+    descriptors = self.context.stateGraph.successors(variable)
+    quantitativeStates = [x for x in descriptors if x.isQuantity]
+    quantities = map(lambda x: x.quantity, quantitativeStates)
+    if len(quantities) > 1:
+      average = sum(quantities) / float(len(quantities))
+    elif len(quantities) == 1:
+      average = quantities[0]
+    else:
+      average = 0
+    return average
   
   def queryAction(self, actionJSON, returnActor=True, returnTarget=False):
     if actionJSON['action']['target']:
@@ -584,6 +616,10 @@ class Interpreter:
       for clause in statementJSON.values()[0]:
         self.assertStatement(clause, initiatingClauseHash)
       return
+    if 'equation' in statementJSON['statement']:
+      equation = Equation.variableHashTable[statementJSON['statement']['equation']]
+      equation.solveAndAssertWithInterpreter(self)
+      return
     if 'concept' in statementJSON['statement'] and not initiatingClauseHash:
       if re.match('^!', statementJSON['statement']['concept']):
         affirmativeConcept = statementJSON['statement']['concept'][1:]
@@ -748,6 +784,12 @@ class Interpreter:
     independentClause = Clause(ruleJSON['rule']['independent_clause'], independent=True)
     dependentClause = Clause(ruleJSON['rule']['dependent_clause'], independent=False)
     independentClause.mandates(dependentClause)
+    
+  def processEquation(self, equationJSON):
+    equation = Equation(equationJSON)
+    independentClause = equation.independentClause()
+    dependentClause = equation.dependentClause()
+    independentClause.mandates(dependentClause)
   
   def interpret(self, JSON):
     if JSON.keys() == ['statement'] and \
@@ -757,6 +799,9 @@ class Interpreter:
         return self.query(JSON['statement']['concept'])
     elif 'statement' in JSON:
       self.assertStatement(JSON)
+      return None
+    elif 'equation' in JSON:
+      self.processEquation(JSON)
       return None
     elif 'belief' in JSON:
       if 'evidence' in JSON['belief']:
