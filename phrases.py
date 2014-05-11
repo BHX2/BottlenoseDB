@@ -25,15 +25,13 @@ class NounPhrase(Concept):
 class Descriptor(Concept):
   def __init__(self, name):
     self.isVerb = False
-    quantitative = re.search('(^[0-9.]+)(.*)', name)
+    quantitative = re.search('^[0-9.]+', name)
     if quantitative:
-      self.quantity = float(quantitative.group(1))
-      self.units = quantitative.group(2) if quantitative.group(2) else None
+      self.quantity = float(quantitative.group(0))
       self.isQuantity = True
       type = 'quantity'
     else:
       self.quantity = None
-      self.units = None
       self.isQuantity = False
       type = name
     Concept.__init__(self, name, type)

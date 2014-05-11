@@ -177,8 +177,6 @@ class Interpreter:
     descriptionJSON = JSON['state']['description']
     if 'quantity' in descriptionJSON:
       targetDescriptor = str(descriptionJSON['quantity'])
-      if descriptionJSON['units']:
-        targetDescriptor += descriptionJSON['units']
     else:
       targetDescriptor = descriptionJSON['quality']
     response = set()
@@ -292,8 +290,6 @@ class Interpreter:
     descriptionJSON = stateJSON['state']['description']
     if 'quantity' in descriptionJSON:
       description = str(descriptionJSON['quantity'])
-      if descriptionJSON['units']:
-        description += descriptionJSON['units']
     else:
       description = descriptionJSON['quality']  
     descriptor = self.context.newDescriptor(description)

@@ -9,11 +9,11 @@ grammar = Grammar("""
   type_includes         = "/="
   is_a                  = "=/"
   synonym_assignment    = concept "~" concept_or_list
-  query                 = "?" concept ("(" (state / action / direct_object / component_assignment / component / concept) ")")?
+  query                 = "?" concept ("(" (state / action / component_assignment / component / concept) ")")?
   belief                = evidence / rule
   rule                   = clause ">>" clause
   arithmetic_operation  = (component / concept) arithmetic_operator quantity
-  arithmetic_operator   = "+" / "-"
+  arithmetic_operator   = "+" / "-" / "/" / "*"
   evidence              = supporting_evidence / opposing_evidence
   supporting_evidence   = clause ">>+" clause
   opposing_evidence     = clause ">>-" clause
@@ -23,15 +23,12 @@ grammar = Grammar("""
   compound_clause       = simple_clause logic_unit+
   logic_unit            = logic_operator simple_clause
   logic_operator        = "&" / "|" / "," 
-  simple_clause         = " "* "!"? statement probability? " "*
-  probability           = "[" number "]"
-  statement             = arithmetic_operation / state / action / component_addition / component_subtraction / component_assignment / component / concept
+  simple_clause         = " "* "!"? statement " "*
+  statement             = state / action / component_addition / component_subtraction / component_assignment / component / concept
   state                 = (component / concept) "#" (quantity / quality)
   quality               = ~"\s*!?[A-Z]*\s*"i
-  quantity              = number units?
-  units                 = ~"\s*[A-Z]*\s*"i
+  quantity              = number
   action                = (component / concept) "." verb "(" concepts_or_component? ")" " "*
-  direct_object         = " "* verb "(" concept ")" " "*
   concept_or_component  = component / concept
   concepts_or_component = component / concept_or_list
   verb                  = ~"\s*[A-Z0-9]*s[A-Z0-9]*\s*"i
@@ -161,17 +158,12 @@ class Translator(NodeVisitor):
     elif (node.text == ","):
       return {'operator' : 'OR'}
     
-  def visit_simple_clause(self, node, (_1, negative, statement, probability, _2)):    
+  def visit_simple_clause(self, node, (_1, negative, statement, _2)):    
     response = {'statement': statement['statement']}
-    if probability:
-      response['probability'] = probability['probability']
     if negative == None:
       return response
     else:
       return {'NOT': [response]}
-  
-  def visit_probability(self, node, (_1, number, _2)):
-    return {'probability': number}
   
   def visit_taxonomy_assignment(self, node, (concept_or_component, operator, concept_or_list)):
     if "is_a" in operator.keys():
@@ -192,14 +184,8 @@ class Translator(NodeVisitor):
   def visit_state(self, node, (subject, _, description)):
     return {'state': {'subject': subject, 'description': description}}
   
-  def visit_quantity(self, node, (number, units)):
-    if units:
-      return {'quantity': number, 'units': units['units']}
-    else:
-      return {'quantity': number, 'units': None}   
-  
-  def visit_direct_object(self, node, (_1, verb, _2, target, _3, _4)):
-    return {'action': {'actor': None, 'act': verb, 'target': target}}
+  def visit_quantity(self, node, number):
+      return {'quantity': number}   
     
   def visit_action(self, node, (actor, _1, verb, _2, target, _3, _4)):
     return {'action': {'actor': actor, 'act': verb, 'target': target}}
