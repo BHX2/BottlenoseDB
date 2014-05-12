@@ -823,6 +823,12 @@ class Interpreter:
       else:
         JSON['concept'] = '!' + JSON['concept']
       return JSON
+    if 'quality' in JSON:
+      if re.match('^!', JSON['quality']):
+        JSON['quality'] = JSON['quality'][1:]
+      else:
+        JSON['quality'] = '!' + JSON['quality']
+      return JSON
     elif 'target' in JSON and JSON['target'] == None:
       JSON['target'] = {'concept': '!'}
       return JSON
