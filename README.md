@@ -85,7 +85,7 @@ mouse*.eats(cheese)
 ###Rules & Clauses
 The real power of Bottlenose is derived from leveraging the "semantic glue" described above in forming dynamic artificial cognitive beliefs. Each **Belief** is made up of **Clauses**, which are testable statements referencing existence of a **Concept** or assertions of **Component**, **Action**, or **State**. A **Rule** follows the syntax of two **Clauses** seperated by `>>`. `A >> B` denotes *if A then B*. The second (or dependent) **Clause** is executed immediately after the first is found to be true. Bottlenose automatically finds and tests relevant **Rules** that have been described previously, and attempts co-reference resolution. One use of **Rules** is to hardcode more "semantic glue" than is otherwise available. Using the cat example above, we can connect the **Action** of 'owning a cat' to the **Component** relationship of 'cat having an owner'.
 ```
-cat.owner=person >>> person.owns(cat)
+cat.owner=person >> person.owns(cat)
 ```
 
 ###Logic
