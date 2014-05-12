@@ -10,8 +10,11 @@ class Concept:
   thesaurus = dict()
   
   def __init__(self, name=None, type=None, bootstrapVocabulary=False):
-    if name: 
-      self.name = utilities.camelCase(name)
+    if name:
+      if getattr(self, 'isQuantity', False):
+        self.name = str(name)
+      else:
+        self.name = utilities.camelCase(name)
     else: 
       self.name = None
     if type: 

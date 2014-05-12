@@ -16,7 +16,7 @@ animal /= mammal
 
 Both taxonomy and synonyms are applied universally to all language expressed thereafter (rather than being pinned down to individual instances). While it may seem tempting, neither synonym nor taxonomy operators should be introduced in conditional expressions because of this.
 
-###Components / Relationships
+###Components
 Use `.` to indicate the existence of a **Component** (*has-a*) or other type of relationship. This can be paired with `=` to assign the role to a single entity or with `+=` to add an element to a relationship that is not exclusively singular. In the latter case, multiple relationships can be added at once using commas to delimit a list of concepts. Both the **Component** expression and any assigned entities should be noun phrases. If the attribute is in the form of a verb phrase use **Actions** as described below. Again note that all phrases should be singular. To remove an entity simply use `-=`.
 ```
 cat.owner = John
@@ -103,21 +103,49 @@ cat#wet >>- cat#happy
 ```
 
 ###Arithmetic
-In order to describe slightly more complex patterns there are a few operators that can be used to describe basic arithmetic (addition, subtraction). The same convention can be applied to a **Component**. Units may be typed directly after the number(s) (without intervening spaces). A simple arithmetic operation is defined with `+` or `-` followed by a quantity. Also of note, trigger (in)equalities can be indicated within a **Clause** using `>`, `<`, `<=`, `>=`, or `==`. 
+In order to describe slightly more complex patterns there is also syntax to carry out basic arithmetic operation (addition, subtraction, multiplication, and division). As described above, numbers can be applied as **States**. These values can be adjusted using `+`, `-`, `/`, or `*` followed by a number. Quantitative concepts can also be described using equations by encapsulating an arithmetic equation within `eq[` and `]`. Bottlenose dynamically assigns and updates these values (however both variables must already exist).
 ```
-cat.weight#10lbs
-cat.eats(quarterPounderCheeseBurger) >> cat.weight+0.25lbs
+eq[Whiskers.age = Henry.age + 2]
+Henry.age#14
+Whiskers.age
+?age(Whiskers.age)
 
-cat.weight > 20lbs >> cat#fat
-cat.weight <= 5lbs >> cat#skinny
+age (9133b8a437)
+  age is 16.0
+  Whiskers (has age) --> age
+
+Henry.age+1
+?age(Whiskers.age)
+
+age (9133b8a437)
+  age is 17.0
+  Whiskers (has age) --> age
+```
+Finally, trigger (in)equalities can function as a **Clause** using `>`, `<`, `<=`, `>=`, or `==`. Arithmetic should not be mixed in dependent *Clauses* of **Evidence** beliefs (but can be used within **Rules**)
+```
+cat.eats(thirtyPoundCheeseBurger) >> cat.weight+30
+cat.weight > 20 >> cat#fat
+cat.weight <=5 >> cat#skinny
+cat.weight#10
+?weight(cat.weight)
+
+weight (5bf537c7f5)
+  weight is 10
+  cat (has weight) --> weight
+
+cat.eats(thirtyPoundCheeseBurger)
+?weight(cat.weight)
+
+weight (5bf537c7f5)
+  weight is 40.0
+  cat (has weight) --> weight
 ```
 
 ---
 ###Roadmap
 
-1. Implement arithmetic expressions (along with comparison operators and possibly equations)
-2. Implement persistence via pickling as well as export/import to plain text files
-3. Implement tabbed autocompletion using *(py)readline* & *rlcompleter*
-4. Polish CLI interface: add intro, help, colors, tables, benchmarks, etc
-5. Implement logging, data backup, and undo functionality
-6. Experiment with rule-based artificial cognition
+1. Implement persistence via pickling as well as export/import to plain text files
+2. Implement tabbed autocompletion using *(py)readline* & *rlcompleter*
+3. Polish CLI interface: add intro, help, colors, tables, benchmarks, etc
+4. Implement logging, data backup, and undo functionality
+5. Experiment with rule-based artificial cognition

@@ -454,6 +454,7 @@ class Context:
   def queryExact(self, name, phraseType=None):
     resultByHashQuery = self.queryHash(name)
     if resultByHashQuery: return resultByHashQuery
+    if not name: return None
     nameSynonyms = Concept().synonyms(utilities.camelCase(name))
     if not phraseType or phraseType == 'NounPhrase':
       for concept in self.concepts['noun_phrases']:

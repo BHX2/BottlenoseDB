@@ -26,6 +26,8 @@ class Descriptor(Concept):
   def __init__(self, name):
     self.isVerb = False
     quantitative = re.search('^[0-9.]+', name)
+    if not quantitative:
+      quantitative = re.search('^-[0-9.]+', name)
     if quantitative:
       self.quantity = float(quantitative.group(0))
       self.isQuantity = True

@@ -619,6 +619,16 @@ class Interpreter:
         act = self.context.newVerbPhrase(actionJSON['action']['act']['verb'])     
         self.context.setAction(actor, act, target, initiatingClauseHash)
 
+  def assertArithmeticOperation(self, arithmeticOperationJSON, initiatingClauseHash=None):
+    if initiatingClauseHash:
+      raise Exception('assertArithmeticOperation: Arithmetic cannot be potentiated via evidence')
+    value = self.queryQuantitativeState(arithmeticOperationJSON['arithmetic_operation']['variable'])
+    if value == None:
+      value = 0
+    newValue = eval(str(value) + arithmeticOperationJSON['arithmetic_operation']['operator'] + arithmeticOperationJSON['arithmetic_operation']['quantity'])
+    state = {'state': {'subject': arithmeticOperationJSON['arithmetic_operation']['variable'], 'description': {'quantity': newValue}}}
+    self.assertState(state)
+    
   def solveQueries(self, JSON):
     if isinstance(JSON, list):
       temp = list()
@@ -701,6 +711,8 @@ class Interpreter:
       self.assertAction(statementJSON['statement'], initiatingClauseHash)
     elif 'state' in statementJSON['statement']:
       self.assertState(statementJSON['statement'], initiatingClauseHash)
+    elif 'arithmetic_operation' in statementJSON['statement']:
+      self.assertArithmeticOperation(statementJSON['statement'], initiatingClauseHash)
   
   def query(self, queryJSON):
     results = list()
