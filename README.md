@@ -1,5 +1,5 @@
 #Bottlenose
-Bottlenose is a platform for building artificially intelligent programs. The engine is written in Python and uses a simple scripting language to streamline communication of logic while allowing compensation for robust natural language vocabularies. The goal of Bottlenose is to bridge the gap between natural (for humans) expression of hierarchical verbal knowledge with the speed, accuracy, and remarkable persistence afforded by computers. Bottlenose can be used out-of-the-box via CLI.py (command-line interface) or imported and subclassed in another program. The following is a guide to Bottlenose scripting syntax.
+Bottlenose is a platform for building artificially intelligent programs. The engine is written in Python and uses a simple scripting language to streamline communication of logic while allowing compensation for robust natural language vocabularies. The goal of Bottlenose is to bridge the gap between natural (for humans) expression of hierarchical verbal knowledge with the speed, accuracy, and remarkable persistence afforded by computers. Bottlenose can be used out-of-the-box via CLI.py (command-line interface) or imported as a module. The following is a guide to Bottlenose scripting syntax.
 
 ###Synonyms
 Use `~` to indicate synonymous words or phrases. Multiple synonyms can be defined at once if seperated by commas. All phrases should be written in *camelCase* such that spaces are removed between words, the first word is in all lower case, and all subsequent words are capitalized; capitalization of proper nouns and acronyms can be preserved. Examples: *houseCat*, *Garfield*, *LOLCat*. In general the singular form of noun phrases should be used. Also, all punctuation including single-quotes should be omitted.
@@ -139,6 +139,13 @@ cat.eats(thirtyPoundCheeseBurger)
 weight (5bf537c7f5)
   weight is 40.0
   cat (has weight) --> weight
+  
+?cat
+
+cat (8ba03d85c9)
+  cat is fat
+  cat (has weight) --> weight
+  cat (eats) --> thirtyPoundCheeseBurger
 ```
 
 ---
