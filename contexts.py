@@ -16,7 +16,7 @@ class Context:
       self.name = name
     else:
       now = datetime.datetime.now()
-      self.name = 'Context from ' + str(now.month) + '/' + str(now.day) + '/' + str(now.year) + ' at ' + str(now.hour) + ':' + str(now.minute)
+      self.name = 'Context from ' + now.strftime("%B %d %Y %I:%M%p")
     self.componentGraph = networkx.DiGraph()
     self.actionGraph = networkx.DiGraph()
     self.stateGraph = networkx.DiGraph()

@@ -32,6 +32,12 @@ class Bottlenose:
     else:
       return [BottlenoseObject(results, self._context)]
   
+  def ask(self, subject, clause=None):
+    query = "?" + subject
+    if clause:
+      query += "(" + clause + ")"
+    return self.tell(query)
+  
   def context(self):
     return self._context
     

@@ -105,6 +105,7 @@ def main():
         else:
           with indent(2):
             puts(red('Unknown command or incoherent scripting.\n'))
-        traceback.print_exc()
+        #traceback.print_exc()
+        
 if __name__ == '__main__':
   main()
