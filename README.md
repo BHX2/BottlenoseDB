@@ -74,10 +74,13 @@ mouse (589fbb56d6)
 ```
 In the above example one may have noticed the hexadecimal strings beside concept names (ex: `03da1ffedb`). These are hashcodes for the individual instances and can be used in place of noun phrase in expressions. They are useful in command-line in circumstances where multiple conceptual instances with the same name exist; however, they should never be used within **Clauses** becaues of their ephemeral nature.
 
-###Instantiation
-By default all concepts are assumed to be previously mentioned entities; this is similar to a default definite article (*the*). If no appropriate entities are found then a new instance may be created to fulfill an assertion. If multiple instances of a referenced concept exist then BottlenoseDB will look for the most recent co-reference within the context. However, to indicate that a concept is new (even when a similar concept exists) place an `*` directly after the concept phrase. This functions similarly to an indefinite article (*a* or *an*). In the below example the use of `*` indicates that the mouse being referenced is a new mouse (not the one from the **Actions** example that is being chased by the cat).
+###Article Postfixes
+By default all concepts in statements are assumed to be previously mentioned entities; this is similar to a default definite article (*the*). If no appropriate entities are found then a new instance may be created to fulfill an assertion. If multiple instances of a referenced concept exist then BottlenoseDB will look for the most recent co-reference within the context. Within queries the opposite is true; that is by default everything is assumed to be generalized. There is specialized post-fixes to phrases that can specify the alternative *article* (to override the default).
+
+To indicate that a concept is new (even when a similar concept exists) place an `*` directly after the concept phrase. This functions similarly to an indefinite article (*a* or *an*). In the below example the use of `*` indicates that the mouse being referenced is a new mouse (not the one from the **Actions** example that is being chased by the cat). In queries, using `^` directly after a concept phrase will force BottlenoseDB to search for an existing reference before continueing with its interpretation. This functions similarly to a definite article (*the*). In the second example only the mouse that was just described as eating cheese will be returned (rather than also returning the mouse being chased).
 ```
 mouse*.eats(cheese)
+?mouse^
 ```
 
 ###Rules & Clauses
