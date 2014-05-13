@@ -12,7 +12,7 @@ import utilities
 
 class Bottlenose:
   def __init__(self, bootstrapVocabulary=False):
-    Concept(bootstrapVocabulary)
+    Concept(bootstrapVocabulary=bootstrapVocabulary)
     self._contexts = [Context()]
     self._context = self._contexts[0]
     self._translator = Translator()

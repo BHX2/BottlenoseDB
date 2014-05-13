@@ -1,5 +1,5 @@
-#Bottlenose
-Bottlenose is a platform for building artificially intelligent programs. The engine is written in Python and uses a simple scripting language to streamline communication of logic while allowing compensation for robust natural language vocabularies. The goal of Bottlenose is to bridge the gap between natural (for humans) expression of hierarchical verbal knowledge with the speed, accuracy, and remarkable persistence afforded by computers. Bottlenose can be used out-of-the-box via CLI.py (command-line interface) or imported as a module. The following is a guide to Bottlenose scripting syntax.
+#BottlenoseDB
+BottlenoseDB is a database system for representing data that is highly self-referential. The engine is written in Python and uses a simple scripting language to streamline communication of logic while allowing compensation for robust natural language vocabularies. The goal of BottlenoseDB is to bridge the gap between naturally (for humans) interdependent expressions of hierarchical verbal knowledge with the speed, accuracy, and remarkable persistence afforded by computers. BottlenoseDB can be used out-of-the-box via CLI.py (command-line interface) or imported as a module. The following is a guide to Bottlenose scripting syntax.
 
 ###Synonyms
 Use `~` to indicate synonymous words or phrases. Multiple synonyms can be defined at once if seperated by commas. All phrases should be written in *camelCase* such that spaces are removed between words, the first word is in all lower case, and all subsequent words are capitalized; capitalization of proper nouns and acronyms can be preserved. Examples: *houseCat*, *Garfield*, *LOLCat*. In general the singular form of noun phrases should be used. Also, all punctuation including single-quotes should be omitted.
@@ -44,7 +44,7 @@ cat#!feral
 ```
 
 ###Queries
-Bottlenose also allows for entities (specifically those expressed via noun phrases) to be queried. **Queries** start with a `?` (query operator) preceding a noun phrase (subject). This is followed by an optional **Clause** (see below for explanation) between parantheses which contains the said subject. In addition to allowing users to inspect instances, **Queries** can also be used anywhere a concept is used; however, an important consideration is that they do not follow co-reference resolution rules and thus do not function intuitively within **Beliefs** (also explained below).
+BottlenoseDB also allows for entities (specifically those expressed via noun phrases) to be queried. **Queries** start with a `?` (query operator) preceding a noun phrase (subject). This is followed by an optional **Clause** (see below for explanation) between parantheses which contains the said subject. In addition to allowing users to inspect instances, **Queries** can also be used anywhere a concept is used; however, an important consideration is that they do not follow co-reference resolution rules and thus do not function intuitively within **Beliefs** (also explained below).
 ```
 ?cat
 
@@ -77,13 +77,13 @@ Bottlenose also allows for entities (specifically those expressed via noun phras
 In the above example one may have noticed the hexadecimal strings beside concept names (ex: `03da1ffedb`). These are hashcodes for the individual instances and can be used in place of noun phrase in expressions. They are useful in command-line in circumstances where multiple conceptual instances with the same name exist; however, they should never be used within **Clauses** becaues of their ephemeral nature.
 
 ###Instantiation
-By default all concepts are assumed to be previously mentioned entities; this is similar to a default definite article (*the*). If no appropriate entities are found then a new instance may be created to fulfill an assertion. If multiple instances of a referenced concept exist then Bottlenose will look for the most recent co-reference within the context. However, to indicate that a concept is new (even when a similar concept exists) place an `*` directly after the concept phrase. This functions similarly to an indefinite article (*a* or *an*). In the below example the use of `*` indicates that the mouse being referenced is a new mouse (not the one from the **Actions** example that is being chased by the cat).
+By default all concepts are assumed to be previously mentioned entities; this is similar to a default definite article (*the*). If no appropriate entities are found then a new instance may be created to fulfill an assertion. If multiple instances of a referenced concept exist then BottlenoseDB will look for the most recent co-reference within the context. However, to indicate that a concept is new (even when a similar concept exists) place an `*` directly after the concept phrase. This functions similarly to an indefinite article (*a* or *an*). In the below example the use of `*` indicates that the mouse being referenced is a new mouse (not the one from the **Actions** example that is being chased by the cat).
 ```
 mouse*.eats(cheese)
 ```
 
 ###Rules & Clauses
-The real power of Bottlenose is derived from leveraging the "semantic glue" described above in forming dynamic artificial cognitive beliefs. Each **Belief** is made up of **Clauses**, which are testable statements referencing existence of a **Concept** or assertions of **Component**, **Action**, or **State**. A **Rule** follows the syntax of two **Clauses** seperated by `>>`. `A >> B` denotes *if A then B*. The second (or dependent) **Clause** is executed immediately after the first is found to be true. Bottlenose automatically finds and tests relevant **Rules** that have been described previously, and attempts co-reference resolution. One use of **Rules** is to hardcode more "semantic glue" than is otherwise available. Using the cat example above, we can connect the **Action** of 'owning a cat' to the **Component** relationship of 'cat having an owner'.
+The real power of BottlenoseDB is derived from leveraging the "semantic glue" described above in forming dynamic artificial cognitive beliefs. Each **Belief** is made up of **Clauses**, which are testable statements referencing existence of a **Concept** or assertions of **Component**, **Action**, or **State**. A **Rule** follows the syntax of two **Clauses** seperated by `>>`. `A >> B` denotes *if A then B*. The second (or dependent) **Clause** is executed immediately after the first is found to be true. BottlenoseDB automatically finds and tests relevant **Rules** that have been described previously, and attempts co-reference resolution. One use of **Rules** is to hardcode more "semantic glue" than is otherwise available. Using the cat example above, we can connect the **Action** of 'owning a cat' to the **Component** relationship of 'cat having an owner'.
 ```
 cat.owner=person >> person.owns(cat)
 ```
@@ -103,7 +103,7 @@ cat#wet >>- cat#happy
 ```
 
 ###Arithmetic
-In order to describe slightly more complex patterns there is also syntax to carry out basic arithmetic operation (addition, subtraction, multiplication, and division). As described above, numbers can be applied as **States**. These values can be adjusted using `+`, `-`, `/`, or `*` followed by a number. Quantitative concepts can also be described using equations by encapsulating an arithmetic equation within `eq[` and `]`. Bottlenose dynamically assigns and updates these values (however both variables must already exist).
+In order to describe slightly more complex patterns there is also syntax to carry out basic arithmetic operation (addition, subtraction, multiplication, and division). As described above, numbers can be applied as **States**. These values can be adjusted using `+`, `-`, `/`, or `*` followed by a number. Quantitative concepts can also be described using equations by encapsulating an arithmetic equation within `eq[` and `]`. BottlenoseDB dynamically assigns and updates these values (however both variables must already exist).
 ```
 eq[Whiskers.age = Henry.age + 2]
 Henry.age#14
