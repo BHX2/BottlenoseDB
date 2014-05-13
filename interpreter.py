@@ -53,8 +53,10 @@ class Interpreter:
           branches.add(edge[1])
     if len(branches) == 0:
       if assertBranches:
-        branch = self.context.newNounPhrase(branchPhrase, initiatingClauseHash)
-        self.context.setComponent(stem, branchPhrase, branch)
+        branch = self.context.newNounPhrase(branchPhrase)
+        if self.context.__class__.__name__ == 'Subcontext':
+          self.context.supercontext.incorporateConcept(branch)
+        self.context.setComponent(stem, branchPhrase, branch, initiatingClauseHash=initiatingClauseHash)
         #branch.classify(utilities.sanitize(branchPhrase).split()[-1])
         branches.add(branch)
     return branches
@@ -85,17 +87,23 @@ class Interpreter:
       for root in roots:
         rootsAndCurrentBranches.append((root, root))    
     branchPhrase = chain.pop(0)
+    if len(chain) == 0 and filter:
+      if isinstance(filter, dict):
+        filterFromConcept = filter['concept']
+      else:
+        filterFromConcept = filter
     rootsAndNextBranches = list()
     for rootBranchTuple in rootsAndCurrentBranches:
-      nextEdges = self.context.componentGraph.out_edges(rootBranchTuple[1], data=True)
-      nextBranches = list()
-      for edge in nextEdges:
-        if edge[2]['label'] == branchPhrase:
-          if filterFromConcept:
-            if edge[1].isA(filterFromConcept):
+      if rootBranchTuple[1] in self.context.componentGraph:
+        nextEdges = self.context.componentGraph.out_edges(rootBranchTuple[1], data=True)
+        nextBranches = list()
+        for edge in nextEdges:
+          if edge[2]['label'] == branchPhrase:
+            if filterFromConcept:
+              if edge[1].isA(filterFromConcept) or edge[1] is self.context.queryHash(filterFromConcept):
+                nextBranches.append(edge[1])
+            else:
               nextBranches.append(edge[1])
-          else:
-            nextBranches.append(edge[1])
       if len(nextBranches) > 0:
         rootsAndNextBranches.append((rootBranchTuple[0], nextBranches))
     if not rootsAndNextBranches: 
@@ -582,7 +590,29 @@ class Interpreter:
     newValue = eval(str(value) + arithmeticOperationJSON['arithmetic_operation']['operator'] + arithmeticOperationJSON['arithmetic_operation']['quantity'])
     state = {'state': {'subject': arithmeticOperationJSON['arithmetic_operation']['variable'], 'description': {'quantity': newValue}}}
     self.assertState(state)
-    
+
+  def resolveKnownReferences(self, JSON):
+    if isinstance(JSON, list):
+      temp = list()
+      for x in JSON:
+        addition = self.resolveKnownReferences(x)
+        if isinstance(addition, list):
+          temp.extend(addition)
+        else:
+          temp.append(addition)
+      return temp
+    if not isinstance(JSON, dict): 
+      return JSON
+    elif 'concept' in JSON and re.match('.*\^', JSON['concept'].strip()):
+      (concept,) = self.context.queryNounPhrases(JSON['concept'])
+      for hashcode in self.context.conceptHashTable:
+        if concept is self.context.conceptHashTable[hashcode]:
+          return {'concept': str(hashcode)}
+    else:
+      for key in JSON.keys():
+        JSON[key] = self.resolveKnownReferences(JSON[key])
+      return JSON  
+  
   def solveQueries(self, JSON):
     if isinstance(JSON, list):
       temp = list()
@@ -595,17 +625,21 @@ class Interpreter:
       return temp
     if not isinstance(JSON, dict): 
       return JSON
-    if 'concept' in JSON and 'query' in JSON['concept']:
-      response = self.query(JSON['concept'])
+    elif 'concept' in JSON and 'query' in JSON['concept']:
+      response = self.query(self.resolveKnownReferences(JSON['concept']))
       if not response: 
         return []
       elif isinstance(response, list) or isinstance(response, set):
         JSON = list()
         for concept in response:
+          JSON.append({'concept': concept.name})
+          # Using name insteaad of hash at least for now
+          '''
           for hashcode in self.context.conceptHashTable:
             if concept is self.context.conceptHashTable[hashcode]:
-              JSON.append({'concept': str(hashcode)})
+              JSON.append({'concept': concept.name})
               break
+          '''
         return JSON
       else:
         raise Exception('assertStatement: Unknown query response')
@@ -622,7 +656,6 @@ class Interpreter:
       return JSON
         
   def assertStatement(self, statementJSON, initiatingClauseHash=None):
-    statementJSON = self.solveQueries(statementJSON)
     if 'AND' in statementJSON or 'OR' in statementJSON:
       for clause in statementJSON.values()[0]:
         self.assertStatement(clause, initiatingClauseHash)
@@ -852,6 +885,7 @@ class Interpreter:
        JSON['statement']['concept'].keys() == ['query']:
         return self.query(JSON['statement']['concept'])
     elif 'statement' in JSON:
+      JSON = self.solveQueries(JSON)
       self.assertStatement(JSON)
       return None
     elif 'equation' in JSON:

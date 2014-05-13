@@ -62,12 +62,14 @@ class BottlenoseObject:
     self.descendants = concept.descendants()
     if utilities.camelCase(concept.name) in self.synonyms: self.synonyms.remove(utilities.camelCase(concept.name))
     self.states = list()
-    descriptors = context.stateGraph.successors(concept)
-    for descriptor in descriptors:
-      self.states.append((descriptor.name, 100))
-    potentialDescriptorEdges = context.potentialStateGraph.out_edges(concept, data=True) if concept in context.potentialStateGraph else []
-    for potentialDescriptorEdge in potentialDescriptorEdges:
-      self.states.append((potentialDescriptorEdge[1].name, int(potentialDescriptorEdge[2]['weight'])))
+    if concept in context.stateGraph:
+      descriptors = context.stateGraph.successors(concept)
+      for descriptor in descriptors:
+        self.states.append((descriptor.name, 100))
+    if concept in context.potentialActionGraph:
+      potentialDescriptorEdges = context.potentialStateGraph.out_edges(concept, data=True) if concept in context.potentialStateGraph else []
+      for potentialDescriptorEdge in potentialDescriptorEdges:
+        self.states.append((potentialDescriptorEdge[1].name, int(potentialDescriptorEdge[2]['weight'])))
     def combineStates(stateTuples):
       evidence = dict()
       for stateTuple in stateTuples:
@@ -84,11 +86,13 @@ class BottlenoseObject:
       return states
     self.states = combineStates(self.states)
     self.components = list()
-    for componentEdge in context.componentGraph.out_edges(concept, data=True):
-      self.components.append((componentEdge[2]['label'], componentEdge[1].name, 100))
-    potentialComponentEdges = context.potentialComponentGraph.out_edges(concept, data=True) if concept in context.potentialComponentGraph else []
-    for potentialComponentEdge in potentialComponentEdges:
-      self.components.append((potentialComponentEdge[2]['label'], potentialComponentEdge[1].name, potentialComponentEdge[2]['weight']))  
+    if concept in context.componentGraph:
+      for componentEdge in context.componentGraph.out_edges(concept, data=True):
+        self.components.append((componentEdge[2]['label'], componentEdge[1].name, 100))
+    if concept in context.potentialComponentGraph:
+      potentialComponentEdges = context.potentialComponentGraph.out_edges(concept, data=True) if concept in context.potentialComponentGraph else []
+      for potentialComponentEdge in potentialComponentEdges:
+        self.components.append((potentialComponentEdge[2]['label'], potentialComponentEdge[1].name, potentialComponentEdge[2]['weight']))  
     def combineComponents(componentTuples):
       evidence = dict()
       for componentTuple in componentTuples:
@@ -108,29 +112,33 @@ class BottlenoseObject:
       return components
     self.components = combineComponents(self.components)
     self.componentOf = list()
-    for componentEdge in context.componentGraph.in_edges(concept, data=True):
-      self.componentOf.append((componentEdge[2]['label'], componentEdge[0].name, 100))
-    potentialComponentOfEdges = context.potentialComponentGraph.in_edges(concept, data=True) if concept in context.potentialComponentGraph else []
-    for potentialComponentOfEdge in potentialComponentOfEdges:
-      self.componentOf.append((potentialComponentOfEdge[2]['label'], potentialComponentOfEdge[0].name, potentialComponentOfEdge[2]['weight']))
+    if concept in context.componentGraph:
+      for componentEdge in context.componentGraph.in_edges(concept, data=True):
+        self.componentOf.append((componentEdge[2]['label'], componentEdge[0].name, 100))
+    if concept in context.potentialComponentGraph:
+      potentialComponentOfEdges = context.potentialComponentGraph.in_edges(concept, data=True) if concept in context.potentialComponentGraph else []
+      for potentialComponentOfEdge in potentialComponentOfEdges:
+        self.componentOf.append((potentialComponentOfEdge[2]['label'], potentialComponentOfEdge[0].name, potentialComponentOfEdge[2]['weight']))
     self.componentOf = combineComponents(self.componentOf)
     self.actions = list()
-    acts = set(context.actionGraph.neighbors(concept))
-    for actor_act in context.actionGraph.out_edges(concept):
-      for act_target in context.actionGraph.out_edges(actor_act[1]):
-        self.actions.append((act_target[0].name, act_target[1].name, 100))
-        acts.remove(act_target[0])
-    for act in acts:
-      self.actions.append((act.name, 'None', 100))
-    potentialActs = set(map(lambda x: x.name, context.potentialActionGraph.neighbors(concept)))
-    for potential_actor_act in context.potentialActionGraph.out_edges(concept):
-      for potential_act_target in context.potentialActionGraph.out_edges(potential_actor_act[1], data=True):
-        self.actions.append((potential_act_target[0].name, potential_act_target[1].name, potential_act_target[2]['weight']))
-        if potential_act_target[0].name in potentialActs:
-          potentialActs.remove(potential_act_target[0].name)
-    for potentialAct in potentialActs:
-      weight = context.potentialActionGraph.in_edges(potentialAct, data=True)[0][2]['weight']
-      self.actions.append((potentialAct.name, 'None', weight))
+    if concept in context.actionGraph:
+      acts = set(context.actionGraph.neighbors(concept))
+      for actor_act in context.actionGraph.out_edges(concept):
+        for act_target in context.actionGraph.out_edges(actor_act[1]):
+          self.actions.append((act_target[0].name, act_target[1].name, 100))
+          acts.remove(act_target[0])
+      for act in acts:
+        self.actions.append((act.name, 'None', 100))
+    if concept in context.potentialActionGraph:
+      potentialActs = set(map(lambda x: x.name, context.potentialActionGraph.neighbors(concept)))
+      for potential_actor_act in context.potentialActionGraph.out_edges(concept):
+        for potential_act_target in context.potentialActionGraph.out_edges(potential_actor_act[1], data=True):
+          self.actions.append((potential_act_target[0].name, potential_act_target[1].name, potential_act_target[2]['weight']))
+          if potential_act_target[0].name in potentialActs:
+            potentialActs.remove(potential_act_target[0].name)
+      for potentialAct in potentialActs:
+        weight = context.potentialActionGraph.in_edges(potentialAct, data=True)[0][2]['weight']
+        self.actions.append((potentialAct.name, 'None', weight))
     def combineActions(actionTuples):
       evidence = dict()
       for actionTuple in actionTuples:
@@ -150,10 +158,12 @@ class BottlenoseObject:
       return actions
     self.actions = combineActions(self.actions)
     self.actedOnBy = list()
-    for act_target in context.actionGraph.in_edges(concept):
-      for actor_act in context.actionGraph.in_edges(act_target[0]):
-        self.actedOnBy.append((act_target[0].name, actor_act[0].name, 100))
-    for potential_act_target in context.potentialActionGraph.in_edges(concept):
-      for potential_actor_act in context.potentialActionGraph.in_edges(potential_act_target[0], data=True):
-        self.actedOnBy.append((potential_act_target[0].name, potential_actor_act[0].name, potential_actor_act[2]['weight']))
-    self.actedOnBy = combineActions(self.actedOnBy)
+    if concept in context.actionGraph:
+      for act_target in context.actionGraph.in_edges(concept):
+        for actor_act in context.actionGraph.in_edges(act_target[0]):
+          self.actedOnBy.append((act_target[0].name, actor_act[0].name, 100))
+    if concept in context.potentialActionGraph:
+      for potential_act_target in context.potentialActionGraph.in_edges(concept):
+        for potential_actor_act in context.potentialActionGraph.in_edges(potential_act_target[0], data=True):
+          self.actedOnBy.append((potential_act_target[0].name, potential_actor_act[0].name, potential_actor_act[2]['weight']))
+      self.actedOnBy = combineActions(self.actedOnBy)

@@ -43,7 +43,7 @@ grammar = Grammar("""
   concept_or_list       = concept_list / concept
   concept_list          = concept ("," concept)+
   concept               = " "* (query / simple_concept) " "*
-  simple_concept        = ~"\s*!?[A-Z0-9]*\*?\s*"i
+  simple_concept        = ~"\s*!?[A-Z0-9]*\*?\^?\s*"i
 """)
 
 class Translator(NodeVisitor):

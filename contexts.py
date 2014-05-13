@@ -36,6 +36,8 @@ class Context:
   def incorporateConcept(self, concept, dontRemember=False):
     hash = os.urandom(5).encode('hex')
     self.conceptHashTable[hash] = concept
+    if isinstance(self, Subcontext):
+      self.supercontext.incorporateConcept(concept)
     if isinstance(concept, NounPhrase):
       self.componentGraph.add_node(concept)
       self.actionGraph.add_node(concept)
@@ -44,8 +46,6 @@ class Context:
       self.potentialActionGraph.add_node(concept)
       self.potentialStateGraph.add_node(concept)
       self.concepts['noun_phrases'].add(concept)
-      if isinstance(self, Subcontext):
-        self.supercontext.concepts['noun_phrases'].add(concept)
       if not dontRemember:
         self.registerChange(concept)
     elif isinstance(concept, VerbPhrase):
@@ -54,14 +54,10 @@ class Context:
       self.potentialActionGraph.add_node(concept)
       self.potentialStateGraph.add_node(concept)
       self.concepts['verb_phrases'].add(concept)
-      if isinstance(self, Subcontext):
-        self.supercontext.concepts['verb_phrases'].add(concept)
     elif isinstance(concept, Descriptor):
       self.stateGraph.add_node(concept)
       self.potentialStateGraph.add_node(concept)
       self.concepts['descriptors'].add(concept)
-      if isinstance(self, Subcontext):
-        self.supercontext.concepts['descriptors'].add(concept)
       
   def newNounPhrase(self, nounPhrase, initiatingClauseHash=None):
     concept = NounPhrase(nounPhrase)
@@ -186,20 +182,22 @@ class Context:
           ruleEdges = Clause.ruleGraph.out_edges(clause.hashcode)
           for evidenceEdge in evidenceEdges:
             dependentClause = Clause.hashtable[evidenceEdge[1]]
+            JSON = interpreter.solveQueries(copy.deepcopy(dependentClause.JSON))
             if dependentClause in recentlyExecutedDependentClauses:
               continue
             else:
               recentlyExecutedDependentClauses.add(dependentClause)
               interpreter.setContext(subcontext)
-              interpreter.assertStatement(dependentClause.JSON, clause.hashcode)
+              interpreter.assertStatement(JSON, clause.hashcode)
               interpreter.setContext(self)
           for ruleEdge in ruleEdges:
             dependentClause = Clause.hashtable[ruleEdge[1]]
+            JSON = interpreter.solveQueries(copy.deepcopy(dependentClause.JSON))
             if dependentClause in recentlyExecutedDependentClauses:
               continue
             else:
               recentlyExecutedDependentClauses.add(dependentClause)
-              interpreter.assertStatement(dependentClause.JSON)
+              interpreter.assertStatement(JSON)
         self.shortTermMemory = brainFreeze  
                 
   def registerChange(self, concept):
@@ -389,7 +387,8 @@ class Context:
       mergedConcept.classify(parent)
     for parent in concept2.parents():
       mergedConcept.classify(parent)
-    graphs = [self.actionGraph, self.componentGraph, self.stateGraph, self.potentialActionGraph, self.potentialComponentGraph, self.potentialStateGraph]
+    graphs = [self.actionGraph, self.componentGraph, self.stateGraph]
+    potentialGraphs = [self.potentialActionGraph, self.potentialComponentGraph, self.potentialStateGraph]
     concepts = [concept1, concept2]
     for concept in concepts:
       for graph in graphs:
@@ -397,11 +396,32 @@ class Context:
           in_edges = graph.in_edges(concept, data=True)
           out_edges = graph.out_edges(concept, data=True)
           for edge in in_edges:
-            graph.add_edge(edge[0], mergedConcept, edge[2])
+            graph.add_edge(edge[0], mergedConcept, attr_dict=edge[2])
           for edge in out_edges:
-            graph.add_edge(mergedConcept, edge[1], edge[2])
+            graph.add_edge(mergedConcept, edge[1], attr_dict=edge[2])
+      for graph in potentialGraphs:
+        if concept in graph:
+          in_edges = graph.in_edges(concept, keys=True, data=True)
+          out_edges = graph.out_edges(concept, keys=True, data=True)
+          for edge in in_edges:
+            graph.add_edge(edge[0], mergedConcept, key=edge[2], attr_dict=edge[3])
+          for edge in out_edges:
+            graph.add_edge(mergedConcept, edge[1], key=edge[2], attr_dict=edge[3])
+    if initiatingClauseHash:
+      def rewriteRecord(edgeRecord):
+        graphType = edgeRecord[0]
+        graphs = {'potentialComponentGraph': self.potentialComponentGraph}
+        sourceEdge = edgeRecord[1] if edgeRecord[1] != concept1 and edgeRecord[1] != concept2 else mergedConcept
+        destEdge = edgeRecord[2] if edgeRecord[2] != concept1 and edgeRecord[2] != concept2 else mergedConcept
+        clause = edgeRecord[3]
+        return ((graphType, sourceEdge, destEdge, clause))
+      potentialEdgeRecords = self.clauseToPotentialEdges[initiatingClauseHash]
+      self.clauseToPotentialEdges[initiatingClauseHash] = map(rewriteRecord, potentialEdgeRecords)
     self.remove(concept1)
     self.remove(concept2)
+    if initiatingClauseHash:
+      self.supercontext.remove(concept1)
+      self.supercontext.remove(concept2)
     if not initiatingClauseHash:
       self.registerChange(mergedConcept)
     return mergedConcept 
@@ -411,6 +431,12 @@ class Context:
       interpreter = Interpreter(self)
       return set(interpreter.query(type))
     response = set()
+    if re.match('.*\^', type.strip()):
+      query = type[:-1]
+      all = self.queryNounPhrases(query)
+      concept = self.findLastReferenced(all)
+      response.add(concept)
+      return response
     if re.match('^!', type):
       concept = self.newNounPhrase(type)
       response.add(concept)
