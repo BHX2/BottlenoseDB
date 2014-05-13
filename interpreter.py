@@ -709,13 +709,20 @@ class Interpreter:
         if results:
           results = self.extractRootsFromQueryResults(clauseJSON['state']['subject'], results)
     elif 'action' in clauseJSON:
-      if not clauseJSON['action']['actor']:
-        results = self.queryAction(clauseJSON, returnActor=False, returnTarget=True )
+      if clauseJSON['action']['target'] == subjectJSON:
+        results = self.queryAction(clauseJSON, returnActor=False, returnTarget=True)
+      elif 'component' in clauseJSON['action']['target'] and self.generateLabelChain(clauseJSON['action']['target']['component'])[0] == subjectJSON['concept']:
+        results = self.queryAction(clauseJSON, returnActor=False, returnTarget=True)
+        if results:
+          results = self.extractRootsFromQueryResults(clauseJSON['action']['target'], results)
+      elif clauseJSON['action']['actor'] == subjectJSON:
+        results = self.queryAction(clauseJSON, returnActor=True, returnTarget=False)
+      elif 'component' in clauseJSON['action']['actor'] and self.generateLabelChain(clauseJSON['action']['actor']['component'])[0] == subjectJSON['concept']:
+        results = self.queryAction(clauseJSON, returnActor=True, returnTarget=False)
+        if results:
+          results = self.extractRootsFromQueryResults(clauseJSON['action']['actor'], results)
       else:
-        if clauseJSON['action']['target'] == subjectJSON:
-          results = self.queryAction(clauseJSON, returnActor=False, returnTarget=True)
-        else:
-          results = self.queryAction(clauseJSON, returnActor=True, returnTarget=False)
+        results = self.queryAction(clauseJSON, returnActor=True, returnTarget=True)
     elif 'component_assignment' in clauseJSON:
       if clauseJSON['component_assignment']['target']['component']['branch'] == subjectJSON['concept'] or clauseJSON['component_assignment']['assignment'] == subjectJSON:
         results = self.queryComponentAssignment(clauseJSON)
