@@ -52,7 +52,7 @@ class Interpreter:
       if assertBranches:
         branch = self.context.newNounPhrase(branchPhrase, initiatingClauseHash)
         self.context.setComponent(stem, branchPhrase, branch)
-        branch.classify(utilities.sanitize(branchPhrase).split()[-1])
+        #branch.classify(utilities.sanitize(branchPhrase).split()[-1])
         branches.add(branch)
     return branches
  
@@ -459,7 +459,7 @@ class Interpreter:
         uninstantiatedAssignments.append(componentAdditionJSON['component_addition']['addition']['concept'])
     for uninstantiatedAssignment in uninstantiatedAssignments:
       assignment = self.context.newNounPhrase(uninstantiatedAssignment, initiatingClauseHash)
-      assignment.classify(utilities.sanitize(branchPhrase).split()[-1])
+      #assignment.classify(utilities.sanitize(branchPhrase).split()[-1])
       assignments.append(assignment)
     for assignment in assignments:
       if len(unspecifiedBranches) > 0:
@@ -744,14 +744,14 @@ class Interpreter:
           results |= branches
           roots = self.retrieveRoots(clauseJSON['component_assignment']['target'], filter=clauseJSON['component_assignment']['assignment'])
           if roots: 
-            results |= roots
+            results |= set(roots)
       elif 'component' in clauseJSON:
         branches = self.queryComponent(clauseJSON)
         if branches:
           results |= branches
           roots = self.retrieveRoots(clauseJSON)
           if roots: 
-            results |= roots
+            results |= set(roots)
       elif 'concept' in clauseJSON:
         results |= self.queryConcept(clauseJSON)
       elif 'query' in clauseJSON:

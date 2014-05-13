@@ -1,5 +1,5 @@
 #BottlenoseDB
-BottlenoseDB is a database system for representing data that is highly self-referential. The engine is written in Python and uses a simple scripting language to streamline communication of logic while allowing compensation for robust natural language vocabularies. The goal of BottlenoseDB is to bridge the gap between naturally (for humans) interdependent expressions of hierarchical verbal knowledge with the speed, accuracy, and remarkable persistence afforded by computers. BottlenoseDB can be used out-of-the-box via CLI.py (command-line interface) or imported as a module. The following is a guide to Bottlenose scripting syntax.
+BottlenoseDB is a database system for representing data that is highly self-referential. The engine is written in Python and uses a simple scripting language to streamline communication of logic while allowing compensation for robust natural language vocabularies. The goal of BottlenoseDB is to bridge the gap between naturally (for humans) interdependent expressions of hierarchical verbal knowledge with the remarkable speed, accuracy, and persistence afforded by computers. BottlenoseDB can be used out-of-the-box via CLI.py (command-line interface) or imported as a module. The following is a guide to Bottlenose scripting syntax.
 
 ###Synonyms
 Use `~` to indicate synonymous words or phrases. Multiple synonyms can be defined at once if seperated by commas. All phrases should be written in *camelCase* such that spaces are removed between words, the first word is in all lower case, and all subsequent words are capitalized; capitalization of proper nouns and acronyms can be preserved. Examples: *houseCat*, *Garfield*, *LOLCat*. In general the singular form of noun phrases should be used. Also, all punctuation including single-quotes should be omitted.
@@ -8,13 +8,13 @@ cat ~ kitty, feline
 ```
 
 ###Taxonomy
-Use `=/` to indicate an *is-a-type-of* relationship. Alternatively use `/=` to indicate the converse relationship. 
+Use `=/` to indicate an *is-a-type-of* relationship. Alternatively use `/=` to indicate the converse relationship. Of note, everything is a `thing` by default.
 ```
 cat =/ mammal
 animal /= mammal
 ```
 
-Both taxonomy and synonyms are applied universally to all language expressed thereafter (rather than being pinned down to individual instances). While it may seem tempting, neither synonym nor taxonomy operators should be introduced in conditional expressions because of this.
+Both taxonomy and synonyms are applied universally to all language expressed thereafter (rather than being pinned down to individual instances). While it may seem tempting, neither synonym nor taxonomy operators should be introduced in conditional expressions because of this. 
 
 ###Components
 Use `.` to indicate the existence of a **Component** (*has-a*) or other type of relationship. This can be paired with `=` to assign the role to a single entity or with `+=` to add an element to a relationship that is not exclusively singular. In the latter case, multiple relationships can be added at once using commas to delimit a list of concepts. Both the **Component** expression and any assigned entities should be noun phrases. If the attribute is in the form of a verb phrase use **Actions** as described below. Again note that all phrases should be singular. To remove an entity simply use `-=`.
@@ -85,7 +85,7 @@ mouse*.eats(cheese)
 ###Rules & Clauses
 The real power of BottlenoseDB is derived from leveraging the "semantic glue" described above in forming dynamic artificial cognitive beliefs. Each **Belief** is made up of **Clauses**, which are testable statements referencing existence of a **Concept** or assertions of **Component**, **Action**, or **State**. A **Rule** follows the syntax of two **Clauses** seperated by `>>`. `A >> B` denotes *if A then B*. The second (or dependent) **Clause** is executed immediately after the first is found to be true. BottlenoseDB automatically finds and tests relevant **Rules** that have been described previously, and attempts co-reference resolution. One use of **Rules** is to hardcode more "semantic glue" than is otherwise available. Using the cat example above, we can connect the **Action** of 'owning a cat' to the **Component** relationship of 'cat having an owner'.
 ```
-cat.owner=person >> person.owns(cat)
+cat.owner=thing >> thing.owns(cat)
 ```
 
 ###Logic
