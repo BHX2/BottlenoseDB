@@ -28,18 +28,21 @@ class Interpreter:
         stems = self.retrieveRoots(originalJSON) 
       stems = set([x for x in stems if x in self.context]) 
       roots = stems
-    if len(stems) == 0:
-      if assertBranches:
-        stem = self.assertConcept(stemJSON, initiatingClauseHash)
+    
+    if assertBranches:
+      if len(stems) == 0:
+          stem = self.assertConcept(stemJSON, initiatingClauseHash)
+      elif len(stems) == 1:
+        (stem,) = stems
       else:
-        return set()
-    elif len(stems) == 1:
-      (stem,) = stems
+        stem = self.context.findLastReferenced(stems)
+        #raise Exception('retrieveComponent: Too many matching stems')
+      stems = {stem}
     else:
-      stem = self.context.findLastReferenced(stems)
-      #raise Exception('retrieveComponent: Too many matching stems')
+      if len(stems) == 0:
+        return set()
       
-    edges = self.context.componentGraph.out_edges(stem, data=True)
+    edges = self.context.componentGraph.out_edges(stems, data=True)
     branches = set()
     for edge in edges:
       if edge[2]['label'] == branchPhrase:
@@ -117,6 +120,7 @@ class Interpreter:
     return self.retrieveComponent(JSON['component_assignment']['target']['component']['stem'], JSON['component_assignment']['target']['component']['branch'], branchFilter=JSON['component_assignment']['assignment']['concept'], assertBranches=False)
     
   def queryState(self, JSON):
+    response = set()
     if 'quality' in JSON['state']['description']:
       if re.match('^!', JSON['state']['description']['quality']):
         raise Exception('Negatives can not be used as filtering criteria.')
@@ -129,7 +133,6 @@ class Interpreter:
     descriptionJSON = JSON['state']['description']
     if 'quantity' in descriptionJSON:
       targetDescriptor = descriptionJSON['quantity']
-      response = set()
       if potentialSubjects:
         for potentialSubject in potentialSubjects:
           descriptors = self.context.stateGraph.successors(potentialSubject)
@@ -139,7 +142,6 @@ class Interpreter:
                 response.add(potentialSubject)
     else:
       targetDescriptor = descriptionJSON['quality']
-      response = set()
       if potentialSubjects:
         for potentialSubject in potentialSubjects:
           descriptors = self.context.stateGraph.successors(potentialSubject)
@@ -385,10 +387,11 @@ class Interpreter:
       else:
         stem = stems
     elif 'concept' in componentAssignmentJSON['component_assignment']['target']['component']['stem']:
-      stem = self.assertConcept(componentAssignmentJSON['component_assignment']['target']['component']['stem'], initiatingClauseHash)
+      stem = {self.assertConcept(componentAssignmentJSON['component_assignment']['target']['component']['stem'], initiatingClauseHash)}
     else:
       raise Exception('assertComponentAssignment: Unknown component structure')
     branchPhrase = componentAssignmentJSON['component_assignment']['target']['component']['branch']
+    branches = self.retrieveComponent(componentAssignmentJSON['component_assignment']['target']['component']['stem'], componentAssignmentJSON['component_assignment']['target']['component']['branch'], assertBranches=True, initiatingClauseHash=initiatingClauseHash)    
     def checkIfNegativeAssignment(concept):
       if re.match('^!', concept['concept']):
         affirmativeConcept = concept['concept'][1:]
@@ -397,7 +400,6 @@ class Interpreter:
       else:
         return False    
     if checkIfNegativeAssignment(componentAssignmentJSON['component_assignment']['assignment']): return
-    branches = self.retrieveComponent(componentAssignmentJSON['component_assignment']['target']['component']['stem'], componentAssignmentJSON['component_assignment']['target']['component']['branch'], assertBranches=True, initiatingClauseHash=initiatingClauseHash)
     if branches and not initiatingClauseHash:
       if isinstance(branches, set):
         for branch in branches:
@@ -421,7 +423,8 @@ class Interpreter:
       stem = self.assertConcept(componentAdditionJSON['component_addition']['target']['component']['stem'], initiatingClauseHash)
     else:
       raise Exception('assertComponentAddition: Unknown component structure')
-    branchPhrase = componentAdditionJSON['component_addition']['target']['component']['branch']
+    branchPhrase = utilities.camelCase(componentAdditionJSON['component_addition']['target']['component']['branch'])
+    branches = self.retrieveComponent(componentAdditionJSON['component_addition']['target']['component']['stem'], componentAdditionJSON['component_addition']['target']['component']['branch'], assertBranches=True, initiatingClauseHash=initiatingClauseHash) 
     def checkIfNegativeAssignment(concept):
       if re.match('^!', concept['concept']):
         affirmativeConcept = concept['concept'][1:]
@@ -433,9 +436,7 @@ class Interpreter:
       componentAdditionJSON['component_addition']['addition'][:] = [x for x in componentAdditionJSON['component_addition']['addition'] if not checkIfNegativeAssignment(x)]
     else:
       if checkIfNegativeAssignment(componentAdditionJSON['component_addition']['addition']): return
-    unspecifiedBranches = []
-    branchPhrase = utilities.camelCase(componentAdditionJSON['component_addition']['target']['component']['branch'])
-    branches = self.retrieveComponent(componentAdditionJSON['component_addition']['target']['component']['stem'], componentAdditionJSON['component_addition']['target']['component']['branch'], assertBranches=True, initiatingClauseHash=initiatingClauseHash)    
+    unspecifiedBranches = []   
     if branches:
       if isinstance(branches, set):
         for branch in branches:
@@ -668,6 +669,22 @@ class Interpreter:
     elif 'arithmetic_operation' in statementJSON['statement']:
       self.assertArithmeticOperation(statementJSON['statement'], initiatingClauseHash)
   
+  def extractRootsFromQueryResults(self, componentJSON, results, chain=None):
+    if not results:
+      return []
+    if chain == None:
+      chain = self.generateLabelChain(componentJSON['component'])
+    relationship = chain.pop()
+    if len(chain) == 0:
+      return results
+    else:
+      edges = self.context.componentGraph.in_edges(results, data=True)
+      nextResults = list()
+      for edge in edges:
+        if edge[2]['label'] == relationship:
+          nextResults.append(edge[0])
+      return self.extractRootsFromQueryResults(componentJSON, nextResults, chain)
+    
   def query(self, queryJSON):
     results = list()
     subjectJSON = queryJSON['query']['subject']
@@ -688,6 +705,9 @@ class Interpreter:
         results = self.retrieveRoots(clauseJSON)
     elif 'state' in clauseJSON:
       results = self.queryState(clauseJSON)
+      if 'component' in clauseJSON['state']['subject'] and self.generateLabelChain(clauseJSON['state']['subject']['component'])[0] == subjectJSON['concept']:
+        if results:
+          results = self.extractRootsFromQueryResults(clauseJSON['state']['subject'], results)
     elif 'action' in clauseJSON:
       if not clauseJSON['action']['actor']:
         results = self.queryAction(clauseJSON, returnActor=False, returnTarget=True )

@@ -47,33 +47,31 @@ cat#!feral
 BottlenoseDB also allows for entities (specifically those expressed via noun phrases) to be queried. **Queries** start with a `?` (query operator) preceding a noun phrase (subject). This is followed by an optional **Clause** (see below for explanation) between parantheses which contains the said subject. In addition to allowing users to inspect instances, **Queries** can also be used anywhere a concept is used; however, an important consideration is that they do not follow co-reference resolution rules and thus do not function intuitively within **Beliefs** (also explained below).
 ```
 ?cat
-
-  cat (9b13dc1201)
-    cat is also known as: feline, kitty
-    cat is a mammal
-    cat is furry
-    cat (has owner) --> John
-    cat (has whiskers) --> whiskers
-    cat (has fur) --> fur
-    cat (has favoriteFood) --> tuna
-    cat (has favoriteFood) --> catnip
-    cat (has favoriteFood) --> oatmeal
-    cat (playsWith) --> yarn
-    cat (chases) --> mouse
+ 
+cat (dc075eb396)
+  cat is also known as: feline, kitty
+  cat is a mammal
+  cat is furry
+  cat (has owner) --> John
+  cat (has whiskers) --> whiskers
+  cat (has fur) --> fur
+  cat (has favoriteFood) --> tuna
+  cat (has favoriteFood) --> catnip
+  cat (has favoriteFood) --> oatmeal
+  cat (playsWith) --> yarn
+  cat (chases) --> mouse
 
 ?owner(cat.owner)
 
-  John (d41e6eb4e3)
-    John is a owner
-    cat (has owner) --> John
+John (68249422ec)
+  cat (has owner) --> John
 
 ?mouse(thing.chases(mouse))
 
-  mouse (b84364aace)
-    cat (chases) --> mouse
+mouse (589fbb56d6)
+  cat (chases) --> mouse
 
 ```
-
 In the above example one may have noticed the hexadecimal strings beside concept names (ex: `03da1ffedb`). These are hashcodes for the individual instances and can be used in place of noun phrase in expressions. They are useful in command-line in circumstances where multiple conceptual instances with the same name exist; however, they should never be used within **Clauses** becaues of their ephemeral nature.
 
 ###Instantiation
@@ -83,7 +81,7 @@ mouse*.eats(cheese)
 ```
 
 ###Rules & Clauses
-The real power of BottlenoseDB is derived from leveraging the "semantic glue" described above in forming dynamic artificial cognitive beliefs. Each **Belief** is made up of **Clauses**, which are testable statements referencing existence of a **Concept** or assertions of **Component**, **Action**, or **State**. A **Rule** follows the syntax of two **Clauses** seperated by `>>`. `A >> B` denotes *if A then B*. The second (or dependent) **Clause** is executed immediately after the first is found to be true. BottlenoseDB automatically finds and tests relevant **Rules** that have been described previously, and attempts co-reference resolution. One use of **Rules** is to hardcode more "semantic glue" than is otherwise available. Using the cat example above, we can connect the **Action** of 'owning a cat' to the **Component** relationship of 'cat having an owner'.
+The real power of BottlenoseDB is derived from leveraging the "semantic glue" described above in forming dynamic artificial cognitive beliefs. Each **Belief** is made up of **Clauses**, which are testable statements referencing existence of a **Concept** or assertions of **Component**, **Action**, or **State**. A **Rule** follows the syntax of two **Clauses** seperated by `>>`. `A >> B` denotes *if A then B*. The second (or dependent) **Clause** is executed immediately after the first is found to be true. BottlenoseDB automatically finds and tests relevant **Rules** that have been described previously, and attempts co-reference resolution. One use of **Rules** is to hardcode more "semantic glue" than is otherwise available. Using the cat example above, we can connect the **Action** of 'owning a cat' to the **Component** relationship of 'cat having an owner'. Of note, **Beliefs** are not applied to anything asserted before codifying of said **Belief** (so they are best described first).
 ```
 cat.owner=thing >> thing.owns(cat)
 ```
@@ -152,7 +150,6 @@ cat (8ba03d85c9)
 ###Roadmap
 
 1. Implement persistence via pickling as well as export/import to plain text files
-2. Implement tabbed autocompletion using *(py)readline* & *rlcompleter*
-3. Polish CLI interface: add intro, help, colors, tables, benchmarks, etc
-4. Implement logging, data backup, and undo functionality
-5. Experiment with rule-based artificial cognition
+2. Implement logging, data backup, and undo functionality
+3. Experiment with rule-based artificial cognition
+4. More rigorous testing and benchmarking
