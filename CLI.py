@@ -18,6 +18,7 @@ Copyright 2014 Bharath Panchalamarri Bhushan
 
 #!usr/bin/python2.7 -tt
 
+import os
 import sys
 import traceback
 import re
@@ -102,6 +103,25 @@ def main():
       sys.exit()
     elif input == ':context' or input == ':c':
       switchContext(bottlenose)
+    elif re.match('^:l', input):
+      match = re.match('(^:l.*)\s(.*)', input)
+      if not match:
+        puts(red('usage: :load <directoryName>'))
+      else:
+        cargoIsFile = re.match('(.*)(\.bottle$)', match.group(2))
+        if cargoIsFile:
+          filePath = cargoIsFile.group(0)
+          if os.path.isfile(filePath):
+            bottlenose.loadFile(filePath, onlyBeliefs=True)
+            bottlenose.loadFile(filePath, onlyStatements=True)
+          else:
+            puts(red('File not found'))
+        else:
+          dirPath = match.group(2)
+          if os.path.isdir(dirPath):
+            bottlenose.loadDirectory(dirPath)
+          else:
+            puts(red('Directory not found'))
     elif input.strip() == '':
       continue
     else:

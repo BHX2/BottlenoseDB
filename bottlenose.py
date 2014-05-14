@@ -18,6 +18,8 @@ Copyright 2014 Bharath Panchalamarri Bhushan
 
 #!usr/bin/python2.7 -tt
 
+import os
+import fnmatch
 import sys
 sys.dont_write_bytecode = True
 # Keeps directory clean by not compiling local files to bytecode
@@ -38,6 +40,9 @@ class Bottlenose:
     
   def tell(self, input):
     JSON = self._translator.visit(grammar.parse(input))
+    return self.tellJSON(JSON)
+  
+  def tellJSON(self, JSON):
     results = self._interpreter.interpret(JSON)
     self._context.ponderRecentMentions()
     if isinstance(results, set) or isinstance(results, list):
@@ -67,6 +72,28 @@ class Bottlenose:
       self._context = self._contexts[index]
       self._interpreter.setContext(self._contexts[index])
       
+  def loadFile(self, filePath, onlyBeliefs=False, onlyStatements=False):
+    file = open(filePath, 'r')
+    for line in file:
+      line = line.rstrip("\n")
+      JSON = self._translator.visit(grammar.parse(line))
+      if 'statement' in JSON:
+        if not onlyBeliefs:
+          self.tellJSON(JSON)
+      else:
+        if not onlyStatements:
+          self.tellJSON(JSON)
+        
+  def loadDirectory(self, dirPath):
+    filePaths = []
+    for root, dirnames, filenames in os.walk(dirPath):
+      for filename in fnmatch.filter(filenames, '*.bottle'):
+        filePaths.append(os.path.join(root, filename))
+    for filePath in filePaths:
+      self.loadFile(filePath, onlyBeliefs=True)
+    for filePath in filePaths:
+      self.loadFile(filePath, onlyStatements=True)    
+    
 class BottlenoseObject:
   def __init__(self, concept, context):
     self.name = concept.name
