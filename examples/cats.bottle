@@ -1,0 +1,31 @@
+cat ~ kitty, feline
+cat =/ mammal
+animal /= mammal
+John =/ person
+cat.owner = John
+cat.favoriteFood += tuna, catnip, oatmeal, grass
+cat.favoriteFood -= grass
+cat.sleeps()
+cat.sleeps(!)
+cat.chases(mouse)
+cat.playsWith(yarn)
+cat.likes(!dog)
+cat#furry
+cat.fur#orange
+cat.whiskers#long
+cat#!feral
+mouse*.eats(cheese)
+cat.owner=person >> person.owns(cat)
+cat & laserPointer >> cat.chases(laserPointer)
+cat#relaxed | cat#stressed >> cat.purrs()
+cat.sunbathes() >>+ cat#happy
+cat#wet >>- cat#happy
+eq[Whiskers.age = Henry.age + 2]
+Henry.age#14
+Whiskers.age
+Henry.age+1
+cat.eats(thirtyPoundCheeseBurger) >> cat.weight+30
+cat.weight > 20 >> cat#fat
+cat.weight <=5 >> cat#skinny
+cat.weight#10
+cat.eats(thirtyPoundCheeseBurger)

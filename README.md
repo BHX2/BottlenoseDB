@@ -19,6 +19,7 @@ Both taxonomy and synonyms are applied universally to all language expressed the
 ###Components
 Use `.` to indicate the existence of a **Component** (*has-a*) or other type of relationship. This can be paired with `=` to assign the role to a single entity or with `+=` to add an element to a relationship that is not exclusively singular. In the latter case, multiple relationships can be added at once using commas to delimit a list of concepts. Both the **Component** expression and any assigned entities should be noun phrases. If the attribute is in the form of a verb phrase use **Actions** as described below. Again note that all phrases should be singular. To remove an entity simply use `-=`.
 ```
+John =/ person
 cat.owner = John
 cat.favoriteFood += tuna, catnip, oatmeal, grass
 cat.favoriteFood -= grass
@@ -86,7 +87,7 @@ mouse*.eats(cheese)
 ###Rules & Clauses
 The real power of BottlenoseDB is derived from leveraging the "semantic glue" described above in forming dynamic artificial cognitive beliefs. Each **Belief** is made up of **Clauses**, which are testable statements referencing existence of a **Concept** or assertions of **Component**, **Action**, or **State**. A **Rule** follows the syntax of two **Clauses** seperated by `>>`. `A >> B` denotes *if A then B*. The second (or dependent) **Clause** is executed immediately after the first is found to be true. BottlenoseDB automatically finds and tests relevant **Rules** that have been described previously, and attempts co-reference resolution. One use of **Rules** is to hardcode more "semantic glue" than is otherwise available. Using the cat example above, we can connect the **Action** of 'owning a cat' to the **Component** relationship of 'cat having an owner'. Of note, **Beliefs** are not applied to anything asserted before codifying of said **Belief** (so they are best described first).
 ```
-cat.owner=thing >> thing.owns(cat)
+cat.owner=person >> person.owns(cat)
 ```
 
 ###Logic
