@@ -22,7 +22,8 @@ import os
 import sys
 import traceback
 import re
-from clint.textui import puts, colored, indent, columns
+from clint import arguments
+from clint.textui import puts, colored, indent
 
 sys.dont_write_bytecode = True
 # Keeps directory clean by not compiling local files to bytecode
@@ -96,7 +97,18 @@ def inspectConcept(object):
         puts(actedOnByTuple[1] + ' (' + actedOnByTuple[0] + ') --> ' + green(object.name) + magenta(" [" + str(actedOnByTuple[2]) + "]"))
           
 def main():
-  bottlenose = Bottlenose()
+  args = arguments.Args()
+  if '--bootstrap' in args.flags or '-b' in args.flags:
+    bottlenose = Bottlenose(bootstrapVocabulary=True)
+  else:
+    bottlenose = Bottlenose()
+  if args.files:
+    for file in args.files:
+      if re.match('(.*)(\.bottle$)', file):
+        bottlenose.loadFile(file, onlyBeliefs=True)
+    for file in args.files:
+      if re.match('(.*)(\.bottle$)', file):
+        bottlenose.loadFile(file, onlyStatements=True)
   while True:
     input = raw_input('> ')
     if input == ':exit' or input == ':x': 

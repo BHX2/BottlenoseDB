@@ -27,7 +27,7 @@ class Concept:
   taxonomy = Taxonomy()
   thesaurus = dict()
   
-  def __init__(self, name=None, type=None, bootstrapVocabulary=False):
+  def __init__(self, name=None, type=None, bootstrapVocabulary=None):
     if name:
       if getattr(self, 'isQuantity', False):
         self.name = str(name)
@@ -37,12 +37,12 @@ class Concept:
       self.name = None
     if type: 
       self.classify(utilities.sanitize(type))
-    if bootstrapVocabulary:
-      self.bootstrapVocabulary = True
-      self.wordnetClassifier = WordNetClassifier()
-      self.taxonomy.classifiers.append(self.wordnetClassifier)
-    else:
-      self.bootstrapVocabulary = False
+    if bootstrapVocabulary == True:
+      Concept.bootstrapVocabulary = True
+      Concept.wordnetClassifier = WordNetClassifier()
+      Concept.taxonomy.classifiers.append(Concept.wordnetClassifier)
+    elif bootstrapVocabulary == False:
+      Concept.bootstrapVocabulary = False
   
   def parents(self, name=None):
     if not name:
@@ -53,16 +53,16 @@ class Concept:
     for name in names:
       name = utilities.sanitize(name)
       if name.istitle():
-        self.taxonomy.classifiers = []
-        self.taxonomy.case_sensitive = True
+        Concept.taxonomy.classifiers = []
+        Concept.taxonomy.case_sensitive = True
       if not getattr(self, 'isVerb', False):
-        response |= set(utilities.unicodeDecode(self.taxonomy.parents(name, recursive=False)))
+        response |= set(utilities.unicodeDecode(Concept.taxonomy.parents(name, recursive=False)))
       else:
-        response |= set(utilities.unicodeDecode(self.taxonomy.parents(name, recursive=False, pos='VB')))
+        response |= set(utilities.unicodeDecode(Concept.taxonomy.parents(name, recursive=False, pos='VB')))
       if name.istitle():
-        if self.bootstrapVocabulary:
-          self.taxonomy.classifiers.append(self.wordnetClassifier)
-        self.taxonomy.case_sensitive = False
+        if Concept.bootstrapVocabulary:
+          Concept.taxonomy.classifiers.append(Concept.wordnetClassifier)
+        Concept.taxonomy.case_sensitive = False
     return response
     
   def ancestors(self, name=None):
@@ -74,20 +74,20 @@ class Concept:
     for name in names:
       name = utilities.sanitize(name)
       if name.istitle():
-        self.taxonomy.classifiers = []
-        self.taxonomy.case_sensitive = True
+        Concept.taxonomy.classifiers = []
+        Concept.taxonomy.case_sensitive = True
       if not getattr(self, 'isVerb', False):
-        response |= set(utilities.unicodeDecode(self.taxonomy.parents(name, recursive=True)))
+        response |= set(utilities.unicodeDecode(Concept.taxonomy.parents(name, recursive=True)))
       else:
-        response |= set(utilities.unicodeDecode(self.taxonomy.parents(name, recursive=True, pos='VB')))
+        response |= set(utilities.unicodeDecode(Concept.taxonomy.parents(name, recursive=True, pos='VB')))
       if name.istitle():
-        if self.bootstrapVocabulary:
-          self.taxonomy.classifiers.append(self.wordnetClassifier)
-        self.taxonomy.case_sensitive = False
+        if Concept.bootstrapVocabulary:
+          Concept.taxonomy.classifiers.append(Concept.wordnetClassifier)
+        Concept.taxonomy.case_sensitive = False
         temp = set()
         for term in response:
           if not utilities.sanitize(term).istitle():
-            temp |= set(utilities.unicodeDecode(self.taxonomy.parents(utilities.sanitize(term), recursive=True)))
+            temp |= set(utilities.unicodeDecode(Concept.taxonomy.parents(utilities.sanitize(term), recursive=True)))
         response |= temp
     return response
     
@@ -101,9 +101,9 @@ class Concept:
       name = utilities.sanitize(name)
       if name.istitle(): return
       if not getattr(self, 'isVerb', False):
-        firstPass = utilities.unicodeDecode(self.taxonomy.children(name, recursive=False))
+        firstPass = utilities.unicodeDecode(Concept.taxonomy.children(name, recursive=False))
       else:
-        firstPass = utilities.unicodeDecode(self.taxonomy.children(name, recursive=False, pos='VB'))
+        firstPass = utilities.unicodeDecode(Concept.taxonomy.children(name, recursive=False, pos='VB'))
       for thing in firstPass:
         if utilities.sanitize(thing).istitle():
           continue
@@ -131,9 +131,9 @@ class Concept:
     child = utilities.sanitize(child)
     parent = utilities.sanitize(parent)
     if not self.isA(child, parent) and not parent.istitle():
-      self.taxonomy.case_sensitive = True
-      self.taxonomy.append(child, type=parent)
-      self.taxonomy.case_sensitive = False
+      Concept.taxonomy.case_sensitive = True
+      Concept.taxonomy.append(child, type=parent)
+      Concept.taxonomy.case_sensitive = False
     
   def isA(self, term1, term2=None):
     if not term2:
@@ -151,20 +151,20 @@ class Concept:
       child = utilities.sanitize(child)
       parent = utilities.sanitize(parent)
       if child.istitle() or parent.istitle():
-        self.taxonomy.classifiers = []
-        self.taxonomy.case_sensitive = True
+        Concept.taxonomy.classifiers = []
+        Concept.taxonomy.case_sensitive = True
       if not getattr(self, 'isVerb', False):
-        existingParents |= set(map(str, self.taxonomy.parents(child, recursive=True)))
+        existingParents |= set(map(str, Concept.taxonomy.parents(child, recursive=True)))
       else:
-        existingParents |= set(map(str, self.taxonomy.parents(child, recursive=True, pos='VB')))
+        existingParents |= set(map(str, Concept.taxonomy.parents(child, recursive=True, pos='VB')))
       if child.istitle() or parent.istitle():
-        if self.bootstrapVocabulary:
-          self.taxonomy.classifiers.append(self.wordnetClassifier)
-        self.taxonomy.case_sensitive = False
+        if Concept.bootstrapVocabulary:
+          Concept.taxonomy.classifiers.append(Concept.wordnetClassifier)
+        Concept.taxonomy.case_sensitive = False
         temp = set()
         for term in existingParents:
           if not utilities.sanitize(term).istitle():
-            temp |= set(map(str, self.taxonomy.parents(utilities.sanitize(term), recursive=True)))
+            temp |= set(map(str, Concept.taxonomy.parents(utilities.sanitize(term), recursive=True)))
         existingParents |= temp
     for term in self.synonyms(parent):
       if utilities.sanitize(term) in existingParents:
