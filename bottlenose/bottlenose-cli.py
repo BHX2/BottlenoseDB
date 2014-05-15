@@ -23,7 +23,7 @@ import sys
 import traceback
 import re
 from clint import arguments
-from clint.textui import puts, colored, indent
+from clint.textui import puts, colored, indent, columns
 
 sys.dont_write_bytecode = True
 # Keeps directory clean by not compiling local files to bytecode
@@ -36,12 +36,18 @@ def green(text):
 
 def teal(text):
   return colored.cyan(text, bold=False)
+
+def cyan(text):
+  return colored.cyan(text, bold=True)
   
 def magenta(text):
   return colored.magenta(text, bold=False)
   
 def red(text):
   return colored.red(text, bold=True)
+
+def grey(text):
+  return colored.black(text, bold=True)
   
 def switchContext(bottlenose):
   currentContext = bottlenose.context()
@@ -95,7 +101,22 @@ def inspectConcept(object):
         puts(actedOnByTuple[1] + ' (' + actedOnByTuple[0] + ') --> ' + green(object.name))
       else:
         puts(actedOnByTuple[1] + ' (' + actedOnByTuple[0] + ') --> ' + green(object.name) + magenta(" [" + str(actedOnByTuple[2]) + "]"))
-          
+
+def help():
+  col1 = 30
+  col2 = 40
+  puts('\nusage: bootstrap-cli.py [--boostrap] [file or directory]')
+  puts('\nlist of commands:')
+  with indent(2):
+    puts(columns([':exit', col1],['Exit Bottlenose', col2]))
+    puts(columns([':load <file or directory>', col1],['Load a .bottle file or directory', col2]))
+    puts(columns([':context', col1],['Switch between contexts', col2]))
+    puts(columns([':help', col1],['Bring back this help info', col2]))
+  puts('\nfor a guide to script syntax go to:')
+  with indent(2):
+    puts('https://github.com/BHX2/BottlenoseDB')
+  puts()
+        
 def main():
   args = arguments.Args()
   if '--bootstrap' in args.flags or '-b' in args.flags:
@@ -109,12 +130,15 @@ def main():
     for file in args.files:
       if re.match('(.*)(\.bottle$)', file):
         bottlenose.loadFile(file, onlyStatements=True)
+  puts('\n' + cyan('BottlenoseDB (v 1.0) ') + grey('type \':help\' for a list of commands') + '\n')
   while True:
     input = raw_input('> ')
     if input == ':exit' or input == ':x': 
       sys.exit()
     elif input == ':context' or input == ':c':
       switchContext(bottlenose)
+    elif input == ':help' or input == ':h':
+      help()
     elif re.match('^:l', input):
       match = re.match('(^:l.*)\s(.*)', input)
       if not match:
