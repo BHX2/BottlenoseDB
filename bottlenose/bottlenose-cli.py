@@ -105,7 +105,7 @@ def inspectConcept(object):
 def help():
   col1 = 30
   col2 = 40
-  puts('\nusage: bootstrap-cli.py [--boostrap] [file or directory]')
+  puts('\nusage: bootstrap-cli.py [--bootstrap] [file or directory]')
   puts('\nlist of commands:')
   with indent(2):
     puts(columns([':exit', col1],['Exit Bottlenose', col2]))
